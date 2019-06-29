@@ -19,7 +19,7 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
     }//用于直线抓勾记录攻击范围内的棋子的数据，以实现抓勾拉过来的操作
     public static Dictionary<GameObject, Color> CanMoveList = new Dictionary<GameObject, Color>();//记录移动/攻击范围
     //棋子数据，通过更改颜色标识
-    GameObject Blood;
+    public GameObject Blood;
     public static int MP = 1;//棋子移动范围
     //public static List<CanMove> CanMoveList = new List<CanMove>();
     public static bool EnemyChecked;//是否检测了可攻击范围
@@ -40,7 +40,14 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
     }
 
     // Update is called once per frame
-    void Update()//若攻击阶段，则检测攻击范围
+    void Update()
+    {
+        //若攻击阶段，则检测攻击范围
+        CheckAttack();
+    }
+
+    //若攻击阶段，则检测攻击范围
+    public void CheckAttack()
     {
         if (GameManager.Stage == 2 && !EnemyChecked)
         {
@@ -50,6 +57,7 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                 {
                     switch (GameManager.OccupiedGround[i].PlayerWeapon)
                     {
+//change:use position of ground instead of army to check range
                         case "Long": attack = 2; range = 2; CheckRange(GameManager.PlayerOnEdit, GameManager.OccupiedGround[i].Ground.transform.position, range, "Players"); break;
                         case "Short": attack = 4; range = 1; CheckRange(GameManager.PlayerOnEdit, GameManager.OccupiedGround[i].Ground.transform.position, range, "Players"); break;
                         case "Drag": attack = 1; range = 3; CheckRangeLine(GameManager.PlayerOnEdit, GameManager.OccupiedGround[i].Ground.transform.position, range, "Players"); OnlyLine = true; break;
@@ -71,151 +79,62 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
 
         }
     }
-    /// <summary>
-    /// OnMouseDown is called when the user has pressed the mouse button while
-    /// over the GUIElement or Collider.
-    /// </summary>
-    void OnMouseDown()//在移动/攻击时点击该回合可操作棋子触发操作
-    {
-        if (GameManager.Stage == 1 && GameManager.PlayerOnEdit == null)//移动
-        {
-            //只有本回合能动的一方可动
-            if (this.tag != "Team" + (MovingTeam + 1).ToString())
-                return;
-            foreach (GameManager.GroundStage gstage in GameManager.OccupiedGround)
-                if (gstage.PlayerOnGround == gameObject && gstage.Moved == true)
-                    return;
-            //标记出移动者并计算可移动范围
-            transform.localScale *= 1.1f;
-            GameManager.PlayerOnEdit = gameObject;
-            foreach (GameManager.GroundStage gstage in GameManager.OccupiedGround)
-                if (gstage.PlayerOnGround == GameManager.PlayerOnEdit)
-                {
-                    CheckRange(gstage.PlayerOnGround, gstage.Ground.transform.position, MP, "Grounds");
-                    break;
-                }
 
-        }
-        //移动，同上
-        else if (GameManager.Stage == 1 && Vector2.Distance(GameManager.PlayerOnEdit.transform.position, transform.position) > 0.1f && this.tag == "Team" + (MovingTeam + 1).ToString())
-        {
-            for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
-            {
-
-                if (GameManager.OccupiedGround[i].PlayerOnGround == gameObject && GameManager.OccupiedGround[i].Moved == true)
-                    return;
-            }
-            transform.localScale *= 1.1f;
-            GameManager.PlayerOnEdit.transform.localScale /= 1.1f;
-            GameManager.PlayerOnEdit = gameObject;
-            foreach (GameManager.GroundStage gstage in GameManager.OccupiedGround)
-                if (gstage.PlayerOnGround == GameManager.PlayerOnEdit)
-                {
-                    CheckRange(gstage.PlayerOnGround, gstage.Ground.transform.position, MP, "Grounds");
-                    break;
-                }
-        }
-        //攻击
-        else if (GameManager.Stage == 2 && Vector2.Distance(GameManager.PlayerOnEdit.transform.position, transform.position) > 0.1f)
-        {
-            //获取反击攻击力，反击范围与双方血条
-            GameObject thisBlood = null;
-            int aimRange = 0;
-            int aimAttack = 0;
-            for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
-            {
-                if (GameManager.OccupiedGround[i].PlayerOnGround == this.gameObject)
-                {
-                    Blood = GameManager.OccupiedGround[i].PlayerBlood;
-                    switch (GameManager.OccupiedGround[i].PlayerWeapon)
-                    {
-                        case "Long": aimAttack = 2; aimRange = 2; break;
-                        case "Short": aimAttack = 3; aimRange = 1; break;
-                        case "Drag": aimAttack = 1; aimRange = 3; break;
-                        case "Tear": aimAttack = 50; aimRange = 1; break;
-                    }
-                }
-                if (GameManager.OccupiedGround[i].PlayerOnGround == GameManager.PlayerOnEdit)
-                {
-                    thisBlood = GameManager.OccupiedGround[i].PlayerBlood;
-                }
-            }
-            if (gameObject.tag == "Monster")
-            {
-                Blood = GameObject.Find("MonsterBlood");
-            }
-            //是否直线攻击
-            if (CanMoveList.ContainsKey(gameObject) && !OnlyLine)
-                Attack(Blood, thisBlood, attack, aimAttack, aimRange);
-            if (OnlyLine)
-            {
-
-                for (int i = 0; i < LineCanAttack.Count; i++)
-                {
-                    if (LineCanAttack[i].Enemy == gameObject)
-                    {
-                        DragAttack(Blood, thisBlood, attack, aimAttack, aimRange);
-                        OnlyLine = false;
-                        break;
-                    }
-                }
-            }
-
-        }
-    }
     //攻击
-    void Attack(GameObject AimBlood, GameObject ThisBlood, int Hurt, int aimattack, int aimrange)//攻击，参数为
+    public void Attack(GameObject AimBlood, GameObject ThisBlood, int Hurt, int aimattack, int aimrange)//攻击，参数为
     //对方血条，己方血条，己方攻击力，对方攻击力与反击范围
     {
+        //change:use AimBlood instead of Blood
         //攻击
-        int bloodamount = int.Parse(Blood.GetComponent<Text>().text);
+        int bloodamount = int.Parse(AimBlood.GetComponent<Text>().text);
         bloodamount -= Hurt;
-        Blood.GetComponent<Text>().text = bloodamount.ToString();
+        AimBlood.GetComponent<Text>().text = bloodamount.ToString();
         //在反击范围内被反击
-        if (Vector3.Distance(gameObject.transform.localPosition, GameManager.PlayerOnEdit.transform.localPosition) < BoardManager.distance / 2 + BoardManager.distance * aimrange)
+//change:use position of ground instead of army to check range
+        for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
         {
-            
+            if (GameManager.OccupiedGround[i].PlayerOnGround == GameManager.PlayerOnEdit
+            && Vector3.Distance(gameObject.transform.localPosition, GameManager.OccupiedGround[i].Ground.transform.localPosition) > BoardManager.distance / 2 + BoardManager.distance * aimrange)
+                goto AfterHurt;
+            //眩晕不反击
+            if (GameManager.OccupiedGround[i].PlayerOnGround == gameObject && GameManager.OccupiedGround[i].Faint)
+                goto AfterHurt;
+        }
+        int thisblood = int.Parse(ThisBlood.GetComponent<Text>().text);
+        thisblood -= aimattack;
+        ThisBlood.GetComponent<Text>().text = thisblood.ToString();
+        if (thisblood <= 0)
+        {
+            //攻击者死亡，剔除棋子状态信息
+            for (int j = 0; j < GameManager.OccupiedGround.Count; j++)
+                if (GameManager.OccupiedGround[j].PlayerOnGround == GameManager.PlayerOnEdit && (GameManager.OccupiedGround[j].Moved))
+                {
+                    MovedDead++;
+                    break;
+                }
             for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
             {
-                //眩晕不反击
-                if (GameManager.OccupiedGround[i].PlayerOnGround == gameObject && GameManager.OccupiedGround[i].Faint)
-                    goto AfterHurt;
-            }
-            int thisblood = int.Parse(ThisBlood.GetComponent<Text>().text);
-            thisblood -= aimattack;
-            ThisBlood.GetComponent<Text>().text = thisblood.ToString();
-            if (thisblood <= 0)
-            {
-                //攻击者死亡，剔除棋子状态信息
-                for (int j = 0; j < GameManager.OccupiedGround.Count; j++)
-                    if (GameManager.OccupiedGround[j].PlayerOnGround == GameManager.PlayerOnEdit && (GameManager.OccupiedGround[j].Moved))
-                    {
-                        MovedDead++;
-                        break;
-                    }
-                for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
-                {
 
-                    if (GameManager.OccupiedGround[i].PlayerOnGround == GameManager.PlayerOnEdit)
-                    {
-                        Destroy(GameManager.OccupiedGround[i].PlayerBlood);
-                        GameManager.OccupiedGround[i].Ground.tag = "Untagged";
-                        GameManager.OccupiedGround.RemoveAt(i);
-                        break;
-                    }
+                if (GameManager.OccupiedGround[i].PlayerOnGround == GameManager.PlayerOnEdit)
+                {
+                    Destroy(GameManager.OccupiedGround[i].PlayerBlood);
+                    GameManager.OccupiedGround[i].Ground.tag = "Untagged";
+                    GameManager.OccupiedGround.RemoveAt(i);
+                    break;
                 }
-                if (CanMoveList.ContainsKey(GameManager.PlayerOnEdit))
-                    CanMoveList.Remove(GameManager.PlayerOnEdit);
-                //统计死亡人数
-                if (GameManager.PlayerOnEdit.tag == "Team1")
-                    DiedSoldiersTeam1++;
-                if (GameManager.PlayerOnEdit.tag == "Team2")
-                    DIedSoldiersTeam2++;
-                if (DiedSoldiersTeam1 == 3 || DIedSoldiersTeam2 == 3)
-                    CreateTear(GameManager.PlayerOnEdit.transform.position);
-                ThisDie();
             }
+            if (CanMoveList.ContainsKey(GameManager.PlayerOnEdit))
+                CanMoveList.Remove(GameManager.PlayerOnEdit);
+            //统计死亡人数
+            if (GameManager.PlayerOnEdit.tag == "Team1")
+                DiedSoldiersTeam1++;
+            if (GameManager.PlayerOnEdit.tag == "Team2")
+                DIedSoldiersTeam2++;
+            if (DiedSoldiersTeam1 == 3 || DIedSoldiersTeam2 == 3)
+                CreateTear(GameManager.PlayerOnEdit.transform.position);
+            ThisDie();
         }
+
     AfterHurt:
         if (bloodamount <= 0)
         {
@@ -250,7 +169,7 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
             if (DiedSoldiersTeam1 == 3 || DIedSoldiersTeam2 == 3)
                 CreateTear(gameObject.transform.position);
             Die();
-            
+
         }
         ChangeTurn();
         foreach (KeyValuePair<GameObject, Color> key in CanMoveList)
@@ -260,7 +179,7 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
 
     }
     //抓勾攻击，与普通攻击大体一样，没有统一函数所有看起来比较冗余
-    void DragAttack(GameObject AimBlood, GameObject ThisBlood, int Hurt, int aimattack, int aimrange)//抓勾攻击，参数同上
+    public void DragAttack(GameObject AimBlood, GameObject ThisBlood, int Hurt, int aimattack, int aimrange)//抓勾攻击，参数同上
     {
         //寻找对应被拉去的地块
         GameObject surround = null;
@@ -275,47 +194,49 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
             }
         }
         //攻击
-        int bloodamount = int.Parse(Blood.GetComponent<Text>().text);
+        int bloodamount = int.Parse(AimBlood.GetComponent<Text>().text);
         bloodamount -= Hurt;
-        Blood.GetComponent<Text>().text = bloodamount.ToString();
+        AimBlood.GetComponent<Text>().text = bloodamount.ToString();
         //反击
-        if (Vector3.Distance(gameObject.transform.localPosition, GameManager.PlayerOnEdit.transform.localPosition) < BoardManager.distance / 2 + BoardManager.distance * aimrange)
+//change:use position of ground instead of army to check range
+        
+        for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
         {
+            if (GameManager.OccupiedGround[i].PlayerOnGround==GameManager.PlayerOnEdit
+                &&Vector3.Distance(gameObject.transform.localPosition, GameManager.OccupiedGround[i].Ground.transform.localPosition) > BoardManager.distance / 2 + BoardManager.distance * aimrange)
+                goto AfterHurt;
+            if (GameManager.OccupiedGround[i].PlayerOnGround == gameObject && GameManager.OccupiedGround[i].Faint)
+                goto AfterHurt;
+        }
+        int thisblood = int.Parse(ThisBlood.GetComponent<Text>().text);
+        thisblood -= aimattack;
+        ThisBlood.GetComponent<Text>().text = thisblood.ToString();
+        if (thisblood <= 0)
+        {
+            for (int j = 0; j < GameManager.OccupiedGround.Count; j++)
+                if (GameManager.OccupiedGround[j].PlayerOnGround == GameManager.PlayerOnEdit && GameManager.OccupiedGround[j].Moved)
+                    MovedDead++;
             for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
             {
-                if (GameManager.OccupiedGround[i].PlayerOnGround == gameObject && GameManager.OccupiedGround[i].Faint)
-                    goto AfterHurt;
+
+                if (GameManager.OccupiedGround[i].PlayerOnGround == GameManager.PlayerOnEdit)
+                {
+                    Destroy(GameManager.OccupiedGround[i].PlayerBlood);
+                    GameManager.OccupiedGround[i].Ground.tag = "Untagged";
+                    GameManager.OccupiedGround.RemoveAt(i);
+                    break;
+                }
             }
-            int thisblood = int.Parse(ThisBlood.GetComponent<Text>().text);
-            thisblood -= aimattack;
-            ThisBlood.GetComponent<Text>().text = thisblood.ToString();
-            if (thisblood <= 0)
+
+            if (GameManager.PlayerOnEdit.tag == "Team1")
             {
-                for (int j = 0; j < GameManager.OccupiedGround.Count; j++)
-                    if (GameManager.OccupiedGround[j].PlayerOnGround == GameManager.PlayerOnEdit && GameManager.OccupiedGround[j].Moved)
-                        MovedDead++;
-                for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
-                {
-
-                    if (GameManager.OccupiedGround[i].PlayerOnGround == GameManager.PlayerOnEdit)
-                    {
-                        Destroy(GameManager.OccupiedGround[i].PlayerBlood);
-                        GameManager.OccupiedGround[i].Ground.tag = "Untagged";
-                        GameManager.OccupiedGround.RemoveAt(i);
-                        break;
-                    }
-                }
-
-                if (GameManager.PlayerOnEdit.tag == "Team1")
-                {
-                    DiedSoldiersTeam1++;
-                }
-                if (GameManager.PlayerOnEdit.tag == "Team2")
-                    DIedSoldiersTeam2++;
-                if (DiedSoldiersTeam1 == 3 || DIedSoldiersTeam2 == 3)
-                    CreateTear(GameManager.PlayerOnEdit.transform.position);
-                ThisDie();
+                DiedSoldiersTeam1++;
             }
+            if (GameManager.PlayerOnEdit.tag == "Team2")
+                DIedSoldiersTeam2++;
+            if (DiedSoldiersTeam1 == 3 || DIedSoldiersTeam2 == 3)
+                CreateTear(GameManager.PlayerOnEdit.transform.position);
+            ThisDie();
         }
     AfterHurt:
     //被抓取
@@ -349,23 +270,48 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
 
 
                     anotherObject = Instantiate(LongSoldier, this.transform.position, Quaternion.identity, GameObject.Find("Players").transform);
+                    if(tag=="Team1")
+                        anotherObject.AddComponent<RealPlayer>();
+                    else
+                    {
+                        anotherObject.AddComponent<AI>();
+                    }
                     gameObject.SetActive(false);
                     break;
                 case "Short":
 
 
                     anotherObject = Instantiate(ShortSoldier, this.transform.position, Quaternion.identity, GameObject.Find("Players").transform);
+                    if(tag=="Team1")
+                        anotherObject.AddComponent<RealPlayer>();
+                    else
+                    {
+                        anotherObject.AddComponent<AI>();
+                    }
                     gameObject.SetActive(false);
                     break;
                 case "Drag":
 
 
                     anotherObject = Instantiate(DragSoldier, this.transform.position, Quaternion.identity, GameObject.Find("Players").transform);
+                    if(tag=="Team1")
+                        anotherObject.AddComponent<RealPlayer>();
+                    else
+                    {
+                        anotherObject.AddComponent<AI>();
+                    }
                     gameObject.SetActive(false);
                     break;
                 case "Tear":
-                    gameObject.SetActive(false);
+                    
                     anotherObject = Instantiate(TearSoldier, this.transform.position, Quaternion.identity, GameObject.Find("Players").transform);
+                    if(tag=="Team1")
+                        anotherObject.AddComponent<RealPlayer>();
+                    else
+                    {
+                        anotherObject.AddComponent<AI>();
+                    }
+                    gameObject.SetActive(false);
                     break;
                 default:
                     anotherObject = gameObject;
@@ -449,7 +395,7 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
         GameManager.PlayerOnEdit = null;
     }
     //确定移动攻击范围
-    void CheckRange(GameObject Center, Vector3 CenterPosition, int Range, string Groups)//检测移动与攻击范围，目前是用直接距离将就的，原理为计入
+    public void CheckRange(GameObject Center, Vector3 CenterPosition, int Range, string Groups)//检测移动与攻击范围，目前是用直接距离将就的，原理为计入
     //Center周围Range范围内的所有地块/敌方单位
     {
         foreach (KeyValuePair<GameObject, Color> key in CanMoveList)
@@ -517,12 +463,12 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
     }
     void ChangeTurn()//更换回合
     {
+        
         GameManager.Stage = 1;
         SmallTurn++;
         //若本回合结束更换大回合
         if (SmallTurn >= GameManager.TeamCount * 3 - FaintCount - DiedSoldiersTeam1 - DIedSoldiersTeam2 + MovedDead)
         {
-
             GameManager.MudSetted = false;
             SmallTurn = 0;
             MovedDead = 0;
@@ -533,6 +479,7 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                 GStage.Moved = false;
                 oGround.Add(GStage);
             }
+            
             GameManager.Turn++;
             GameManager.OccupiedGround = oGround;
         }
@@ -563,6 +510,8 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                 break;
             }
         }
+//change:fix the bug due to moving a same chess contineously
+        GameManager.PlayerOnEdit = null;
     }
     void CreateTear(Vector3 position)//生成致死刀
     {

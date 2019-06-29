@@ -18,7 +18,7 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
     public static int SoldierCount=0;
     
     int BloodCount;
-    public static int TeamCounter=-1;//用于队伍轮转
+    public static int TeamCounter=0;//用于队伍轮转
     // Start is called before the first frame update
     void Start()
     {
@@ -34,12 +34,12 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
         //按所在地块移动
         if (GameManager.Stage == 1 && GameManager.PlayerOnEdit != null)
         {
-            if (Input.GetMouseButtonDown(0))
+            if (Input.GetMouseButtonDown(0)&&PlayerController.MovingTeam==0)
             {
                 Vector3 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
                 mousePosition.z = 0;
                 if (Mathf.Abs(Vector3.Distance(mousePosition, this.gameObject.transform.position)) < BoardManager.distance / 2)
-                    PlayerMove(GameManager.PlayerOnEdit);
+                    PlayerMove();
             }
         }
 
@@ -47,13 +47,21 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
 
     void PlacePlayer()
     {
-        
+
         if (Input.GetMouseButtonUp(0))
         {
-            
-            
-            PlaceSinglePlayer();
-            
+            Vector3 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            mousePosition.z = 0;
+            //相当于onmouse
+            if (Mathf.Abs(Vector3.Distance(mousePosition, this.gameObject.transform.position)) < BoardManager.distance / 2 && this.gameObject.tag != "Occupied")
+            {
+                //不能降空地
+                if (this.tag == "Untagged")
+                    return;
+                if(TeamCounter==0)
+                    PlaceSinglePlayer();
+            }
+
         }
         /*if(Input.touchCount>0)
         {
@@ -76,62 +84,57 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
         if(SoldierCount>=3*GameManager.TeamCount)
             GameManager.Stage = 1;
     }
-    void PlaceSinglePlayer()//空降单个玩家
+    public void PlaceSinglePlayer()//空降单个玩家
     {
-        Vector3 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        mousePosition.z = 0;
-        //相当于onmouse
-        if (Mathf.Abs(Vector3.Distance(mousePosition, this.gameObject.transform.position)) < BoardManager.distance / 2 && this.gameObject.tag != "Occupied")
+
+        
+        GameObject newPlayer = null;
+        
+        switch (this.gameObject.tag)
         {
-            TeamCounter = (TeamCounter + 1) % GameManager.TeamCount;
-            GameObject newPlayer = null;
-            //不能降空地
-            if(this.tag=="Untagged")
-                return;
-            switch (this.gameObject.tag)
-            {
-                case "Long": newPlayer = Instantiate(LongSoldier, this.transform.position, Quaternion.identity,GameObject.Find("Players").transform); break;
-                case "Short": newPlayer = Instantiate(ShortSoldier, this.transform.position, Quaternion.identity,GameObject.Find("Players").transform); break;
-                case "Drag": newPlayer = Instantiate(DragSoldier, this.transform.position, Quaternion.identity,GameObject.Find("Players").transform); break;
-            }
-            //只能降空地
-            //newPlayer = Instantiate(EmptySoldier, this.transform.position, Quaternion.identity,GameObject.Find("Players").transform);
-            //一队一个轮流
-            switch (TeamCounter)
-            {
-                case 0: newPlayer.tag = "Team1"; break;
-                case 1: newPlayer.tag = "Team2"; newPlayer.transform.Rotate(0, 0, 180); break;
-                case 2: newPlayer.tag = "Team3"; break;
-                case 3: newPlayer.tag = "Team4"; break;
-            }
-            //生成血条
-            GameObject canvas = GameObject.Find("Canvas");
-            Vector3 offset = new Vector3(0, -0.3f, 0);
-            blood = Instantiate(Blood, this.transform.position + offset, Quaternion.identity,canvas.transform);
-            //foreach (Transform t in blood.GetComponentsInChildren<Transform>())
-            {
-               // if (t.name == "blood")
-                //{ blood = t.gameObject; break; }
-            }
-            blood.GetComponentInChildren<Text>().text = BloodCount.ToString();
-            foreach (Transform t in GetComponentsInChildren<Transform>())
-                if (t.tag == "Weapon")
-                    t.gameObject.SetActive(false);
-            //储存玩家状态
-            GameManager.GroundStage GStage = new GameManager.GroundStage();
-            GStage.PlayerBlood = blood;
-            GStage.Ground = this.gameObject;
-            GStage.PlayerOnGround = newPlayer;
-            GStage.PlayerWeapon = this.tag;
-            GStage.Moved = false;
-            GStage.InMug = false;
-            GStage.Faint = false;
-            GameManager.OccupiedGround.Add(GStage);
-            SoldierCount++;
-            this.gameObject.tag = "Occupied";
+            case "Long": newPlayer = Instantiate(LongSoldier, this.transform.position, Quaternion.identity, GameObject.Find("Players").transform); break;
+            case "Short": newPlayer = Instantiate(ShortSoldier, this.transform.position, Quaternion.identity, GameObject.Find("Players").transform); break;
+            case "Drag": newPlayer = Instantiate(DragSoldier, this.transform.position, Quaternion.identity, GameObject.Find("Players").transform); break;
         }
+        //只能降空地
+        //newPlayer = Instantiate(EmptySoldier, this.transform.position, Quaternion.identity,GameObject.Find("Players").transform);
+        //一队一个轮流
+        switch (TeamCounter)
+        {
+            case 0: newPlayer.tag = "Team1"; newPlayer.AddComponent<RealPlayer>(); break;
+            case 1: newPlayer.tag = "Team2"; newPlayer.transform.Rotate(0, 0, 180); newPlayer.AddComponent<AI>(); break;
+            case 2: newPlayer.tag = "Team3"; break;
+            case 3: newPlayer.tag = "Team4"; break;
+        }
+        //生成血条
+        GameObject canvas = GameObject.Find("Canvas");
+        Vector3 offset = new Vector3(0, -0.3f, 0);
+        blood = Instantiate(Blood, this.transform.position + offset, Quaternion.identity, canvas.transform);
+        //foreach (Transform t in blood.GetComponentsInChildren<Transform>())
+        {
+            // if (t.name == "blood")
+            //{ blood = t.gameObject; break; }
+        }
+        blood.GetComponentInChildren<Text>().text = BloodCount.ToString();
+        foreach (Transform t in GetComponentsInChildren<Transform>())
+            if (t.tag == "Weapon")
+                t.gameObject.SetActive(false);
+        //储存玩家状态
+        GameManager.GroundStage GStage = new GameManager.GroundStage();
+        GStage.PlayerBlood = blood;
+        GStage.Ground = this.gameObject;
+        GStage.PlayerOnGround = newPlayer;
+        GStage.PlayerWeapon = this.tag;
+        GStage.Moved = false;
+        GStage.InMug = false;
+        GStage.Faint = false;
+        GameManager.OccupiedGround.Add(GStage);
+        SoldierCount++;
+        this.gameObject.tag = "Occupied";
+        TeamCounter = (TeamCounter + 1) % GameManager.TeamCount;
+
     }
-    public void PlayerMove(GameObject player)//玩家移动
+    public void PlayerMove()//玩家移动
     //棋子移动，若该地块位于已检测到的移动范围内，则移动，参数为待移动棋子
     {
 
@@ -156,7 +159,7 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
             Vector3 offset = new Vector3(0, -BoardManager.distance / 3, 0);
             //player.transform.position = transform.position;
             //匀速移动
-            StartCoroutine(SmoothMove(this.transform.position));
+            StartCoroutine(SmoothMove(GameManager.PlayerOnEdit,this.transform.position));
             //player.transform.position = Vector3.Lerp(player.transform.position, this.transform.position, 0.2f);
             //切换武器状态
             switch (this.tag)
@@ -185,8 +188,15 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
                         GameManager.PlayerOnEdit.transform.Rotate(0, 0, 180);
                     break;
             }
-            if(tag=="Team2")
+            if (tag == "Team2")
+            {
                 GameManager.PlayerOnEdit.transform.Rotate(0, 0, 180);
+                GameManager.PlayerOnEdit.AddComponent<AI>();
+            }
+            else
+            {
+                GameManager.PlayerOnEdit.AddComponent<RealPlayer>();
+            }
             //更换并储存状态
             GameManager.PlayerOnEdit.tag = tag;
             blood.transform.position = this.transform.position + offset;
@@ -213,14 +223,16 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
                 key.Key.GetComponent<SpriteRenderer>().color = key.Value;
         }
     }
-    IEnumerator SmoothMove(Vector3 aimPosition)//匀速移动
+    IEnumerator SmoothMove(GameObject MovingObject,Vector3 aimPosition)//匀速移动
     {
-        while (aimPosition!=GameManager.PlayerOnEdit.transform.position)
+//change:as I've edited playeronedit in "PlayerController.ChangeTurn,I need one more parameters"
+        while (aimPosition!=MovingObject.transform.position)
         {
-            if(GameManager.PlayerOnEdit==null)
-                break;
-            GameManager.PlayerOnEdit.transform.position=Vector3.MoveTowards(GameManager.PlayerOnEdit.transform.position,aimPosition,3*Time.deltaTime);  
+            
+            MovingObject.transform.position=Vector3.MoveTowards(MovingObject.transform.position,aimPosition,3*Time.deltaTime);  
             yield return 0;
+            if(MovingObject==null)
+                break;
         }
         //GameManager.PlayerOnEdit.transform.position = transform.position;
     }

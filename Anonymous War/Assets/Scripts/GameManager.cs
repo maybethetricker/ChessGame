@@ -25,6 +25,7 @@ public class GameManager : MonoBehaviour
     public static GameObject PlayerOnEdit;//正准备移动或攻击的棋子
     public static List<GroundStage> OccupiedGround = new List<GroundStage>();//棋盘上所有棋子信息
     public static int TeamCount = 2;
+    public static int RealPlayerTeam=0;//哪一队是玩家（其他是AI或者联机模块）
     public static int Turn;
     GameObject TearGround;//怪物生成地，因为之前不是怪所有名字有点不对
     GameObject MonsterBlood;
@@ -50,7 +51,7 @@ public class GameManager : MonoBehaviour
         OccupiedGround = new List<GroundStage>();
         MudSetted = false;
         GroundClick.SoldierCount = 0;
-        GroundClick.TeamCounter = -1;
+        GroundClick.TeamCounter = 0;
         PlayerController.MovingTeam = 1;
         PlayerController.SmallTurn = 0;
         PlayerController.FaintCount = 0;
@@ -61,6 +62,7 @@ public class GameManager : MonoBehaviour
         PlayerController.LineCanAttack = new List<PlayerController.AttackLine>();
         PlayerController.OnlyLine = false;
         PlayerController.MovedDead = 0;
+        AI.CoroutineStarted = false;
         /* 
         test = GameObject.Find("Test").GetComponent<Button>();
         test.onClick.AddListener(delegate () {
@@ -79,6 +81,12 @@ public class GameManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if(GameManager.Stage==0&&GroundClick.TeamCounter!=RealPlayerTeam)
+        {
+            //等待一会儿后空降
+            if(!AI.CoroutineStarted)
+                StartCoroutine(WaitToLand());
+        }
         if(Turn==3&&!MudSetted)
         {
             //降怪前准备
@@ -239,9 +247,8 @@ public class GameManager : MonoBehaviour
                     GameManager.OccupiedGround[i].Ground.tag = "Untagged";
                     if (PlayerController.CanMoveList.ContainsKey(OccupiedGround[i].PlayerOnGround))
                         PlayerController.CanMoveList.Remove(OccupiedGround[i].PlayerOnGround);
-                    for (int j = 0; j < GameManager.OccupiedGround.Count;j++)
-                        if(GameManager.OccupiedGround[j].PlayerOnGround==OccupiedGround[i].PlayerOnGround&&!GameManager.OccupiedGround[j].Moved)
-                            PlayerController.MovedDead++;
+//change:Always Add MovedDead
+                    PlayerController.MovedDead++;
                     if (OccupiedGround[i].PlayerOnGround.tag == "Team1")
                         PlayerController.DiedSoldiersTeam1++;
                     if (OccupiedGround[i].PlayerOnGround.tag == "Team2")
@@ -326,5 +333,38 @@ public class GameManager : MonoBehaviour
                 break;
             }
         }
+    }
+
+    void AILand()
+    {
+        //需要空降到的地块
+        GameObject GroundToLand=null;
+        //遍历所有有武器且未被其他棋子占据的地块，并在遍历到的第一个地块处降落,因为地上有武器，所有Tag也不能为Weapon
+        foreach (Transform t in GameObject.Find("Grounds").GetComponentsInChildren<Transform>())
+        {
+            if(t.tag!="Occupied"&&t.tag!="Untagged"&&t.tag!="Weapon")
+            {
+                GroundToLand = t.gameObject;
+                break;
+            }
+        }
+        
+        //对接降落函数，可以不用看了
+        foreach (Transform t in GameObject.Find("Grounds").GetComponentsInChildren<Transform>())
+        {
+            if(Vector3.Distance(GroundToLand.transform.position, t.position) < BoardManager.distance / 2)
+            {
+                t.gameObject.GetComponent<GroundClick>().PlaceSinglePlayer();
+                break;
+            }
+        }
+    }
+
+    IEnumerator WaitToLand()
+    {
+        AI.CoroutineStarted = true;
+        yield return new WaitForSeconds(1);
+        AILand();
+        AI.CoroutineStarted = false;
     }
 }

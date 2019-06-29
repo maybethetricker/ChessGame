@@ -18,6 +18,9 @@ public class SkipTurn : MonoBehaviour
     }
     void Skip()//跳过移动或攻击阶段
     {
+//change:fix bug due to null object
+        if(GameManager.PlayerOnEdit==null)
+            return;
         //跳过移动，修改状态为已移动并删除高亮
         if(GameManager.Stage==1&&GameManager.PlayerOnEdit.tag=="Team" + (PlayerController.MovingTeam + 1).ToString())
         {

@@ -1,0 +1,21 @@
+fileFormatVersion: 2
+guid: fe0cd2bae66776a4fb3fb17c306c88ed
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - LongSoldier: {fileID: 4319592440285663039, guid: 85806a52e00715a44b1171bfab571f84,
+      type: 3}
+  - ShortSoldier: {fileID: 2481720175780188011, guid: c455796536e1e4d4ab9be8757cba50f8,
+      type: 3}
+  - DragSoldier: {fileID: 6882349054949763340, guid: bb8d3dde01f7b974180c1a0f3aabd018,
+      type: 3}
+  - TearSoldier: {fileID: 129337885249873763, guid: fc132bce0c1be7247a4e80cf3993b695,
+      type: 3}
+  - Tear: {fileID: 6677337581583436081, guid: 17aeb40c84473a7499a040242fcf934e, type: 3}
+  - Blood: {fileID: 1959562310762665233, guid: fa7e5273cadd19c4aa3f5e4371581a5d, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
