@@ -10,7 +10,6 @@ GameObject:
   m_Component:
   - component: {fileID: 2436673184478296369}
   - component: {fileID: 4856116070967723506}
-  - component: {fileID: -8510268777251887397}
   - component: {fileID: -7724043558077333532}
   m_Layer: 0
   m_Name: LongSoldier
@@ -82,26 +81,6 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!114 &-8510268777251887397
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4319592440285663039}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 19d9b2ac08678084daac08e38029e3ea, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  LongSoldier: {fileID: 4319592440285663039}
-  ShortSoldier: {fileID: 2481720175780188011, guid: c455796536e1e4d4ab9be8757cba50f8,
-    type: 3}
-  DragSoldier: {fileID: 6882349054949763340, guid: bb8d3dde01f7b974180c1a0f3aabd018,
-    type: 3}
-  TearSoldier: {fileID: 129337885249873763, guid: fc132bce0c1be7247a4e80cf3993b695,
-    type: 3}
-  Tear: {fileID: 6677337581583436081, guid: 17aeb40c84473a7499a040242fcf934e, type: 3}
 --- !u!60 &-7724043558077333532
 PolygonCollider2D:
   m_ObjectHideFlags: 0
