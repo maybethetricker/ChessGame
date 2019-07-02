@@ -13,13 +13,13 @@ public class AI : PlayerController
         //检测攻击范围
         CheckAttack();
         
-        if(GameManager.Stage==1&&this.tag == "Team" + (MovingTeam + 1).ToString() && this.tag != "Team" + (GameManager.RealPlayerTeam + 1).ToString())
+        if(GameManager.Stage==1&&this.tag == "Team" + (MovingTeam + 1).ToString() && !GameManager.RealPlayerTeam.Contains(this.tag))
         {
             //等待一会儿后移动
             if(!CoroutineStarted)
                 StartCoroutine(WaitToMove());
         }
-        if(GameManager.Stage == 2 && GameManager.PlayerOnEdit.tag != "Team" + (GameManager.RealPlayerTeam + 1).ToString())
+        if(GameManager.Stage == 2 &&  !GameManager.RealPlayerTeam.Contains(GameManager.PlayerOnEdit.tag))
         {
             //等待一会儿后攻击
             if(!CoroutineStarted)
@@ -38,7 +38,7 @@ public class AI : PlayerController
         if (GameManager.Stage == 2 && Vector2.Distance(GameManager.PlayerOnEdit.transform.position, transform.position) > 0.1f)
         {
             //只有本回合能动的一方可动
-            if (GameManager.PlayerOnEdit.tag != "Team" + (GameManager.RealPlayerTeam + 1).ToString())
+            if ( !GameManager.RealPlayerTeam.Contains(GameManager.PlayerOnEdit.tag))
                 return;
             //获取反击攻击力，反击范围与双方血条
             GameObject thisBlood = null;
@@ -92,11 +92,11 @@ public class AI : PlayerController
         //遍历所有未移动的AI棋子，并移动遍历到的第一颗棋子
         for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
         {
-            if(GameManager.OccupiedGround[i].PlayerOnGround.tag=="Team2"&&!GameManager.OccupiedGround[i].Moved)
+            if((!GameManager.RealPlayerTeam.Contains(GameManager.OccupiedGround[i].PlayerOnGround.tag))&&!GameManager.OccupiedGround[i].Moved)
             {
                 GameManager.PlayerOnEdit = GameManager.OccupiedGround[i].PlayerOnGround;
                 //检测周围可移动地块
-                CheckRange(GameManager.OccupiedGround[i].PlayerOnGround, GameManager.OccupiedGround[i].Ground.transform.position, MP, "Grounds");
+                CheckRange(GameManager.OccupiedGround[i].PlayerOnGround, BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.position, MP, "Grounds");
                 break;
             }
 
@@ -109,6 +109,7 @@ public class AI : PlayerController
             GroundToMove = key.Key;
             break;
         }
+
         //对接移动函数，可以不用看了
         foreach (Transform t in GameObject.Find("Grounds").GetComponentsInChildren<Transform>())
         {
@@ -155,7 +156,7 @@ public class AI : PlayerController
                     thisBlood = GameManager.OccupiedGround[i].PlayerBlood;
                 }
             }
-            if (gameObject.tag == "Monster")
+            if (PlayerToAttack.tag == "Monster")
             {
                 Blood = GameObject.Find("MonsterBlood");
             }
@@ -164,7 +165,14 @@ public class AI : PlayerController
             {
                 if (Vector3.Distance(PlayerToAttack.transform.position, t.position) < BoardManager.distance / 2)
                 {
-                    t.gameObject.GetComponent<RealPlayer>().DragAttack(Blood, thisBlood, attack, aimAttack, aimRange);
+                    if(t.tag=="Monster")
+                        t.gameObject.GetComponent<MonsterController>().DragAttack(Blood, thisBlood, attack, aimAttack, aimRange);
+                    else if(t.tag!=GameManager.PlayerOnEdit.tag)
+                        t.gameObject.GetComponent<RealPlayer>().DragAttack(Blood, thisBlood, attack, aimAttack, aimRange);
+                    else
+                    {
+                        t.gameObject.GetComponent<AI>().DragAttack(Blood, thisBlood, attack, aimAttack, aimRange);
+                    }
                     OnlyLine = false;
                     break;
                 }
@@ -202,7 +210,7 @@ public class AI : PlayerController
                     thisBlood = GameManager.OccupiedGround[i].PlayerBlood;
                 }
             }
-            if (gameObject.tag == "Monster")
+            if (PlayerToAttack.tag == "Monster")
             {
                 Blood = GameObject.Find("MonsterBlood");
             }
@@ -211,7 +219,10 @@ public class AI : PlayerController
             {
                 if (Vector3.Distance(PlayerToAttack.transform.position, t.position) < BoardManager.distance / 2)
                 {
-                    t.gameObject.GetComponent<RealPlayer>().Attack(Blood, thisBlood, attack, aimAttack, aimRange);
+                    if(t.tag=="Monster")
+                        t.gameObject.GetComponent<MonsterController>().Attack(Blood, thisBlood, attack, aimAttack, aimRange);
+                    else
+                        t.gameObject.GetComponent<RealPlayer>().Attack(Blood, thisBlood, attack, aimAttack, aimRange);
                     break;
                 }
             }

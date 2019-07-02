@@ -13,7 +13,7 @@ public class RealPlayer : PlayerController
         if (GameManager.Stage == 1 && GameManager.PlayerOnEdit == null)//移动
         {
             //只有本回合能动的一方可动
-            if (this.tag != "Team" + (MovingTeam + 1).ToString() || this.tag != "Team" + (GameManager.RealPlayerTeam + 1).ToString())
+            if (this.tag != "Team" + (MovingTeam + 1).ToString() ||  !GameManager.RealPlayerTeam.Contains(this.tag))
                 return;
             foreach (GameManager.GroundStage gstage in GameManager.OccupiedGround)
                 if (gstage.PlayerOnGround == gameObject && gstage.Moved == true)
@@ -24,7 +24,7 @@ public class RealPlayer : PlayerController
             foreach (GameManager.GroundStage gstage in GameManager.OccupiedGround)
                 if (gstage.PlayerOnGround == GameManager.PlayerOnEdit)
                 {
-                    CheckRange(gstage.PlayerOnGround, gstage.Ground.transform.position, MP, "Grounds");
+                    CheckRange(gstage.PlayerOnGround, BoardManager.Grounds[gstage.i][gstage.j].transform.position, MP, "Grounds");
                     break;
                 }
 
@@ -33,7 +33,7 @@ public class RealPlayer : PlayerController
         else if (GameManager.Stage == 1 && Vector2.Distance(GameManager.PlayerOnEdit.transform.position, transform.position) > 0.1f)
         {
             //只有本回合能动的一方可动
-            if (this.tag != "Team" + (MovingTeam + 1).ToString() || this.tag != "Team" + (GameManager.RealPlayerTeam + 1).ToString())
+            if (this.tag != "Team" + (MovingTeam + 1).ToString() || !GameManager.RealPlayerTeam.Contains(this.tag))
                 return;
             for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
             {
@@ -48,9 +48,59 @@ public class RealPlayer : PlayerController
             foreach (GameManager.GroundStage gstage in GameManager.OccupiedGround)
                 if (gstage.PlayerOnGround == GameManager.PlayerOnEdit)
                 {
-                    CheckRange(gstage.PlayerOnGround, gstage.Ground.transform.position, MP, "Grounds");
+                    CheckRange(gstage.PlayerOnGround, BoardManager.Grounds[gstage.i][gstage.j].transform.position, MP, "Grounds");
                     break;
                 }
+        }
+        else if (GameManager.Stage == 2 && Vector2.Distance(GameManager.PlayerOnEdit.transform.position, transform.position) > 0.1f)
+        {
+            //只有本回合能动的一方可动
+            if (!GameManager.RealPlayerTeam.Contains(GameManager.PlayerOnEdit.tag))
+                return;
+            //获取反击攻击力，反击范围与双方血条
+            GameObject thisBlood = null;
+            int aimRange = 0;
+            int aimAttack = 0;
+            for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
+            {
+                if (GameManager.OccupiedGround[i].PlayerOnGround == this.gameObject)
+                {
+                    Blood = GameManager.OccupiedGround[i].PlayerBlood;
+                    switch (GameManager.OccupiedGround[i].PlayerWeapon)
+                    {
+                        case "Long": aimAttack = 2; aimRange = 2; break;
+                        case "Short": aimAttack = 4; aimRange = 1; break;
+                        case "Drag": aimAttack = 1; aimRange = 3; break;
+                        case "Tear": aimAttack = 50; aimRange = 0; break;
+                    }
+//change:data error
+                }
+                if (GameManager.OccupiedGround[i].PlayerOnGround == GameManager.PlayerOnEdit)
+                {
+                    thisBlood = GameManager.OccupiedGround[i].PlayerBlood;
+                }
+            }
+            if (gameObject.tag == "Monster")
+            {
+                Blood = GameObject.Find("MonsterBlood");
+            }
+            //是否直线攻击
+            if (CanMoveList.ContainsKey(gameObject) && !OnlyLine)
+                Attack(Blood, thisBlood, attack, aimAttack, aimRange);
+            if (OnlyLine)
+            {
+
+                for (int i = 0; i < LineCanAttack.Count; i++)
+                {
+                    if (LineCanAttack[i].Enemy == gameObject)
+                    {
+                        DragAttack(Blood, thisBlood, attack, aimAttack, aimRange);
+                        OnlyLine = false;
+                        break;
+                    }
+                }
+            }
+
         }
         
     }

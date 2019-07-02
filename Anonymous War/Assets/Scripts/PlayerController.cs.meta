@@ -3,7 +3,17 @@ guid: 19d9b2ac08678084daac08e38029e3ea
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
-  defaultReferences: []
+  defaultReferences:
+  - LongSoldier: {fileID: 4319592440285663039, guid: 85806a52e00715a44b1171bfab571f84,
+      type: 3}
+  - ShortSoldier: {fileID: 2481720175780188011, guid: c455796536e1e4d4ab9be8757cba50f8,
+      type: 3}
+  - DragSoldier: {fileID: 6882349054949763340, guid: bb8d3dde01f7b974180c1a0f3aabd018,
+      type: 3}
+  - TearSoldier: {fileID: 129337885249873763, guid: fc132bce0c1be7247a4e80cf3993b695,
+      type: 3}
+  - Tear: {fileID: 6677337581583436081, guid: 17aeb40c84473a7499a040242fcf934e, type: 3}
+  - Blood: {instanceID: 0}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 

@@ -13,7 +13,7 @@ MonoImporter:
   - TearSoldier: {fileID: 129337885249873763, guid: fc132bce0c1be7247a4e80cf3993b695,
       type: 3}
   - Tear: {fileID: 6677337581583436081, guid: 17aeb40c84473a7499a040242fcf934e, type: 3}
-  - Blood: {fileID: 1959562310762665233, guid: fa7e5273cadd19c4aa3f5e4371581a5d, type: 3}
+  - Blood: {instanceID: 0}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 

@@ -93,6 +93,7 @@ public class SkipTurn : MonoBehaviour
                     break;
                 }
             }
+            GameManager.PlayerOnEdit = null;
             PlayerController.EnemyChecked = false;
         }
 

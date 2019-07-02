@@ -6,6 +6,10 @@ using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
+    public GameObject LongSoldier;
+    public GameObject ShortSoldier;
+    public GameObject DragSoldier;
+    public GameObject TearSoldier;
     public GameObject Tear;//致死刀
     public GameObject Monster;//怪
     public GameObject Blood;//血条prefab
@@ -13,7 +17,9 @@ public class GameManager : MonoBehaviour
     public static Text Notice;
     public Button Restart;
     public struct GroundStage{
-        public GameObject Ground;//所在地块
+        //public GameObject Ground;//所在地块
+        public int i;//所在地块在数组中的第一个下标
+        public int j;//。。。第二个下标
         public GameObject PlayerOnGround;//玩家
         public GameObject PlayerBlood;//血条
         public string PlayerWeapon;//拿了什么武器
@@ -25,12 +31,13 @@ public class GameManager : MonoBehaviour
     public static GameObject PlayerOnEdit;//正准备移动或攻击的棋子
     public static List<GroundStage> OccupiedGround = new List<GroundStage>();//棋盘上所有棋子信息
     public static int TeamCount = 2;
-    public static int RealPlayerTeam=0;//哪一队是玩家（其他是AI或者联机模块）
+    public static List<string> RealPlayerTeam=new List<string>();//哪一队是玩家（其他是AI或者联机模块）
     public static int Turn;
     GameObject TearGround;//怪物生成地，因为之前不是怪所有名字有点不对
     GameObject MonsterBlood;
     List<GameObject> randomPlace = new List<GameObject>();//生成怪的范围
     public static bool MudSetted = false;//本回合是否已扩毒
+    public static bool TearCreated;//致死刀至多一把
     //Button test;
     // Start is called before the first frame update
     
@@ -63,6 +70,9 @@ public class GameManager : MonoBehaviour
         PlayerController.OnlyLine = false;
         PlayerController.MovedDead = 0;
         AI.CoroutineStarted = false;
+        RealPlayerTeam.Add("Team1");
+        RealPlayerTeam.Add("Team2");
+        TearCreated = false;
         /* 
         test = GameObject.Find("Test").GetComponent<Button>();
         test.onClick.AddListener(delegate () {
@@ -81,7 +91,7 @@ public class GameManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(GameManager.Stage==0&&GroundClick.TeamCounter!=RealPlayerTeam)
+        if(GameManager.Stage==0&&!RealPlayerTeam.Contains("Team"+(GroundClick.TeamCounter+1).ToString()))
         {
             //等待一会儿后空降
             if(!AI.CoroutineStarted)
@@ -207,31 +217,91 @@ public class GameManager : MonoBehaviour
 
     void SetMug(int Range)
     {
+        if (Turn % 2 == 0)
+        {
+            //防止一出毒就被毒扩入的误差
+            for (int i = 0; i < OccupiedGround.Count; i++)
+            {
+                GroundStage GStage = OccupiedGround[i];
+                int i1 = 0, j1 = 0, i2 = 0, j2 = 0;
+                i1 = OccupiedGround[i].i;
+                j1 = OccupiedGround[i].j;
+                for (int j = 0; j < BoardManager.row; j++)
+                    for (int k = 0; k < BoardManager.col; k++)
+                    {
+                        if (BoardManager.Grounds[j][k] != null && Vector3.Distance(BoardManager.Grounds[j][k].transform.position, TearGround.transform.position) < BoardManager.distance / 2)
+                        {
+                            i2 = j;
+                            j2 = k;
+                        }
+                    }
+                if (Mathf.Abs(j2 - j1) <= Range - 1
+                    && ((j1 >= j2 && (i1 >= i2 - Range + 1 && i1 <= i2 + Range + j2 - j1 - 1))
+                    || (j1 < j2 && (i1 >= i2 - Range + j2 - j1 + 1 && i1 <= i2 + Range - 1))))
+                    continue;
+                else
+                {
+                    GStage.InMug = false;
+                    OccupiedGround[i] = GStage;
+                }
+            }
+        }
         //标记毒
         foreach (Transform t in GameObject.Find("Grounds").GetComponentsInChildren<Transform>())
         {
-            if (Vector3.Distance(TearGround.transform.position, t.position) < BoardManager.distance / 2 + BoardManager.distance*Range)
+            int i1 = 0, j1 = 0, i2 = 0, j2 = 0;
+            for (int j = 0; j < BoardManager.row; j++)
+                for (int k = 0; k < BoardManager.col; k++)
+                {
+                    if (BoardManager.Grounds[j][k] != null && Vector3.Distance(BoardManager.Grounds[j][k].transform.position, t.position) < BoardManager.distance / 2)
+                    {
+                        i1 = j;
+                        j1 = k;
+                    }
+                    if (BoardManager.Grounds[j][k] != null && Vector3.Distance(BoardManager.Grounds[j][k].transform.position, TearGround.transform.position) < BoardManager.distance / 2)
+                    {
+                        i2 = j;
+                        j2 = k;
+                    }
+                }
+            if (Mathf.Abs(j2 - j1) <= Range
+                && ((j1 >= j2 && (i1 >= i2 - Range && i1 <= i2 + Range + j2 - j1))
+                || (j1 < j2 && (i1 >= i2 - Range + j2 - j1 && i1 <= i2 + Range))))
             {
-                if(t==TearGround.transform)
+                if (t == TearGround.transform)
                     continue;
-                if(t.gameObject.GetComponent<SpriteRenderer>().color == new Color(0,10,0))
+                if (t.gameObject.GetComponent<SpriteRenderer>().color == new Color(0, 10, 0))
                     continue;
-                if(t.parent==TearGround.transform)
+                if (t.parent == TearGround.transform)
                     continue;
-                t.gameObject.GetComponent<SpriteRenderer>().color = new Color(0,10,0);
+                t.gameObject.GetComponent<SpriteRenderer>().color = new Color(0, 10, 0);
                 randomPlace.Add(t.gameObject);
             }
         }
         List<GroundStage> oGround = new List<GroundStage>();
         PlayerController.FaintCount = 0;
         //玩家进入掉血眩晕
-        for (int i = 0; i < OccupiedGround.Count;i++)
+        for (int i = 0; i < OccupiedGround.Count; i++)
         {
             GroundStage GStage = OccupiedGround[i];
             GStage.Faint = false;
-            if(Vector3.Distance(TearGround.transform.position, OccupiedGround[i].Ground.transform.position) < BoardManager.distance / 2 + BoardManager.distance*Range)
+            int i1 = 0, j1 = 0, i2 = 0, j2 = 0;
+            i1 = OccupiedGround[i].i;
+            j1 = OccupiedGround[i].j;
+            for (int j = 0; j < BoardManager.row; j++)
+                for (int k = 0; k < BoardManager.col; k++)
+                {
+                    if (BoardManager.Grounds[j][k] != null && Vector3.Distance(BoardManager.Grounds[j][k].transform.position, TearGround.transform.position) < BoardManager.distance / 2)
+                    {
+                        i2 = j;
+                        j2 = k;
+                    }
+                }
+            if (Mathf.Abs(j2 - j1) <= Range
+                && ((j1 >= j2 && (i1 >= i2 - Range && i1 <= i2 + Range + j2 - j1))
+                || (j1 < j2 && (i1 >= i2 - Range + j2 - j1 && i1 <= i2 + Range))))
             {
-                if (OccupiedGround[i].Ground == TearGround)
+                if (BoardManager.Grounds[OccupiedGround[i].i][OccupiedGround[i].j] == TearGround)
                 {
                     GStage.InMug = false;
                     oGround.Add(GStage);
@@ -244,11 +314,9 @@ public class GameManager : MonoBehaviour
                 if (bloodamount <= 0)
                 {
                     Destroy(GameManager.OccupiedGround[i].PlayerBlood);
-                    GameManager.OccupiedGround[i].Ground.tag = "Untagged";
+                    BoardManager.Grounds[OccupiedGround[i].i][OccupiedGround[i].j].tag = "Untagged";
                     if (PlayerController.CanMoveList.ContainsKey(OccupiedGround[i].PlayerOnGround))
                         PlayerController.CanMoveList.Remove(OccupiedGround[i].PlayerOnGround);
-//change:Always Add MovedDead
-                    PlayerController.MovedDead++;
                     if (OccupiedGround[i].PlayerOnGround.tag == "Team1")
                         PlayerController.DiedSoldiersTeam1++;
                     if (OccupiedGround[i].PlayerOnGround.tag == "Team2")
@@ -258,18 +326,18 @@ public class GameManager : MonoBehaviour
                     Destroy(OccupiedGround[i].PlayerOnGround);
                     continue;
                 }
-                if(OccupiedGround[i].InMug==false)
+                if (OccupiedGround[i].InMug == false)
                 {
                     GStage.InMug = true;
                     GStage.Moved = true;
                     GStage.Faint = true;
-                    Debug.Log("faint"+GStage.PlayerOnGround.transform.position);
+                    Debug.Log("faint" + GStage.PlayerOnGround.transform.position);
                     PlayerController.FaintCount++;
                 }
             }
             else
             {
-                if(OccupiedGround[i].InMug==true)
+                if (OccupiedGround[i].InMug == true)
                 {
                     GStage.InMug = false;
                 }
@@ -297,6 +365,13 @@ public class GameManager : MonoBehaviour
             counter++;
             if (counter >= 2 * GameManager.TeamCount)
             {
+                Debug.Log("Died1,2" + PlayerController.DiedSoldiersTeam1 + PlayerController.DIedSoldiersTeam2);
+                Debug.Log("faint,MovedDied" + PlayerController.FaintCount + PlayerController.MovedDead);
+                for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
+                    Debug.Log("position,moved" + BoardManager.Grounds[OccupiedGround[i].i][OccupiedGround[i].j].transform.transform.position + GameManager.OccupiedGround[i].Moved);
+                Debug.Log("ProbleBug");
+                if (counter >= 10)
+                    break;
                 MudSetted = false;
                 PlayerController.SmallTurn = 0;
                 PlayerController.MovedDead = 0;
@@ -312,7 +387,7 @@ public class GameManager : MonoBehaviour
                 break;
             }
         }
-        
+
     }
 
     void AllLose()
@@ -321,9 +396,11 @@ public class GameManager : MonoBehaviour
         Notice.text = "You All Losed!";
 
     }
-    void CreateTear(Vector3 position)//产生致死刀
+    public void CreateTear(Vector3 position)//产生致死刀
     {
-
+        if(TearCreated)
+            return;
+        TearCreated = true;
         foreach (Transform t in GameObject.Find("Grounds").GetComponentsInChildren<Transform>())
         {
             if(Vector3.Distance(position,t.position)<0.1f)

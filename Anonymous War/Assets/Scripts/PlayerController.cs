@@ -6,11 +6,6 @@ using UnityEngine.UI;
 public class PlayerController : MonoBehaviour//附着在每个棋子上
 {
     //几种玩家状态，临时替代一种game object多状态
-    public GameObject LongSoldier;
-    public GameObject ShortSoldier;
-    public GameObject DragSoldier;
-    public GameObject TearSoldier;
-    public GameObject Tear;
     public struct AttackLine
     {
         public GameObject Enemy;
@@ -58,10 +53,10 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                     switch (GameManager.OccupiedGround[i].PlayerWeapon)
                     {
 //change:use position of ground instead of army to check range
-                        case "Long": attack = 2; range = 2; CheckRange(GameManager.PlayerOnEdit, GameManager.OccupiedGround[i].Ground.transform.position, range, "Players"); break;
-                        case "Short": attack = 4; range = 1; CheckRange(GameManager.PlayerOnEdit, GameManager.OccupiedGround[i].Ground.transform.position, range, "Players"); break;
-                        case "Drag": attack = 1; range = 3; CheckRangeLine(GameManager.PlayerOnEdit, GameManager.OccupiedGround[i].Ground.transform.position, range, "Players"); OnlyLine = true; break;
-                        case "Tear": attack = 50; range = 2; CheckRange(GameManager.PlayerOnEdit, GameManager.OccupiedGround[i].Ground.transform.position, range, "Players"); break;
+                        case "Long": attack = 2; range = 2; CheckRange(GameManager.PlayerOnEdit, BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.position, range, "Players"); break;
+                        case "Short": attack = 4; range = 1; CheckRange(GameManager.PlayerOnEdit, BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.position, range, "Players"); break;
+                        case "Drag": attack = 1; range = 3; CheckRangeLine(GameManager.PlayerOnEdit, BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.position, range, "Players"); OnlyLine = true; break;
+                        case "Tear": attack = 50; range = 2; CheckRange(GameManager.PlayerOnEdit, BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.position, range, "Players"); break;
                         default:attack=0;range=0;CanMoveList=new Dictionary<GameObject, Color>();break;
                     }
                     break;
@@ -90,12 +85,22 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
         bloodamount -= Hurt;
         AimBlood.GetComponent<Text>().text = bloodamount.ToString();
         //在反击范围内被反击
-//change:use position of ground instead of army to check range
+        //change:use position of ground instead of army to check range
         for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
         {
-            if (GameManager.OccupiedGround[i].PlayerOnGround == GameManager.PlayerOnEdit
-            && Vector3.Distance(gameObject.transform.localPosition, GameManager.OccupiedGround[i].Ground.transform.localPosition) > BoardManager.distance / 2 + BoardManager.distance * aimrange)
-                goto AfterHurt;
+            int i1 = 0, j1 = 0;
+            for (int j = 0; j < BoardManager.row; j++)
+                for (int k = 0; k < BoardManager.col; k++)
+                    if (BoardManager.Grounds[j][k] != null && Vector3.Distance(BoardManager.Grounds[j][k].transform.position, this.transform.position) < BoardManager.distance / 2)
+                    {
+                        i1 = j;
+                        j1 = k;
+                    }
+            if (GameManager.OccupiedGround[i].PlayerOnGround == GameManager.PlayerOnEdit)
+                if (Mathf.Abs(GameManager.OccupiedGround[i].j - j1) > aimrange
+                    || (j1 >= GameManager.OccupiedGround[i].j && (i1 < GameManager.OccupiedGround[i].i - aimrange || i1 > GameManager.OccupiedGround[i].i + aimrange + GameManager.OccupiedGround[i].j - j1))
+                    || (j1 < GameManager.OccupiedGround[i].j && (i1 < GameManager.OccupiedGround[i].i - aimrange + GameManager.OccupiedGround[i].j - j1 || i1 > GameManager.OccupiedGround[i].i + aimrange)))
+                    goto AfterHurt;
             //眩晕不反击
             if (GameManager.OccupiedGround[i].PlayerOnGround == gameObject && GameManager.OccupiedGround[i].Faint)
                 goto AfterHurt;
@@ -118,7 +123,7 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                 if (GameManager.OccupiedGround[i].PlayerOnGround == GameManager.PlayerOnEdit)
                 {
                     Destroy(GameManager.OccupiedGround[i].PlayerBlood);
-                    GameManager.OccupiedGround[i].Ground.tag = "Untagged";
+                    BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].tag = "Untagged";
                     GameManager.OccupiedGround.RemoveAt(i);
                     break;
                 }
@@ -154,7 +159,7 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                 if (GameManager.OccupiedGround[i].PlayerOnGround == gameObject)
                 {
                     Destroy(GameManager.OccupiedGround[i].PlayerBlood);
-                    GameManager.OccupiedGround[i].Ground.tag = "Untagged";
+                    BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].tag = "Untagged";
                     GameManager.OccupiedGround.RemoveAt(i);
                     break;
                 }
@@ -202,10 +207,22 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
         
         for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
         {
-            if (GameManager.OccupiedGround[i].PlayerOnGround==GameManager.PlayerOnEdit
-                &&Vector3.Distance(gameObject.transform.localPosition, GameManager.OccupiedGround[i].Ground.transform.localPosition) > BoardManager.distance / 2 + BoardManager.distance * aimrange)
-                goto AfterHurt;
+            int i1 = 0, j1 = 0;
+            for (int j = 0; j < BoardManager.row; j++)
+                for (int k = 0; k < BoardManager.col; k++)
+                    if (BoardManager.Grounds[j][k] != null && Vector3.Distance(BoardManager.Grounds[j][k].transform.position, this.transform.position) < BoardManager.distance / 2)
+                    {
+                        i1 = j;
+                        j1 = k;
+                    }
+            if (GameManager.OccupiedGround[i].PlayerOnGround == GameManager.PlayerOnEdit)
+                if (Mathf.Abs(GameManager.OccupiedGround[i].j - j1) > aimrange
+                    || (j1 >= GameManager.OccupiedGround[i].j && (i1 < GameManager.OccupiedGround[i].i - aimrange || i1 > GameManager.OccupiedGround[i].i + aimrange + GameManager.OccupiedGround[i].j - j1))
+                    || (j1 < GameManager.OccupiedGround[i].j && (i1 < GameManager.OccupiedGround[i].i - aimrange + GameManager.OccupiedGround[i].j - j1 || i1 > GameManager.OccupiedGround[i].i + aimrange)))
+                    goto AfterHurt;
             if (GameManager.OccupiedGround[i].PlayerOnGround == gameObject && GameManager.OccupiedGround[i].Faint)
+                goto AfterHurt;
+            if(GameManager.PlayerOnEdit.tag==gameObject.tag)
                 goto AfterHurt;
         }
         int thisblood = int.Parse(ThisBlood.GetComponent<Text>().text);
@@ -222,7 +239,7 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                 if (GameManager.OccupiedGround[i].PlayerOnGround == GameManager.PlayerOnEdit)
                 {
                     Destroy(GameManager.OccupiedGround[i].PlayerBlood);
-                    GameManager.OccupiedGround[i].Ground.tag = "Untagged";
+                    BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].tag = "Untagged";
                     GameManager.OccupiedGround.RemoveAt(i);
                     break;
                 }
@@ -252,7 +269,7 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
             {
                 if (GameManager.OccupiedGround[i].PlayerOnGround == gameObject)
                 {
-                    GameManager.OccupiedGround[i].Ground.tag = "Untagged";
+                    BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].tag = "Untagged";
                     inMug = GameManager.OccupiedGround[i].InMug;
                     faint = GameManager.OccupiedGround[i].Faint;
                     moved = GameManager.OccupiedGround[i].Moved;
@@ -269,7 +286,7 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                 case "Long":
 
 
-                    anotherObject = Instantiate(LongSoldier, this.transform.position, Quaternion.identity, GameObject.Find("Players").transform);
+                    anotherObject = Instantiate(GameObject.Find("GameManager").GetComponent<GameManager>().LongSoldier, this.transform.position, Quaternion.identity, GameObject.Find("Players").transform);
                     if(tag=="Team1")
                         anotherObject.AddComponent<RealPlayer>();
                     else
@@ -281,7 +298,7 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                 case "Short":
 
 
-                    anotherObject = Instantiate(ShortSoldier, this.transform.position, Quaternion.identity, GameObject.Find("Players").transform);
+                    anotherObject = Instantiate(GameObject.Find("GameManager").GetComponent<GameManager>().ShortSoldier, this.transform.position, Quaternion.identity, GameObject.Find("Players").transform);
                     if(tag=="Team1")
                         anotherObject.AddComponent<RealPlayer>();
                     else
@@ -293,7 +310,7 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                 case "Drag":
 
 
-                    anotherObject = Instantiate(DragSoldier, this.transform.position, Quaternion.identity, GameObject.Find("Players").transform);
+                    anotherObject = Instantiate(GameObject.Find("GameManager").GetComponent<GameManager>().DragSoldier, this.transform.position, Quaternion.identity, GameObject.Find("Players").transform);
                     if(tag=="Team1")
                         anotherObject.AddComponent<RealPlayer>();
                     else
@@ -304,7 +321,7 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                     break;
                 case "Tear":
                     
-                    anotherObject = Instantiate(TearSoldier, this.transform.position, Quaternion.identity, GameObject.Find("Players").transform);
+                    anotherObject = Instantiate(GameObject.Find("GameManager").GetComponent<GameManager>().TearSoldier, this.transform.position, Quaternion.identity, GameObject.Find("Players").transform);
                     if(tag=="Team1")
                         anotherObject.AddComponent<RealPlayer>();
                     else
@@ -328,7 +345,13 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                 if (t.tag == "Weapon")
                     t.gameObject.SetActive(false);
             GameManager.GroundStage GStage = new GameManager.GroundStage();
-            GStage.Ground = surround;
+            for (int i = 0; i < BoardManager.row;i++)
+            for (int j = 0; j < BoardManager.col;j++)
+                if (BoardManager.Grounds[i][j]!=null&&Vector3.Distance(BoardManager.Grounds[i][j].transform.position, surround.transform.position) < BoardManager.distance / 2)
+                {
+                    GStage.i = i;
+                    GStage.j = j;
+                }
             GStage.PlayerOnGround = anotherObject;
             GStage.PlayerBlood = AimBlood;
             GStage.InMug = inMug;
@@ -354,7 +377,7 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                 if (GameManager.OccupiedGround[i].PlayerOnGround == gameObject)
                 {
                     Destroy(GameManager.OccupiedGround[i].PlayerBlood);
-                    GameManager.OccupiedGround[i].Ground.tag = "Untagged";
+                    BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].tag = "Untagged";
                     GameManager.OccupiedGround.RemoveAt(i);
                     break;
                 }
@@ -378,7 +401,8 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
         }
         ChangeTurn();
         foreach (AttackLine line in LineCanAttack)
-            line.Enemy.GetComponent<SpriteRenderer>().color = line.color;
+            if(line.Enemy!=GameManager.PlayerOnEdit)
+                line.Enemy.GetComponent<SpriteRenderer>().color = line.color;
         EnemyChecked = false;
         if (!gameObject.activeSelf)
             Destroy(gameObject);
@@ -404,7 +428,24 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
         LineCanAttack = new List<AttackLine>();
         foreach (Transform t in GameObject.Find(Groups).GetComponentsInChildren<Transform>())
         {
-            if (Vector3.Distance(CenterPosition, t.position) < BoardManager.distance / 2 + BoardManager.distance * Range)
+            int i1 = 0, j1 = 0, i2 = 0, j2 = 0;
+            for (int j = 0; j < BoardManager.row; j++)
+                for (int k = 0; k < BoardManager.col; k++)
+                {
+                    if (BoardManager.Grounds[j][k] != null && Vector3.Distance(BoardManager.Grounds[j][k].transform.position, t.position) < BoardManager.distance / 2)
+                    {
+                        i1 = j;
+                        j1 = k;
+                    }
+                    if (BoardManager.Grounds[j][k] != null && Vector3.Distance(BoardManager.Grounds[j][k].transform.position, CenterPosition) < BoardManager.distance / 2)
+                    {
+                        i2 = j;
+                        j2 = k;
+                    }
+                }
+            if (Mathf.Abs(j2 - j1) <= Range
+                && ((j1 >= j2 && (i1 >= i2 - Range && i1 <= i2 + Range + j2 - j1))
+                || (j1 < j2 && (i1 >= i2 - Range + j2 - j1 && i1 <= i2 + Range))))
             {
                 if (Groups == "Grounds" && t.tag == "Occupied")
                     continue;
@@ -425,6 +466,7 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
         //是否在直线上
         foreach (Transform t in GameObject.Find("Grounds").GetComponentsInChildren<Transform>())
         {
+            
             if (Vector3.Distance(CenterPosition, t.position) < BoardManager.distance / 2 + BoardManager.distance)
             {
                 if (Vector3.Distance(CenterPosition, t.position) < BoardManager.distance / 2)
@@ -437,10 +479,30 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
         }//是否在范围内
         foreach (Transform t in GameObject.Find(Groups).GetComponentsInChildren<Transform>())
         {
-            if (Vector3.Distance(CenterPosition, t.position) < BoardManager.distance / 2 + BoardManager.distance * Range)
+            int i1 = 0, j1 = 0, i2 = 0, j2 = 0;
+            for (int j = 0; j < BoardManager.row; j++)
+                for (int k = 0; k < BoardManager.col; k++)
+                {
+                    if (BoardManager.Grounds[j][k] != null && Vector3.Distance(BoardManager.Grounds[j][k].transform.position, t.position) < BoardManager.distance / 2)
+                    {
+                        i1 = j;
+                        j1 = k;
+                    }
+                    if (BoardManager.Grounds[j][k] != null && Vector3.Distance(BoardManager.Grounds[j][k].transform.position, CenterPosition) < BoardManager.distance / 2)
+                    {
+                        i2 = j;
+                        j2 = k;
+                    }
+                }
+            if (Mathf.Abs(j2 - j1) <= Range
+                && ((j1 >= j2 && (i1 >= i2 - Range && i1 <= i2 + Range + j2 - j1))
+                || (j1 < j2 && (i1 >= i2 - Range + j2 - j1 && i1 <= i2 + Range))))
             {
-                if (Center.tag == t.tag)
+                //是否允许队友攻击
+                if(Center==t.gameObject)
                     continue;
+                //if (Center.tag == t.tag)
+                //continue;
                 GameObject surroundLine = null;
                 bool inLine = false;
                 foreach (GameObject g in Surround)
@@ -503,8 +565,11 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
             counter++;
             if (counter > 2 * GameManager.TeamCount)
             {
+                Debug.Log("SmallTurn" + SmallTurn);
                 Debug.Log("Died1,2"+DiedSoldiersTeam1+DIedSoldiersTeam2);
                 Debug.Log("faint,MovedDied" + FaintCount + MovedDead);
+                for (int i = 0; i < GameManager.OccupiedGround.Count;i++)
+                    Debug.Log("position,moved" + BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.transform.position+GameManager.OccupiedGround[i].Moved);
                 Debug.Log("Bug");
 
                 break;
@@ -513,16 +578,9 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
 //change:fix the bug due to moving a same chess contineously
         GameManager.PlayerOnEdit = null;
     }
-    void CreateTear(Vector3 position)//生成致死刀
+
+    void CreateTear(Vector3 position)
     {
-        foreach (Transform t in GameObject.Find("Grounds").GetComponentsInChildren<Transform>())
-        {
-            if(Vector3.Distance(position,t.position)<0.1f)
-            {
-                Instantiate(Tear, position, Quaternion.identity, t);
-                t.gameObject.tag = "Tear";
-                break;
-            }
-        }
+        GameObject.Find("GameManager").GetComponent<GameManager>().CreateTear(position);
     }
 }
