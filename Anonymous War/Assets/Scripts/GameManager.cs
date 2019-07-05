@@ -6,6 +6,7 @@ using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
+    public static GameManager instance;
     public GameObject LongSoldier;
     public GameObject ShortSoldier;
     public GameObject DragSoldier;
@@ -33,9 +34,9 @@ public class GameManager : MonoBehaviour
     public static int TeamCount = 2;
     public static List<string> RealPlayerTeam=new List<string>();//哪一队是玩家（其他是AI或者联机模块）
     public static int Turn;
-    GameObject TearGround;//怪物生成地，因为之前不是怪所有名字有点不对
+    public GameObject TearGround;//怪物生成地，因为之前不是怪所有名字有点不对
     GameObject MonsterBlood;
-    List<GameObject> randomPlace = new List<GameObject>();//生成怪的范围
+    public List<GameObject> randomPlace = new List<GameObject>();//生成怪的范围
     public static bool MudSetted = false;//本回合是否已扩毒
     public static bool TearCreated;//致死刀至多一把
     //Button test;
@@ -43,6 +44,12 @@ public class GameManager : MonoBehaviour
     
     void Start()
     {
+        if(instance==null)
+            instance = this;
+        else
+        {
+            Destroy(gameObject);
+        }
         //胜利提示框
         WinnerNotice=GameObject.Find("WinnerNotice");
         Notice = GameObject.Find("Notice").GetComponent<Text>();
@@ -105,11 +112,10 @@ public class GameManager : MonoBehaviour
         //降怪
         if(Turn==4&&!MudSetted)
             CreateMonster();
-        //扩毒
-        if(Turn>4&&!MudSetted)
-            SetMug((Turn - 2)/2);
+        
         //双方死完，都输
         if(PlayerController.DiedSoldiersTeam1==3&&PlayerController.DIedSoldiersTeam2==3)
+            if(int.Parse(MonsterBlood.GetComponent<Text>().text)>0)
             AllLose();
 
     }
@@ -146,9 +152,12 @@ public class GameManager : MonoBehaviour
     }
     void CreateMonster()
     {
+        GameObject monster;
         //清除提示圈
-        for (int i = 0; i < randomPlace.Count;i++)
-            randomPlace[i].GetComponent<SpriteRenderer>().color = new Color(255,255,255);
+        for (int i = 0; i < randomPlace.Count; i++)
+        {
+            randomPlace[i].GetComponent<SpriteRenderer>().color = new Color(255, 255, 255);
+        }
         //生成怪物
         int random=Random.Range(0, randomPlace.Count-1);
         int count=0;
@@ -170,11 +179,12 @@ public class GameManager : MonoBehaviour
         foreach(Transform t in TearGround.GetComponentsInChildren<Transform>())
             if(t.tag=="Weapon")
                 Destroy(t.gameObject);
-        Instantiate(Monster, position, Quaternion.identity,GameObject.Find("Players").transform);
+        monster=Instantiate(Monster, position, Quaternion.identity,GameObject.Find("Players").transform);
         Vector3 offset=new Vector3(0, -0.3f, 0);
         MonsterBlood=Instantiate(Blood,position+offset,Quaternion.identity,GameObject.Find("Canvas").transform);
         MonsterBlood.GetComponent<Text>().text = "50";
         MonsterBlood.name = "MonsterBlood";
+        monster.GetComponent<MonsterController>().SetMug(1);
         /*bool containPlayer=false;
         for (int i = 0; i < OccupiedGround.Count; i++)
         {
@@ -211,184 +221,9 @@ public class GameManager : MonoBehaviour
             TearGround.tag = "Occupied";
             GameManager.OccupiedGround.Add(GStage);
         }*/
-        
-        SetMug(1);
     }
 
-    void SetMug(int Range)
-    {
-        if (Turn % 2 == 0)
-        {
-            //防止一出毒就被毒扩入的误差
-            for (int i = 0; i < OccupiedGround.Count; i++)
-            {
-                GroundStage GStage = OccupiedGround[i];
-                int i1 = 0, j1 = 0, i2 = 0, j2 = 0;
-                i1 = OccupiedGround[i].i;
-                j1 = OccupiedGround[i].j;
-                for (int j = 0; j < BoardManager.row; j++)
-                    for (int k = 0; k < BoardManager.col; k++)
-                    {
-                        if (BoardManager.Grounds[j][k] != null && Vector3.Distance(BoardManager.Grounds[j][k].transform.position, TearGround.transform.position) < BoardManager.distance / 2)
-                        {
-                            i2 = j;
-                            j2 = k;
-                        }
-                    }
-                if (Mathf.Abs(j2 - j1) <= Range - 1
-                    && ((j1 >= j2 && (i1 >= i2 - Range + 1 && i1 <= i2 + Range + j2 - j1 - 1))
-                    || (j1 < j2 && (i1 >= i2 - Range + j2 - j1 + 1 && i1 <= i2 + Range - 1))))
-                    continue;
-                else
-                {
-                    GStage.InMug = false;
-                    OccupiedGround[i] = GStage;
-                }
-            }
-        }
-        //标记毒
-        foreach (Transform t in GameObject.Find("Grounds").GetComponentsInChildren<Transform>())
-        {
-            int i1 = 0, j1 = 0, i2 = 0, j2 = 0;
-            for (int j = 0; j < BoardManager.row; j++)
-                for (int k = 0; k < BoardManager.col; k++)
-                {
-                    if (BoardManager.Grounds[j][k] != null && Vector3.Distance(BoardManager.Grounds[j][k].transform.position, t.position) < BoardManager.distance / 2)
-                    {
-                        i1 = j;
-                        j1 = k;
-                    }
-                    if (BoardManager.Grounds[j][k] != null && Vector3.Distance(BoardManager.Grounds[j][k].transform.position, TearGround.transform.position) < BoardManager.distance / 2)
-                    {
-                        i2 = j;
-                        j2 = k;
-                    }
-                }
-            if (Mathf.Abs(j2 - j1) <= Range
-                && ((j1 >= j2 && (i1 >= i2 - Range && i1 <= i2 + Range + j2 - j1))
-                || (j1 < j2 && (i1 >= i2 - Range + j2 - j1 && i1 <= i2 + Range))))
-            {
-                if (t == TearGround.transform)
-                    continue;
-                if (t.gameObject.GetComponent<SpriteRenderer>().color == new Color(0, 10, 0))
-                    continue;
-                if (t.parent == TearGround.transform)
-                    continue;
-                t.gameObject.GetComponent<SpriteRenderer>().color = new Color(0, 10, 0);
-                randomPlace.Add(t.gameObject);
-            }
-        }
-        List<GroundStage> oGround = new List<GroundStage>();
-        PlayerController.FaintCount = 0;
-        //玩家进入掉血眩晕
-        for (int i = 0; i < OccupiedGround.Count; i++)
-        {
-            GroundStage GStage = OccupiedGround[i];
-            GStage.Faint = false;
-            int i1 = 0, j1 = 0, i2 = 0, j2 = 0;
-            i1 = OccupiedGround[i].i;
-            j1 = OccupiedGround[i].j;
-            for (int j = 0; j < BoardManager.row; j++)
-                for (int k = 0; k < BoardManager.col; k++)
-                {
-                    if (BoardManager.Grounds[j][k] != null && Vector3.Distance(BoardManager.Grounds[j][k].transform.position, TearGround.transform.position) < BoardManager.distance / 2)
-                    {
-                        i2 = j;
-                        j2 = k;
-                    }
-                }
-            if (Mathf.Abs(j2 - j1) <= Range
-                && ((j1 >= j2 && (i1 >= i2 - Range && i1 <= i2 + Range + j2 - j1))
-                || (j1 < j2 && (i1 >= i2 - Range + j2 - j1 && i1 <= i2 + Range))))
-            {
-                if (BoardManager.Grounds[OccupiedGround[i].i][OccupiedGround[i].j] == TearGround)
-                {
-                    GStage.InMug = false;
-                    oGround.Add(GStage);
-                    continue;
-                }
-                int bloodamount = int.Parse(OccupiedGround[i].PlayerBlood.GetComponent<Text>().text);
-                bloodamount -= 1;
-                OccupiedGround[i].PlayerBlood.GetComponent<Text>().text = bloodamount.ToString();
-                //死亡
-                if (bloodamount <= 0)
-                {
-                    Destroy(GameManager.OccupiedGround[i].PlayerBlood);
-                    BoardManager.Grounds[OccupiedGround[i].i][OccupiedGround[i].j].tag = "Untagged";
-                    if (PlayerController.CanMoveList.ContainsKey(OccupiedGround[i].PlayerOnGround))
-                        PlayerController.CanMoveList.Remove(OccupiedGround[i].PlayerOnGround);
-                    if (OccupiedGround[i].PlayerOnGround.tag == "Team1")
-                        PlayerController.DiedSoldiersTeam1++;
-                    if (OccupiedGround[i].PlayerOnGround.tag == "Team2")
-                        PlayerController.DIedSoldiersTeam2++;
-                    if (PlayerController.DiedSoldiersTeam1 == 3 || PlayerController.DIedSoldiersTeam2 == 3)
-                        CreateTear(OccupiedGround[i].PlayerOnGround.transform.position);
-                    Destroy(OccupiedGround[i].PlayerOnGround);
-                    continue;
-                }
-                if (OccupiedGround[i].InMug == false)
-                {
-                    GStage.InMug = true;
-                    GStage.Moved = true;
-                    GStage.Faint = true;
-                    Debug.Log("faint" + GStage.PlayerOnGround.transform.position);
-                    PlayerController.FaintCount++;
-                }
-            }
-            else
-            {
-                if (OccupiedGround[i].InMug == true)
-                {
-                    GStage.InMug = false;
-                }
-            }
-            oGround.Add(GStage);
-        }
-        OccupiedGround = oGround;
-        int counter = 0;
-        //若都被晕住则开始新回合
-        bool teamHaveMove = false;
-        MudSetted = true;
-        while (!teamHaveMove)
-        {
-            for (int i = 0; i < OccupiedGround.Count; i++)
-            {
-                string team = "Team" + (PlayerController.MovingTeam + 1).ToString();
-                if (OccupiedGround[i].Moved == false && OccupiedGround[i].PlayerOnGround.tag == team)
-                {
-                    teamHaveMove = true;
-                    break;
-                }
-            }
-            if (!teamHaveMove)
-                PlayerController.MovingTeam = (PlayerController.MovingTeam + 1) % TeamCount;
-            counter++;
-            if (counter >= 2 * GameManager.TeamCount)
-            {
-                Debug.Log("Died1,2" + PlayerController.DiedSoldiersTeam1 + PlayerController.DIedSoldiersTeam2);
-                Debug.Log("faint,MovedDied" + PlayerController.FaintCount + PlayerController.MovedDead);
-                for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
-                    Debug.Log("position,moved" + BoardManager.Grounds[OccupiedGround[i].i][OccupiedGround[i].j].transform.transform.position + GameManager.OccupiedGround[i].Moved);
-                Debug.Log("ProbleBug");
-                if (counter >= 10)
-                    break;
-                MudSetted = false;
-                PlayerController.SmallTurn = 0;
-                PlayerController.MovedDead = 0;
-                oGround = new List<GameManager.GroundStage>();
-                for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
-                {
-                    GameManager.GroundStage GStage = OccupiedGround[i];
-                    GStage.Moved = false;
-                    oGround.Add(GStage);
-                }
-                Turn++;
-                OccupiedGround = oGround;
-                break;
-            }
-        }
-
-    }
+    
 
     void AllLose()
     {

@@ -28,11 +28,6 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
     public static List<AttackLine> LineCanAttack = new List<AttackLine>();//抓勾可抓取范围
     public static bool OnlyLine = false;//是否是抓勾攻击方式
     public static int MovedDead = 0;
-    // Start is called before the first frame update
-    void Start()
-    {
-
-    }
 
     // Update is called once per frame
     void Update()

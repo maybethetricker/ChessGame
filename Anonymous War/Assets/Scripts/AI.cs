@@ -109,7 +109,21 @@ public class AI : PlayerController
             GroundToMove = key.Key;
             break;
         }
-
+        if(GroundToMove==null)
+        {
+            for (int i = 0; i < GameManager.OccupiedGround.Count;i++)
+            {
+                if(GameManager.OccupiedGround[i].PlayerOnGround==GameManager.PlayerOnEdit)
+                {
+                    GameManager.GroundStage GStage = GameManager.OccupiedGround[i];
+                    GStage.Moved = true;
+                    GameManager.OccupiedGround[i] = GStage;
+                    break;
+                }
+            }
+            GameManager.Stage = 2;
+            return;
+        }
         //对接移动函数，可以不用看了
         foreach (Transform t in GameObject.Find("Grounds").GetComponentsInChildren<Transform>())
         {
