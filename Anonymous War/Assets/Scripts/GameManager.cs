@@ -39,9 +39,10 @@ public class GameManager : MonoBehaviour
     public List<GameObject> randomPlace = new List<GameObject>();//生成怪的范围
     public static bool MudSetted = false;//本回合是否已扩毒
     public static bool TearCreated;//致死刀至多一把
+    public static bool UseAI;
     //Button test;
     // Start is called before the first frame update
-    
+
     void Start()
     {
         if(instance==null)
@@ -77,8 +78,9 @@ public class GameManager : MonoBehaviour
         PlayerController.OnlyLine = false;
         PlayerController.MovedDead = 0;
         AI.CoroutineStarted = false;
-        RealPlayerTeam.Add("Team1");
-        RealPlayerTeam.Add("Team2");
+        //RealPlayerTeam.Add("Team1");
+        //RealPlayerTeam.Add("Team2");
+        //UseAI = false;
         TearCreated = false;
         /* 
         test = GameObject.Find("Test").GetComponent<Button>();
@@ -98,7 +100,7 @@ public class GameManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(GameManager.Stage==0&&!RealPlayerTeam.Contains("Team"+(GroundClick.TeamCounter+1).ToString()))
+        if(UseAI&&GameManager.Stage==0&&!RealPlayerTeam.Contains("Team"+(GroundClick.TeamCounter+1).ToString()))
         {
             //等待一会儿后空降
             if(!AI.CoroutineStarted)

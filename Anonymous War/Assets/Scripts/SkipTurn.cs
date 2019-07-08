@@ -8,7 +8,31 @@ public class SkipTurn : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        this.GetComponent<Button>().onClick.AddListener(Skip);
+        this.GetComponent<Button>().onClick.AddListener(delegate ()
+        {
+            if (GameManager.PlayerOnEdit != null && GameManager.RealPlayerTeam.Contains(GameManager.PlayerOnEdit.tag))
+            {
+                if ((!GameManager.UseAI) && GameManager.RealPlayerTeam.Count < 2)
+                {
+                    if (GameManager.Stage == 1)
+                    {
+                        ProtocolBytes protocol = new ProtocolBytes();
+                        protocol.AddString("SkipMove");
+                        protocol.AddFloat(GameManager.PlayerOnEdit.transform.position.x);
+                        protocol.AddFloat(GameManager.PlayerOnEdit.transform.position.y);
+                        protocol.AddFloat(GameManager.PlayerOnEdit.transform.position.z);
+                        NetMgr.srvConn.Send(protocol);
+                    }
+                    else
+                    {
+                        ProtocolBytes protocol = new ProtocolBytes();
+                        protocol.AddString("SkipAttack");
+                        NetMgr.srvConn.Send(protocol);
+                    }
+                }
+                Skip();
+            }
+        });
     }
 
     // Update is called once per frame
@@ -16,11 +40,8 @@ public class SkipTurn : MonoBehaviour
     {
         
     }
-    void Skip()//跳过移动或攻击阶段
+    public void Skip()//跳过移动或攻击阶段
     {
-//change:fix bug due to null object
-        if(GameManager.PlayerOnEdit==null)
-            return;
         //跳过移动，修改状态为已移动并删除高亮
         if(GameManager.Stage==1&&GameManager.PlayerOnEdit.tag=="Team" + (PlayerController.MovingTeam + 1).ToString())
         {

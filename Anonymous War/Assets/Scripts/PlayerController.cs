@@ -61,6 +61,12 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
             MovingTeam = (MovingTeam + 1) % GameManager.TeamCount;
             if ((CanMoveList.Count == 0 && (!OnlyLine)) || (OnlyLine && LineCanAttack.Count == 0))
             {
+                if((!GameManager.UseAI)&&GameManager.RealPlayerTeam.Count<2)
+                {
+                    ProtocolBytes protocol = new ProtocolBytes();
+                    protocol.AddString("SkipAttack");
+                    NetMgr.srvConn.Send(protocol);
+                }
                 OnlyLine = false;
                 ChangeTurn();
             }
@@ -282,11 +288,17 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
 
 
                     anotherObject = Instantiate(GameObject.Find("GameManager").GetComponent<GameManager>().LongSoldier, this.transform.position, Quaternion.identity, GameObject.Find("Players").transform);
-                    if(tag=="Team1")
+                    if (GameManager.RealPlayerTeam.Contains(tag))
+                    {
                         anotherObject.AddComponent<RealPlayer>();
-                    else
+                    }
+                    else if(GameManager.UseAI)
                     {
                         anotherObject.AddComponent<AI>();
+                    }
+                    else
+                    {
+                        anotherObject.AddComponent<RemoteEnemy>();
                     }
                     gameObject.SetActive(false);
                     break;
@@ -294,11 +306,17 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
 
 
                     anotherObject = Instantiate(GameObject.Find("GameManager").GetComponent<GameManager>().ShortSoldier, this.transform.position, Quaternion.identity, GameObject.Find("Players").transform);
-                    if(tag=="Team1")
+                    if (GameManager.RealPlayerTeam.Contains(tag))
+                    {
                         anotherObject.AddComponent<RealPlayer>();
-                    else
+                    }
+                    else if(GameManager.UseAI)
                     {
                         anotherObject.AddComponent<AI>();
+                    }
+                    else
+                    {
+                        anotherObject.AddComponent<RemoteEnemy>();
                     }
                     gameObject.SetActive(false);
                     break;
@@ -306,22 +324,34 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
 
 
                     anotherObject = Instantiate(GameObject.Find("GameManager").GetComponent<GameManager>().DragSoldier, this.transform.position, Quaternion.identity, GameObject.Find("Players").transform);
-                    if(tag=="Team1")
+                    if (GameManager.RealPlayerTeam.Contains(tag))
+                    {
                         anotherObject.AddComponent<RealPlayer>();
-                    else
+                    }
+                    else if(GameManager.UseAI)
                     {
                         anotherObject.AddComponent<AI>();
+                    }
+                    else
+                    {
+                        anotherObject.AddComponent<RemoteEnemy>();
                     }
                     gameObject.SetActive(false);
                     break;
                 case "Tear":
                     
                     anotherObject = Instantiate(GameObject.Find("GameManager").GetComponent<GameManager>().TearSoldier, this.transform.position, Quaternion.identity, GameObject.Find("Players").transform);
-                    if(tag=="Team1")
+                    if (GameManager.RealPlayerTeam.Contains(tag))
+                    {
                         anotherObject.AddComponent<RealPlayer>();
-                    else
+                    }
+                    else if(GameManager.UseAI)
                     {
                         anotherObject.AddComponent<AI>();
+                    }
+                    else
+                    {
+                        anotherObject.AddComponent<RemoteEnemy>();
                     }
                     gameObject.SetActive(false);
                     break;

@@ -39,7 +39,22 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
                 Vector3 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
                 mousePosition.z = 0;
                 if (Mathf.Abs(Vector3.Distance(mousePosition, this.gameObject.transform.position)) < BoardManager.distance / 2)
+                {
+                    if((!GameManager.UseAI)&&(GameManager.RealPlayerTeam.Count<2))
+                    {
+                        //Update Move协议，包含移动者位置与待移动地块位置
+                        ProtocolBytes protocol = new ProtocolBytes();
+                        protocol.AddString("UpdateMove");
+                        protocol.AddFloat(GameManager.PlayerOnEdit.transform.position.x);
+                        protocol.AddFloat(GameManager.PlayerOnEdit.transform.position.y);
+                        protocol.AddFloat(GameManager.PlayerOnEdit.transform.position.z);
+                        protocol.AddFloat(this.transform.position.x);
+                        protocol.AddFloat(this.transform.position.y);
+                        protocol.AddFloat(this.transform.position.z);
+                        NetMgr.srvConn.Send(protocol);
+                    }
                     PlayerMove();
+                }
             }
         }
 
@@ -106,13 +121,18 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
             case 2: newPlayer.tag = "Team3"; break;
             case 3: newPlayer.tag = "Team4"; break;
         }
-        if (!GameManager.RealPlayerTeam.Contains(newPlayer.tag))
+        if (GameManager.RealPlayerTeam.Contains(newPlayer.tag))
+        {
+            newPlayer.AddComponent<RealPlayer>();
+
+        }
+        else if (GameManager.UseAI)
         {
             newPlayer.AddComponent<AI>();
         }
         else
         {
-            newPlayer.AddComponent<RealPlayer>();
+            newPlayer.AddComponent<RemoteEnemy>();
         }
         //生成血条
         GameObject canvas = GameObject.Find("Canvas");
@@ -130,9 +150,9 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
         //储存玩家状态
         GameManager.GroundStage GStage = new GameManager.GroundStage();
         GStage.PlayerBlood = blood;
-        for (int i = 0; i < BoardManager.row;i++)
-            for (int j = 0; j < BoardManager.col;j++)
-                if (BoardManager.Grounds[i][j]!=null&&Vector3.Distance(BoardManager.Grounds[i][j].transform.position, this.transform.position) < BoardManager.distance / 2)
+        for (int i = 0; i < BoardManager.row; i++)
+            for (int j = 0; j < BoardManager.col; j++)
+                if (BoardManager.Grounds[i][j] != null && Vector3.Distance(BoardManager.Grounds[i][j].transform.position, this.transform.position) < BoardManager.distance / 2)
                 {
                     GStage.i = i;
                     GStage.j = j;
@@ -182,51 +202,71 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
 
                     Destroy(GameManager.PlayerOnEdit);
                     GameManager.PlayerOnEdit = Instantiate(LongSoldier, this.transform.position, Quaternion.identity, GameObject.Find("Players").transform);
-                    if (!GameManager.RealPlayerTeam.Contains(tag))
+                    if (GameManager.RealPlayerTeam.Contains(tag))
+                    {
+                        GameManager.PlayerOnEdit.AddComponent<RealPlayer>();
+                        
+                    }
+                    else if(GameManager.UseAI)
                     {
                         GameManager.PlayerOnEdit.AddComponent<AI>();
                     }
                     else
                     {
-                        GameManager.PlayerOnEdit.AddComponent<RealPlayer>();
+                        GameManager.PlayerOnEdit.AddComponent<RemoteEnemy>();
                     }
                     break;
                 case "Short":
 
                     Destroy(GameManager.PlayerOnEdit);
                     GameManager.PlayerOnEdit = Instantiate(ShortSoldier, this.transform.position, Quaternion.identity, GameObject.Find("Players").transform);
-                    if (!GameManager.RealPlayerTeam.Contains(tag))
+                    if (GameManager.RealPlayerTeam.Contains(tag))
+                    {
+                        GameManager.PlayerOnEdit.AddComponent<RealPlayer>();
+                        
+                    }
+                    else if(GameManager.UseAI)
                     {
                         GameManager.PlayerOnEdit.AddComponent<AI>();
                     }
                     else
                     {
-                        GameManager.PlayerOnEdit.AddComponent<RealPlayer>();
+                        GameManager.PlayerOnEdit.AddComponent<RemoteEnemy>();
                     }
                     break;
                 case "Drag":
 
                     Destroy(GameManager.PlayerOnEdit);
                     GameManager.PlayerOnEdit = Instantiate(DragSoldier, this.transform.position, Quaternion.identity, GameObject.Find("Players").transform);
-                    if (!GameManager.RealPlayerTeam.Contains(tag))
+                    if (GameManager.RealPlayerTeam.Contains(tag))
+                    {
+                        GameManager.PlayerOnEdit.AddComponent<RealPlayer>();
+                        
+                    }
+                    else if(GameManager.UseAI)
                     {
                         GameManager.PlayerOnEdit.AddComponent<AI>();
                     }
                     else
                     {
-                        GameManager.PlayerOnEdit.AddComponent<RealPlayer>();
+                        GameManager.PlayerOnEdit.AddComponent<RemoteEnemy>();
                     }
                     break;
                 case "Tear":
                     Destroy(GameManager.PlayerOnEdit);
                     GameManager.PlayerOnEdit = Instantiate(TearSoldier, this.transform.position, Quaternion.identity, GameObject.Find("Players").transform);
-                    if (!GameManager.RealPlayerTeam.Contains(tag))
+                    if (GameManager.RealPlayerTeam.Contains(tag))
+                    {
+                        GameManager.PlayerOnEdit.AddComponent<RealPlayer>();
+                        
+                    }
+                    else if(GameManager.UseAI)
                     {
                         GameManager.PlayerOnEdit.AddComponent<AI>();
                     }
                     else
                     {
-                        GameManager.PlayerOnEdit.AddComponent<RealPlayer>();
+                        GameManager.PlayerOnEdit.AddComponent<RemoteEnemy>();
                     }
                     break;
                 default:
