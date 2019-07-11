@@ -68,7 +68,7 @@ public class BoardManager : MonoBehaviour
                 //random = Random.Range(0, 3);
                 //固定地图
                 random = randomlist[i][j];
-                position = new Vector3(distance * i - 3,1.732f * 0.5f * distance * j - 4, 0);
+                position = new Vector3(distance * i - 3,1.732f * 0.5f * distance * j -3, 0);
                 position.x += (j-3)*distance / 2;
                 Grounds[i][j]=Instantiate(RandomGround[random], position, Quaternion.identity, GameObject.Find("Grounds").transform);
             }

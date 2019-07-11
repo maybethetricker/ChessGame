@@ -41,6 +41,7 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
     {
         if (GameManager.Stage == 2 && !EnemyChecked)
         {
+            EnemyChecked = true;
             for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
             {
                 if (GameManager.OccupiedGround[i].PlayerOnGround == GameManager.PlayerOnEdit)
@@ -61,17 +62,11 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
             MovingTeam = (MovingTeam + 1) % GameManager.TeamCount;
             if ((CanMoveList.Count == 0 && (!OnlyLine)) || (OnlyLine && LineCanAttack.Count == 0))
             {
-                if((!GameManager.UseAI)&&GameManager.RealPlayerTeam.Count<2)
-                {
-                    ProtocolBytes protocol = new ProtocolBytes();
-                    protocol.AddString("SkipAttack");
-                    NetMgr.srvConn.Send(protocol);
-                }
                 OnlyLine = false;
                 ChangeTurn();
+                EnemyChecked = false;
             }
-            else
-                EnemyChecked = true;
+                
 
         }
     }
@@ -102,8 +97,10 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                     || (j1 >= GameManager.OccupiedGround[i].j && (i1 < GameManager.OccupiedGround[i].i - aimrange || i1 > GameManager.OccupiedGround[i].i + aimrange + GameManager.OccupiedGround[i].j - j1))
                     || (j1 < GameManager.OccupiedGround[i].j && (i1 < GameManager.OccupiedGround[i].i - aimrange + GameManager.OccupiedGround[i].j - j1 || i1 > GameManager.OccupiedGround[i].i + aimrange)))
                     goto AfterHurt;
-            //眩晕不反击
+            //死亡/眩晕不反击
             if (GameManager.OccupiedGround[i].PlayerOnGround == gameObject && GameManager.OccupiedGround[i].Faint)
+                goto AfterHurt;
+            if(bloodamount<=0)
                 goto AfterHurt;
         }
         int thisblood = int.Parse(ThisBlood.GetComponent<Text>().text);
@@ -224,6 +221,8 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
             if (GameManager.OccupiedGround[i].PlayerOnGround == gameObject && GameManager.OccupiedGround[i].Faint)
                 goto AfterHurt;
             if(GameManager.PlayerOnEdit.tag==gameObject.tag)
+                goto AfterHurt;
+            if(bloodamount<=0)
                 goto AfterHurt;
         }
         int thisblood = int.Parse(ThisBlood.GetComponent<Text>().text);
@@ -453,6 +452,8 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
         LineCanAttack = new List<AttackLine>();
         foreach (Transform t in GameObject.Find(Groups).GetComponentsInChildren<Transform>())
         {
+            if(t.name==Groups)
+                continue;
             int i1 = 0, j1 = 0, i2 = 0, j2 = 0;
             for (int j = 0; j < BoardManager.row; j++)
                 for (int k = 0; k < BoardManager.col; k++)
@@ -491,7 +492,8 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
         //是否在直线上
         foreach (Transform t in GameObject.Find("Grounds").GetComponentsInChildren<Transform>())
         {
-            
+            if(t.name=="Grounds")
+                continue;
             if (Vector3.Distance(CenterPosition, t.position) < BoardManager.distance / 2 + BoardManager.distance)
             {
                 if (Vector3.Distance(CenterPosition, t.position) < BoardManager.distance / 2)
@@ -504,6 +506,8 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
         }//是否在范围内
         foreach (Transform t in GameObject.Find(Groups).GetComponentsInChildren<Transform>())
         {
+            if(t.name==Groups)
+                continue;
             int i1 = 0, j1 = 0, i2 = 0, j2 = 0;
             for (int j = 0; j < BoardManager.row; j++)
                 for (int k = 0; k < BoardManager.col; k++)
@@ -531,14 +535,16 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                 GameObject surroundLine = null;
                 bool inLine = false;
                 foreach (GameObject g in Surround)
+                {
                     if (Vector3.Angle(CenterPosition - t.position, CenterPosition - g.transform.position) < 1)
                     {
+
                         inLine = true;
                         surroundLine = g;
                     }
+                }
                 if (!inLine)
                     continue;
-
                 AttackLine line = new AttackLine();
                 line.Enemy = t.gameObject;
                 line.color = t.gameObject.GetComponent<SpriteRenderer>().color;
@@ -548,7 +554,7 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
             }
         }
     }
-    void ChangeTurn()//更换回合
+    public void ChangeTurn()//更换回合
     {
         
         GameManager.Stage = 1;

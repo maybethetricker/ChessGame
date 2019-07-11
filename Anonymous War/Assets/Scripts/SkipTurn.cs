@@ -69,7 +69,8 @@ public class SkipTurn : MonoBehaviour
             else
             {
                 foreach (PlayerController.AttackLine line in PlayerController.LineCanAttack)
-                    line.Enemy.GetComponent<SpriteRenderer>().color = line.color;
+                    if(line.Enemy!=null)
+                        line.Enemy.GetComponent<SpriteRenderer>().color = line.color;
             }
             PlayerController.OnlyLine = false;
             //同Player controller。Check Turn

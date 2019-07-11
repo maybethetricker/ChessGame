@@ -37,9 +37,13 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
             if (Input.GetMouseButtonDown(0)&&GameManager.RealPlayerTeam.Contains("Team"+(PlayerController.MovingTeam+1).ToString()))
             {
                 Vector3 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+                //mousePosition.y = 1.414f / 2 * (mousePosition.y+mousePosition.z);
                 mousePosition.z = 0;
+                //Debug.Log(mousePosition);
                 if (Mathf.Abs(Vector3.Distance(mousePosition, this.gameObject.transform.position)) < BoardManager.distance / 2)
                 {
+                    if (!PlayerController.CanMoveList.ContainsKey(gameObject))//检测在可移动范围内
+                        return;
                     if((!GameManager.UseAI)&&(GameManager.RealPlayerTeam.Count<2))
                     {
                         //Update Move协议，包含移动者位置与待移动地块位置
@@ -66,6 +70,11 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
         if (Input.GetMouseButtonUp(0))
         {
             Vector3 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            //Debug.Log(mousePosition + ")");
+            //mousePosition.x -= 1.2f;
+            //mousePosition.y = 1.414f / 2 * (mousePosition.y-mousePosition.z);
+            //mousePosition.z = 0;
+            //Debug.Log(mousePosition);
             mousePosition.z = 0;
             //相当于onmouse
             if (Mathf.Abs(Vector3.Distance(mousePosition, this.gameObject.transform.position)) < BoardManager.distance / 2 && this.gameObject.tag != "Occupied")
@@ -73,8 +82,19 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
                 //不能降空地
                 if (this.tag == "Untagged")
                     return;
-                if(GameManager.RealPlayerTeam.Contains("Team"+(TeamCounter+1).ToString()))
+                if (GameManager.RealPlayerTeam.Contains("Team" + (TeamCounter + 1).ToString()))
+                {
                     PlaceSinglePlayer();
+                    if((!GameManager.UseAI)&&GameManager.RealPlayerTeam.Count<2)
+                    {
+                        ProtocolBytes protocol = new ProtocolBytes();
+                        protocol.AddString("UpdateLand");
+                        protocol.AddFloat(this.transform.position.x);
+                        protocol.AddFloat(this.transform.position.y);
+                        protocol.AddFloat(this.transform.position.z);
+                        NetMgr.srvConn.Send(protocol);
+                    }
+                }
             }
 
         }
@@ -172,142 +192,141 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
     //棋子移动，若该地块位于已检测到的移动范围内，则移动，参数为待移动棋子
     {
 
-        if (PlayerController.CanMoveList.ContainsKey(gameObject))//检测在可移动范围内
+
+        string WeaponTag = "";
+        bool inMug = false;
+        //读取并修改玩家状态
+        for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
         {
-            string WeaponTag = "";
-            bool inMug = false;
-            //读取并修改玩家状态
-            for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
+            if (GameManager.OccupiedGround[i].PlayerOnGround == GameManager.PlayerOnEdit)
             {
-                if (GameManager.OccupiedGround[i].PlayerOnGround == GameManager.PlayerOnEdit)
+                BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].tag = "Untagged";
+                blood = GameManager.OccupiedGround[i].PlayerBlood;
+                WeaponTag = GameManager.OccupiedGround[i].PlayerWeapon;
+                inMug = GameManager.OccupiedGround[i].InMug;
+                GameManager.OccupiedGround.RemoveAt(i);
+                break;
+            }
+        }
+        string tag = GameManager.PlayerOnEdit.tag;
+        Vector3 offset = new Vector3(0, -BoardManager.distance / 3, 0);
+        //player.transform.position = transform.position;
+        //匀速移动
+        StartCoroutine(SmoothMove(GameManager.PlayerOnEdit, this.transform.position));
+        //player.transform.position = Vector3.Lerp(player.transform.position, this.transform.position, 0.2f);
+        //切换武器状态
+        switch (this.tag)
+        {
+            case "Long":
+
+                Destroy(GameManager.PlayerOnEdit);
+                GameManager.PlayerOnEdit = Instantiate(LongSoldier, this.transform.position, Quaternion.identity, GameObject.Find("Players").transform);
+                if (GameManager.RealPlayerTeam.Contains(tag))
                 {
-                    BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].tag = "Untagged";
-                    blood = GameManager.OccupiedGround[i].PlayerBlood;
-                    WeaponTag = GameManager.OccupiedGround[i].PlayerWeapon;
-                    inMug = GameManager.OccupiedGround[i].InMug;
-                    GameManager.OccupiedGround.RemoveAt(i);
-                    break;
+                    GameManager.PlayerOnEdit.AddComponent<RealPlayer>();
+
                 }
-            }
-            string tag = GameManager.PlayerOnEdit.tag;
-            Vector3 offset = new Vector3(0, -BoardManager.distance / 3, 0);
-            //player.transform.position = transform.position;
-            //匀速移动
-            StartCoroutine(SmoothMove(GameManager.PlayerOnEdit, this.transform.position));
-            //player.transform.position = Vector3.Lerp(player.transform.position, this.transform.position, 0.2f);
-            //切换武器状态
-            switch (this.tag)
-            {
-                case "Long":
+                else if (GameManager.UseAI)
+                {
+                    GameManager.PlayerOnEdit.AddComponent<AI>();
+                }
+                else
+                {
+                    GameManager.PlayerOnEdit.AddComponent<RemoteEnemy>();
+                }
+                break;
+            case "Short":
 
-                    Destroy(GameManager.PlayerOnEdit);
-                    GameManager.PlayerOnEdit = Instantiate(LongSoldier, this.transform.position, Quaternion.identity, GameObject.Find("Players").transform);
-                    if (GameManager.RealPlayerTeam.Contains(tag))
-                    {
-                        GameManager.PlayerOnEdit.AddComponent<RealPlayer>();
-                        
-                    }
-                    else if(GameManager.UseAI)
-                    {
-                        GameManager.PlayerOnEdit.AddComponent<AI>();
-                    }
-                    else
-                    {
-                        GameManager.PlayerOnEdit.AddComponent<RemoteEnemy>();
-                    }
-                    break;
-                case "Short":
+                Destroy(GameManager.PlayerOnEdit);
+                GameManager.PlayerOnEdit = Instantiate(ShortSoldier, this.transform.position, Quaternion.identity, GameObject.Find("Players").transform);
+                if (GameManager.RealPlayerTeam.Contains(tag))
+                {
+                    GameManager.PlayerOnEdit.AddComponent<RealPlayer>();
 
-                    Destroy(GameManager.PlayerOnEdit);
-                    GameManager.PlayerOnEdit = Instantiate(ShortSoldier, this.transform.position, Quaternion.identity, GameObject.Find("Players").transform);
-                    if (GameManager.RealPlayerTeam.Contains(tag))
-                    {
-                        GameManager.PlayerOnEdit.AddComponent<RealPlayer>();
-                        
-                    }
-                    else if(GameManager.UseAI)
-                    {
-                        GameManager.PlayerOnEdit.AddComponent<AI>();
-                    }
-                    else
-                    {
-                        GameManager.PlayerOnEdit.AddComponent<RemoteEnemy>();
-                    }
-                    break;
-                case "Drag":
+                }
+                else if (GameManager.UseAI)
+                {
+                    GameManager.PlayerOnEdit.AddComponent<AI>();
+                }
+                else
+                {
+                    GameManager.PlayerOnEdit.AddComponent<RemoteEnemy>();
+                }
+                break;
+            case "Drag":
 
-                    Destroy(GameManager.PlayerOnEdit);
-                    GameManager.PlayerOnEdit = Instantiate(DragSoldier, this.transform.position, Quaternion.identity, GameObject.Find("Players").transform);
-                    if (GameManager.RealPlayerTeam.Contains(tag))
-                    {
-                        GameManager.PlayerOnEdit.AddComponent<RealPlayer>();
-                        
-                    }
-                    else if(GameManager.UseAI)
-                    {
-                        GameManager.PlayerOnEdit.AddComponent<AI>();
-                    }
-                    else
-                    {
-                        GameManager.PlayerOnEdit.AddComponent<RemoteEnemy>();
-                    }
-                    break;
-                case "Tear":
-                    Destroy(GameManager.PlayerOnEdit);
-                    GameManager.PlayerOnEdit = Instantiate(TearSoldier, this.transform.position, Quaternion.identity, GameObject.Find("Players").transform);
-                    if (GameManager.RealPlayerTeam.Contains(tag))
-                    {
-                        GameManager.PlayerOnEdit.AddComponent<RealPlayer>();
-                        
-                    }
-                    else if(GameManager.UseAI)
-                    {
-                        GameManager.PlayerOnEdit.AddComponent<AI>();
-                    }
-                    else
-                    {
-                        GameManager.PlayerOnEdit.AddComponent<RemoteEnemy>();
-                    }
-                    break;
-                default:
-                    if (tag == "Team2")
-                        GameManager.PlayerOnEdit.transform.Rotate(0, 0, 180);
-                    break;
-            }
-            if (tag == "Team2")
-                GameManager.PlayerOnEdit.transform.Rotate(0, 0, 180);
-            //更换并储存状态
-            GameManager.PlayerOnEdit.tag = tag;
-            StartCoroutine(SmoothMove(blood, transform.position + offset));
-            //blood.transform.position = this.transform.position + offset;
-            foreach (Transform t in GetComponentsInChildren<Transform>())
-                if (t.tag == "Weapon")
-                    t.gameObject.SetActive(false);
-            GameManager.GroundStage GStage = new GameManager.GroundStage();
-            for (int i = 0; i < BoardManager.row;i++)
-            for (int j = 0; j < BoardManager.col;j++)
-                if (BoardManager.Grounds[i][j]!=null&&Vector3.Distance(BoardManager.Grounds[i][j].transform.position, this.transform.position) < BoardManager.distance / 2)
+                Destroy(GameManager.PlayerOnEdit);
+                GameManager.PlayerOnEdit = Instantiate(DragSoldier, this.transform.position, Quaternion.identity, GameObject.Find("Players").transform);
+                if (GameManager.RealPlayerTeam.Contains(tag))
+                {
+                    GameManager.PlayerOnEdit.AddComponent<RealPlayer>();
+
+                }
+                else if (GameManager.UseAI)
+                {
+                    GameManager.PlayerOnEdit.AddComponent<AI>();
+                }
+                else
+                {
+                    GameManager.PlayerOnEdit.AddComponent<RemoteEnemy>();
+                }
+                break;
+            case "Tear":
+                Destroy(GameManager.PlayerOnEdit);
+                GameManager.PlayerOnEdit = Instantiate(TearSoldier, this.transform.position, Quaternion.identity, GameObject.Find("Players").transform);
+                if (GameManager.RealPlayerTeam.Contains(tag))
+                {
+                    GameManager.PlayerOnEdit.AddComponent<RealPlayer>();
+
+                }
+                else if (GameManager.UseAI)
+                {
+                    GameManager.PlayerOnEdit.AddComponent<AI>();
+                }
+                else
+                {
+                    GameManager.PlayerOnEdit.AddComponent<RemoteEnemy>();
+                }
+                break;
+            default:
+                if (tag == "Team2")
+                    GameManager.PlayerOnEdit.transform.Rotate(0, 0, 180);
+                break;
+        }
+        if (tag == "Team2")
+            GameManager.PlayerOnEdit.transform.Rotate(0, 0, 180);
+        //更换并储存状态
+        GameManager.PlayerOnEdit.tag = tag;
+        StartCoroutine(SmoothMove(blood, transform.position + offset));
+        //blood.transform.position = this.transform.position + offset;
+        foreach (Transform t in GetComponentsInChildren<Transform>())
+            if (t.tag == "Weapon")
+                t.gameObject.SetActive(false);
+        GameManager.GroundStage GStage = new GameManager.GroundStage();
+        for (int i = 0; i < BoardManager.row; i++)
+            for (int j = 0; j < BoardManager.col; j++)
+                if (BoardManager.Grounds[i][j] != null && Vector3.Distance(BoardManager.Grounds[i][j].transform.position, this.transform.position) < BoardManager.distance / 2)
                 {
                     GStage.i = i;
                     GStage.j = j;
                 }
-            GStage.PlayerOnGround = GameManager.PlayerOnEdit;
-            GStage.PlayerBlood = blood;
-            GStage.InMug = inMug;
-            GStage.Faint = false;
-            if (this.tag != "Untagged")
-                GStage.PlayerWeapon = this.tag;
-            else
-                GStage.PlayerWeapon = WeaponTag;
-            GStage.Moved = true;
-            GameManager.OccupiedGround.Add(GStage);
+        GStage.PlayerOnGround = GameManager.PlayerOnEdit;
+        GStage.PlayerBlood = blood;
+        GStage.InMug = inMug;
+        GStage.Faint = false;
+        if (this.tag != "Untagged")
+            GStage.PlayerWeapon = this.tag;
+        else
+            GStage.PlayerWeapon = WeaponTag;
+        GStage.Moved = true;
+        GameManager.OccupiedGround.Add(GStage);
 
-            this.tag = "Occupied";
-            GameManager.Stage = 2;
+        this.tag = "Occupied";
+        GameManager.Stage = 2;
 
-            foreach (KeyValuePair<GameObject, Color> key in PlayerController.CanMoveList)
-                key.Key.GetComponent<SpriteRenderer>().color = key.Value;
-        }
+        foreach (KeyValuePair<GameObject, Color> key in PlayerController.CanMoveList)
+            key.Key.GetComponent<SpriteRenderer>().color = key.Value;
+
     }
     IEnumerator SmoothMove(GameObject MovingObject,Vector3 aimPosition)//匀速移动
     {

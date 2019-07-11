@@ -57,7 +57,13 @@ public class GameManager : MonoBehaviour
         WinnerNotice.SetActive(false);
         Restart.onClick.AddListener(delegate ()
         {
-            SceneManager.LoadScene("Game");
+            if (!UseAI && RealPlayerTeam.Count < 2)
+            {
+                ProtocolBytes protocol = new ProtocolBytes();
+                protocol.AddString("EndGame");
+                NetMgr.srvConn.Send(protocol);
+            }
+            SceneManager.LoadScene("MainPage");
         });
         //初始化静态变量
         Stage =0;
@@ -78,9 +84,10 @@ public class GameManager : MonoBehaviour
         PlayerController.OnlyLine = false;
         PlayerController.MovedDead = 0;
         AI.CoroutineStarted = false;
-        //RealPlayerTeam.Add("Team1");
-        //RealPlayerTeam.Add("Team2");
-        //UseAI = false;
+        RealPlayerTeam.Add("Team1");
+        RealPlayerTeam.Add("Team2");
+        UseAI = false;
+        //UseAI = true;
         TearCreated = false;
         /* 
         test = GameObject.Find("Test").GetComponent<Button>();
@@ -126,6 +133,8 @@ public class GameManager : MonoBehaviour
         //寻找大致降怪范围
         foreach (Transform t in GameObject.Find("Grounds").GetComponentsInChildren<Transform>())
         {
+            if(t.name=="Grounds")
+                continue;
             if (Vector3.Magnitude(t.position) < BoardManager.distance / 2 + BoardManager.distance * 4)
             {
                 if(t.tag=="Weapon")
@@ -144,6 +153,8 @@ public class GameManager : MonoBehaviour
         //在周围标记提示圈
         foreach (Transform t in GameObject.Find("Grounds").GetComponentsInChildren<Transform>())
         {
+            if(t.name=="Grounds")
+                continue;
             if (Vector3.Distance(problePosition, t.position) < BoardManager.distance / 2 + BoardManager.distance * 2)
             {
                 t.gameObject.GetComponent<SpriteRenderer>().color = new Color(0,0,10);
@@ -240,6 +251,8 @@ public class GameManager : MonoBehaviour
         TearCreated = true;
         foreach (Transform t in GameObject.Find("Grounds").GetComponentsInChildren<Transform>())
         {
+            if(t.name=="Grounds")
+                continue;
             if(Vector3.Distance(position,t.position)<0.1f)
             {
                 Instantiate(Tear, position, Quaternion.identity, t);
@@ -253,19 +266,26 @@ public class GameManager : MonoBehaviour
     {
         //需要空降到的地块
         GameObject GroundToLand=null;
+        List<GameObject> randomLandList = new List<GameObject>();
         //遍历所有有武器且未被其他棋子占据的地块，并在遍历到的第一个地块处降落,因为地上有武器，所有Tag也不能为Weapon
         foreach (Transform t in GameObject.Find("Grounds").GetComponentsInChildren<Transform>())
         {
+            if(t.name=="Grounds")
+                continue;
             if(t.tag!="Occupied"&&t.tag!="Untagged"&&t.tag!="Weapon")
             {
-                GroundToLand = t.gameObject;
-                break;
+                if(t.tag=="Drag")
+                    continue;
+                randomLandList.Add(t.gameObject);
             }
         }
-        
+        int rand = Random.Range(0, randomLandList.Count);
+        GroundToLand = randomLandList[rand];
         //对接降落函数，可以不用看了
         foreach (Transform t in GameObject.Find("Grounds").GetComponentsInChildren<Transform>())
         {
+            if(t.name=="Grounds")
+                continue;
             if(Vector3.Distance(GroundToLand.transform.position, t.position) < BoardManager.distance / 2)
             {
                 t.gameObject.GetComponent<GroundClick>().PlaceSinglePlayer();

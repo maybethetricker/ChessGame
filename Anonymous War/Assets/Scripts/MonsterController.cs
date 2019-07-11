@@ -21,6 +21,16 @@ public class MonsterController : PlayerController
     public override void Die()//怪死，游戏结束
     {
         GameManager.WinnerNotice.SetActive(true);
+        foreach (Transform t in GameObject.Find("Players").GetComponentsInChildren<Transform>())
+        {
+            if (t.name == "Players")
+                continue;
+            if(t.gameObject.GetComponent<AI>())
+                Destroy(t.gameObject.GetComponent<AI>());
+            if(t.gameObject.GetComponent<RealPlayer>())
+                Destroy(t.gameObject.GetComponent<RealPlayer>());
+
+        }
         if(DiedSoldiersTeam1<3&&DIedSoldiersTeam2<3)
         {
             
@@ -129,6 +139,8 @@ public class MonsterController : PlayerController
         //标记毒
         foreach (Transform t in GameObject.Find("Grounds").GetComponentsInChildren<Transform>())
         {
+            if(t.name=="Grounds")
+                continue;
             int i1 = 0, j1 = 0, i2 = 0, j2 = 0;
             for (int j = 0; j < BoardManager.row; j++)
                 for (int k = 0; k < BoardManager.col; k++)
@@ -251,7 +263,10 @@ public class MonsterController : PlayerController
                     Debug.Log("position,moved" + BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.transform.position + GameManager.OccupiedGround[i].Moved);
                 Debug.Log("ProbleBug");
                 if (counter >= 10)
+                {
+                    GameManager.MudSetted = true;
                     break;
+                }
                 GameManager.MudSetted = false;
                 PlayerController.SmallTurn = 0;
                 PlayerController.MovedDead = 0;

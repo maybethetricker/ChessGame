@@ -15,6 +15,7 @@ public class Root : MonoBehaviour
         NetMgr.srvConn.msgDist.AddListener("UpdateAttack", NetAttack);
         NetMgr.srvConn.msgDist.AddListener("SkipMove", SkipMove);
         NetMgr.srvConn.msgDist.AddListener("SkipAttack", SkipAttack);
+        NetMgr.srvConn.msgDist.AddListener("UpdateLand",NetLand);
     }
 
     // Update is called once per frame
@@ -23,6 +24,42 @@ public class Root : MonoBehaviour
         NetMgr.Update();
     }
 
+    void NetLand(ProtocolBase protocol)
+    {
+        ProtocolBytes proto = (ProtocolBytes)protocol;
+        int start = 0;
+        string protoName = proto.GetString(start, ref start);
+        Vector3 GroundPosition;
+        GroundPosition.x = proto.GetFloat(start, ref start);
+        GroundPosition.y = proto.GetFloat(start, ref start);
+        GroundPosition.z = proto.GetFloat(start, ref start);
+        //需要空降到的地块
+        GameObject GroundToLand=null;
+        //降落到对应地块上
+        foreach (Transform t in GameObject.Find("Grounds").GetComponentsInChildren<Transform>())
+        {
+            if(t.name=="Grounds")
+                continue;
+            if (Vector3.Distance(t.position, GroundPosition) < BoardManager.distance / 2)
+            {
+                if (t.tag == "Weapon")
+                    continue;
+                GroundToLand = t.gameObject;
+                break;
+            }
+        }
+        //对接降落函数，可以不用看了
+        foreach (Transform t in GameObject.Find("Grounds").GetComponentsInChildren<Transform>())
+        {
+            if(t.name=="Grounds")
+                continue;
+            if(Vector3.Distance(GroundToLand.transform.position, t.position) < BoardManager.distance / 2)
+            {
+                t.gameObject.GetComponent<GroundClick>().PlaceSinglePlayer();
+                break;
+            }
+        }
+    }
     void NetMove(ProtocolBase protocol)
     {
         ProtocolBytes proto = (ProtocolBytes)protocol;
@@ -50,6 +87,8 @@ public class Root : MonoBehaviour
         //移动到对应地块上
         foreach (Transform t in GameObject.Find("Grounds").GetComponentsInChildren<Transform>())
         {
+            if(t.name=="Grounds")
+                continue;
             if (Vector3.Distance(t.position, GroundPosition) < BoardManager.distance / 2)
             {
                 if (t.tag == "Weapon")
@@ -65,6 +104,8 @@ public class Root : MonoBehaviour
         //对接移动函数
         foreach (Transform t in GameObject.Find("Grounds").GetComponentsInChildren<Transform>())
         {
+            if(t.name=="Grounds")
+                continue;
             if (Vector3.Distance(GroundToMove.transform.position, t.position) < BoardManager.distance / 2)
             {
                 t.gameObject.GetComponent<GroundClick>().PlayerMove();
@@ -87,6 +128,8 @@ public class Root : MonoBehaviour
         //攻击对应棋子
         foreach (Transform t in GameObject.Find("Players").GetComponentsInChildren<Transform>())
         {
+            if(t.name=="Players")
+                continue;
             if (Vector3.Distance(EnemyPosition, t.position) < BoardManager.distance / 2)
             {
                 PlayerToAttack = t.gameObject;
@@ -118,6 +161,13 @@ public class Root : MonoBehaviour
                 }
                 if (GameManager.OccupiedGround[i].PlayerOnGround == GameManager.PlayerOnEdit)
                 {
+                    switch (GameManager.OccupiedGround[i].PlayerWeapon)
+                    {
+                        case "Long": attack = 2;break;
+                        case "Short": attack = 4; break;
+                        case "Drag": attack = 1;break;
+                        case "Tear": attack = 50;break;
+                    }
                     thisBlood = GameManager.OccupiedGround[i].PlayerBlood;
                 }
             }
@@ -128,6 +178,8 @@ public class Root : MonoBehaviour
             //对接攻击函数
             foreach (Transform t in GameObject.Find("Players").GetComponentsInChildren<Transform>())
             {
+                if(t.name=="Players")
+                continue;
                 if (Vector3.Distance(PlayerToAttack.transform.position, t.position) < BoardManager.distance / 2)
                 {
                     if (t.tag == "Monster")
@@ -136,7 +188,7 @@ public class Root : MonoBehaviour
                         t.gameObject.GetComponent<RealPlayer>().DragAttack(Blood, thisBlood, attack, aimAttack, aimRange);
                     else
                     {
-                        t.gameObject.GetComponent<AI>().DragAttack(Blood, thisBlood, attack, aimAttack, aimRange);
+                        t.gameObject.GetComponent<RemoteEnemy>().DragAttack(Blood, thisBlood, attack, aimAttack, aimRange);
                     }
                     PlayerController.OnlyLine = false;
                     break;
@@ -165,6 +217,13 @@ public class Root : MonoBehaviour
                 }
                 if (GameManager.OccupiedGround[i].PlayerOnGround == GameManager.PlayerOnEdit)
                 {
+                    switch (GameManager.OccupiedGround[i].PlayerWeapon)
+                    {
+                        case "Long": attack = 2;break;
+                        case "Short": attack = 4; break;
+                        case "Drag": attack = 1;break;
+                        case "Tear": attack = 50;break;
+                    }
                     thisBlood = GameManager.OccupiedGround[i].PlayerBlood;
                 }
             }
@@ -172,9 +231,17 @@ public class Root : MonoBehaviour
             {
                 Blood = GameObject.Find("MonsterBlood");
             }
+            if(Blood==null)
+                Debug.Log("NullBlood");
+            else
+            {
+                Debug.Log("HasBlood");
+            }
             //对接攻击函数
             foreach (Transform t in GameObject.Find("Players").GetComponentsInChildren<Transform>())
             {
+                if(t.name=="Players")
+                continue;
                 if (Vector3.Distance(PlayerToAttack.transform.position, t.position) < BoardManager.distance / 2)
                 {
                     if (t.tag == "Monster")

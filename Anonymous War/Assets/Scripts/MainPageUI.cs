@@ -24,6 +24,7 @@ public class MainPageUI : MonoBehaviour
         ProtocolBytes protocol=new ProtocolBytes();
         protocol.AddString("StartMatch");
         NetMgr.srvConn.Send(protocol);
+        StartGame.onClick.RemoveAllListeners();
     }
 
     

@@ -11,12 +11,28 @@ public class RemoteEnemy : PlayerController
     /// </summary>
     void OnMouseDown()
     {
-        //玩家攻击时的受击检测，与AI逻辑无关，可不看
+        //玩家攻击时的受击检测
         if (GameManager.Stage == 2 && Vector2.Distance(GameManager.PlayerOnEdit.transform.position, transform.position) > 0.1f)
         {
             //只有本回合能动的一方可动
             if (!GameManager.RealPlayerTeam.Contains(GameManager.PlayerOnEdit.tag))
                 return;
+            if ((!CanMoveList.ContainsKey(gameObject)) && (!OnlyLine))
+                return;
+            if (OnlyLine)
+            {
+                bool find = false;
+                for (int i = 0; i < LineCanAttack.Count; i++)
+                {
+                    if (LineCanAttack[i].Enemy == gameObject)
+                    {
+                        find = true;
+                        break;
+                    }
+                }
+                if(!find)
+                    return;
+            }
             //UpdateAttack协议，包含被攻击者位置与是否使用抓勾
             ProtocolBytes protocol = new ProtocolBytes();
             protocol.AddString("UpdateAttack");
@@ -58,7 +74,7 @@ public class RemoteEnemy : PlayerController
                 Blood = GameObject.Find("MonsterBlood");
             }
             //是否直线攻击
-            if (CanMoveList.ContainsKey(gameObject) && !OnlyLine)
+            if (!OnlyLine)
                 Attack(Blood, thisBlood, attack, aimAttack, aimRange);
             if (OnlyLine)
             {
