@@ -15,6 +15,7 @@ TagManager:
   - Team4
   - Tear
   - Monster
+  - Blood
   layers:
   - Default
   - TransparentFX
@@ -57,4 +58,7 @@ TagManager:
     locked: 0
   - name: player
     uniqueID: 3851731551
+    locked: 0
+  - name: UI
+    uniqueID: 4214525315
     locked: 0

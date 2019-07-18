@@ -266,8 +266,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 259103161}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.272604, y: 1.597155, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 15, y: 15, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 5
@@ -396,7 +396,7 @@ Canvas:
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
   m_AdditionalShaderChannelsFlag: 0
-  m_SortingLayerID: 0
+  m_SortingLayerID: -443235745
   m_SortingOrder: 0
   m_TargetDisplay: 0
 --- !u!224 &494495026
@@ -454,7 +454,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
-  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_BackGroundColor: {r: 0.5721544, g: 0.506942, b: 0.6037736, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -470,7 +470,7 @@ Camera:
   near clip plane: 0.3
   far clip plane: 1000
   field of view: 60
-  orthographic: 1
+  orthographic: 0
   orthographic size: 5
   m_Depth: -1
   m_CullingMask:
@@ -494,13 +494,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 519420028}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0.38268343, y: 0, z: 0, w: 0.92387956}
   m_LocalPosition: {x: 0, y: 0, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: -45, y: 0, z: 0}
 --- !u!1 &537967722
 GameObject:
   m_ObjectHideFlags: 0
@@ -598,8 +598,8 @@ Canvas:
   m_GameObject: {fileID: 619133734}
   m_Enabled: 1
   serializedVersion: 3
-  m_RenderMode: 0
-  m_Camera: {fileID: 0}
+  m_RenderMode: 1
+  m_Camera: {fileID: 519420031}
   m_PlaneDistance: 100
   m_PixelPerfect: 0
   m_ReceivesEvents: 1
@@ -607,7 +607,7 @@ Canvas:
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
   m_AdditionalShaderChannelsFlag: 0
-  m_SortingLayerID: 0
+  m_SortingLayerID: -80441981
   m_SortingOrder: 0
   m_TargetDisplay: 0
 --- !u!224 &619133738
@@ -1018,18 +1018,24 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   LongSoldier: {fileID: 4319592440285663039, guid: 85806a52e00715a44b1171bfab571f84,
     type: 3}
-  ShortSoldier: {fileID: 2481720175780188011, guid: c455796536e1e4d4ab9be8757cba50f8,
+  ShortSoldier: {fileID: 8887891261889884195, guid: f092f229a39c2164a9c817a9c557b010,
     type: 3}
-  DragSoldier: {fileID: 6882349054949763340, guid: bb8d3dde01f7b974180c1a0f3aabd018,
+  DragSoldier: {fileID: 6747744764353101295, guid: 75571fe0da6225c48a7877ef559649c9,
     type: 3}
   TearSoldier: {fileID: 129337885249873763, guid: fc132bce0c1be7247a4e80cf3993b695,
     type: 3}
+  Short: {fileID: 2196757628317213394, guid: 74c182ed24fd99e4aa01592c84c36d2a, type: 3}
+  Long: {fileID: 5861715006425365771, guid: 250e264dcb69e61458b4ebc95f2dc0a2, type: 3}
+  Drag: {fileID: 3335133884325783597, guid: 2219874e529f3ce45836de12deaa2f19, type: 3}
   Tear: {fileID: 6677337581583436081, guid: 17aeb40c84473a7499a040242fcf934e, type: 3}
   Monster: {fileID: 7174348744320852066, guid: 6aac8f5c9ac2e0a469436af8d22add9c, type: 3}
   Blood: {fileID: 1959562310762665233, guid: fa7e5273cadd19c4aa3f5e4371581a5d, type: 3}
   Restart: {fileID: 95388264}
   TearGround: {fileID: 0}
+  MonsterBlood: {fileID: 0}
   randomPlace: []
+  PlayerBloodSum: 0
+  EnemyBloodSum: 0
 --- !u!4 &1164979708
 Transform:
   m_ObjectHideFlags: 0
@@ -1114,7 +1120,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Skip Stage
+  m_Text: "\u8DF3\u8FC7\u79FB\u52A8/\u653B\u51FB\u9636\u6BB5"
 --- !u!222 &1175739079
 CanvasRenderer:
   m_ObjectHideFlags: 0

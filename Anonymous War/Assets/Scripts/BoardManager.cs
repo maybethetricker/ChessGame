@@ -18,7 +18,7 @@ public class BoardManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        distance=1.44f;
+        distance=21.6f;
         RandomGround.Add(LongGround);
         RandomGround.Add(ShortGround);
         RandomGround.Add(DragGround);
@@ -32,7 +32,7 @@ public class BoardManager : MonoBehaviour
         col = 7;
         int random;
         Vector3 position;
-        int[][] randomlist=new int[row][];
+        int[][] randomlist = new int[row][];
         Grounds = new GameObject[row][];
         for (int i = 0; i < row; i++)
         {
@@ -43,9 +43,35 @@ public class BoardManager : MonoBehaviour
                 randomlist[i][j] = 3;
             }
         }
+        /* 
         randomlist[2][1] = randomlist[5][0] = randomlist[3][3] = randomlist[4][3] = randomlist[2][6] = 0;
         randomlist[2][2] = randomlist[5][2] = randomlist[0][3] = randomlist[5][3] = randomlist[4][4] = randomlist[0][4] = 1;
-        randomlist[4][2] = randomlist[5][4] = randomlist[1][5] = 2;
+        randomlist[4][2] = randomlist[5][4] = randomlist[1][5] = 2;*/
+        int k = 0;
+        int dragCount = 0;
+        while (k < 15)
+        {
+            int i = Random.Range(0, 7);
+            int j = Random.Range(0, 7);
+            switch (j)
+            {
+                case 0: if (i < 3 || i > 6) continue; break;
+                case 1: if (i < 2 || i > 6) continue; break;
+                case 2: if (i == 0 || i > 6) continue; break;
+                case 3: if (i > 6) continue; break;
+                case 4: if (i > 5) continue; break;
+                case 5: if (i > 4) continue; break;
+                case 6: if (i > 3) continue; break;
+            }
+            
+            int rand = Random.Range(0, 3);
+            if(dragCount>3&&rand==2)
+                rand = Random.Range(0, 2);
+            if(rand==2)
+                dragCount++;
+            randomlist[i][j] = rand;
+            k++;
+        }
         //固定地图
         for (int i = 0; i < row; i++)
         {
@@ -56,21 +82,21 @@ public class BoardManager : MonoBehaviour
                 //控制形状
                 switch (j)
                 {
-                    case 0: if (i <3 || i > 6) continue; break;
-                    case 1: if (i <2 || i > 6) continue; break;
-                    case 2: if (i ==0 || i >6) continue; break;
+                    case 0: if (i < 3 || i > 6) continue; break;
+                    case 1: if (i < 2 || i > 6) continue; break;
+                    case 2: if (i == 0 || i > 6) continue; break;
                     case 3: if (i > 6) continue; break;
                     case 4: if (i > 5) continue; break;
                     case 5: if (i > 4) continue; break;
-                    case 6: if ( i > 3) continue; break;
+                    case 6: if (i > 3) continue; break;
                 }
                 //随机地图
                 //random = Random.Range(0, 3);
                 //固定地图
                 random = randomlist[i][j];
-                position = new Vector3(distance * i - 3,1.732f * 0.5f * distance * j -3, 0);
-                position.x += (j-3)*distance / 2;
-                Grounds[i][j]=Instantiate(RandomGround[random], position, Quaternion.identity, GameObject.Find("Grounds").transform);
+                position = new Vector3(distance * i - 3 - 55, 1.732f * 0.5f * distance * j - 3 + 50, 78);
+                position.x += (j - 3) * distance / 2;
+                Grounds[i][j] = Instantiate(RandomGround[random], position, Quaternion.identity, GameObject.Find("Grounds").transform);
             }
         }
     }

@@ -21,9 +21,9 @@ public class AI : PlayerController
     {
         //检测攻击范围
         CheckAttack();
-        
         if(GameManager.Stage==1&&this.tag == "Team" + (MovingTeam + 1).ToString() && !GameManager.RealPlayerTeam.Contains(this.tag))
         {
+            
             //等待一会儿后移动
             if(!CoroutineStarted)
                 StartCoroutine(WaitToMove());
@@ -102,6 +102,16 @@ public class AI : PlayerController
         GameObject GroundToMove = null;
         int maxScore = 0, thisScore = 0;
         score = new Dictionary<GameObject, SurroundScore>();
+        GameManager.instance.PlayerBloodSum = GameManager.instance.EnemyBloodSum = 0;
+        for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
+        { 
+            if(GameManager.RealPlayerTeam.Contains(GameManager.OccupiedGround[i].PlayerOnGround.tag))
+                GameManager.instance.PlayerBloodSum += int.Parse(GameManager.OccupiedGround[i].PlayerBlood.GetComponentInChildren<Text>().text);
+            else
+            {
+                GameManager.instance.EnemyBloodSum += int.Parse(GameManager.OccupiedGround[i].PlayerBlood.GetComponentInChildren<Text>().text);
+            }        
+        }
         //算分
         for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
         {
@@ -145,7 +155,7 @@ public class AI : PlayerController
                                             enemyScore = 0;
                                             if (Vector3.Distance(GameManager.OccupiedGround[j].PlayerOnGround.transform.position, key.Key.transform.position) < BoardManager.distance * 1.5f)
                                             {
-                                                enemyScore = 30 - int.Parse(GameManager.OccupiedGround[j].PlayerBlood.GetComponent<Text>().text);
+                                                enemyScore = 40 - int.Parse(GameManager.OccupiedGround[j].PlayerBlood.GetComponent<Text>().text);
                                                 switch (GameManager.OccupiedGround[j].PlayerWeapon)
                                                 {
                                                     case "Short":
@@ -157,14 +167,14 @@ public class AI : PlayerController
                                                         enemyScore *= 4;
                                                         break;
                                                     case "Tear":
-                                                        enemyScore = (30 - int.Parse(GameManager.OccupiedGround[i].PlayerBlood.GetComponent<Text>().text)) / 4;
+                                                        enemyScore = (40 - int.Parse(GameManager.OccupiedGround[i].PlayerBlood.GetComponent<Text>().text)) / 4;
                                                         break;
                                                 }
                                                 if (GameManager.OccupiedGround[j].Faint)
                                                     enemyScore *= 2;
 
                                             }
-                                            enemyScore -= (int)Vector3.Distance(GameManager.OccupiedGround[j].PlayerOnGround.transform.position, key.Key.transform.position);
+                                            enemyScore -= (int)(Vector3.Distance(GameManager.OccupiedGround[j].PlayerOnGround.transform.position, key.Key.transform.position)/BoardManager.distance);
                                             if (enemyScore > enemyMaxScore)
                                             {
                                                 enemyMaxScore = enemyScore;
@@ -182,7 +192,7 @@ public class AI : PlayerController
                                             enemyScore = 0;
                                             if (Vector3.Distance(GameManager.OccupiedGround[j].PlayerOnGround.transform.position, key.Key.transform.position) < BoardManager.distance * 2.5f)
                                             {
-                                                enemyScore = 30 - int.Parse(GameManager.OccupiedGround[j].PlayerBlood.GetComponent<Text>().text);
+                                                enemyScore = 40 - int.Parse(GameManager.OccupiedGround[j].PlayerBlood.GetComponent<Text>().text);
                                                 switch (GameManager.OccupiedGround[j].PlayerWeapon)
                                                 {
                                                     case "Short":
@@ -200,13 +210,13 @@ public class AI : PlayerController
                                                         if(GameManager.OccupiedGround[j].Faint)
                                                             enemyScore *= 5;
                                                         else
-                                                            enemyScore = (30 - int.Parse(GameManager.OccupiedGround[i].PlayerBlood.GetComponent<Text>().text))/3;
+                                                            enemyScore = (40 - int.Parse(GameManager.OccupiedGround[i].PlayerBlood.GetComponent<Text>().text))/3;
                                                         break;
                                                 }
                                                 if(GameManager.OccupiedGround[j].Faint)
                                                     enemyScore *= 2;
                                             }
-                                            enemyScore -= (int)Vector3.Distance(GameManager.OccupiedGround[j].PlayerOnGround.transform.position, key.Key.transform.position);
+                                            enemyScore -= (int)(Vector3.Distance(GameManager.OccupiedGround[j].PlayerOnGround.transform.position, key.Key.transform.position)/BoardManager.distance);
                                             if (enemyScore > enemyMaxScore)
                                             {
                                                 enemyMaxScore = enemyScore;
@@ -227,7 +237,7 @@ public class AI : PlayerController
                                         enemyScore = 0;
                                         if (t.gameObject.tag == "Monster")
                                         {
-                                            enemyScore -= (int)Vector3.Distance(t.position, key.Key.transform.position);
+                                            enemyScore -= (int)(Vector3.Distance(t.position, key.Key.transform.position)/BoardManager.distance);
                                             if (enemyScore > enemyMaxScore)
                                             {
                                                 enemyMaxScore = enemyScore;
@@ -247,28 +257,65 @@ public class AI : PlayerController
                     }
                     surroundscore.score = maxScore;
                     score.Add(GameManager.OccupiedGround[i].PlayerBlood, surroundscore);
+                    CanMoveList.Remove(BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j]);
                 }
             }
         }
+        GameObject possibleEnemy=null;
         maxScore = -10;
-        for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
+        if (GameManager.instance.PlayerBloodSum < GameManager.instance.EnemyBloodSum - 4)
         {
-            if ((!GameManager.RealPlayerTeam.Contains(GameManager.OccupiedGround[i].PlayerOnGround.tag)) && !GameManager.OccupiedGround[i].Moved)
+            maxScore = 10;
+            for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
             {
-                if (score[GameManager.OccupiedGround[i].PlayerBlood].score <= maxScore)
-                    continue;
-                maxScore = score[GameManager.OccupiedGround[i].PlayerBlood].score;
-                GameManager.PlayerOnEdit = GameManager.OccupiedGround[i].PlayerOnGround;
-                if (BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j] == score[GameManager.OccupiedGround[i].PlayerBlood].Aim)
+                if ((!GameManager.RealPlayerTeam.Contains(GameManager.OccupiedGround[i].PlayerOnGround.tag)) && !GameManager.OccupiedGround[i].Moved)
                 {
-                    GroundToMove = null;
+                    if (score[GameManager.OccupiedGround[i].PlayerBlood].score >= maxScore)
+                        continue;
+                    maxScore = score[GameManager.OccupiedGround[i].PlayerBlood].score;
+                    GameManager.PlayerOnEdit = GameManager.OccupiedGround[i].PlayerOnGround;
+                    possibleEnemy = score[GameManager.OccupiedGround[i].PlayerBlood].Enemy;
+                    if (BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j] == score[GameManager.OccupiedGround[i].PlayerBlood].Aim)
+                    {
+                        GroundToMove = null;
+                    }
+                    else
+                        GroundToMove = score[GameManager.OccupiedGround[i].PlayerBlood].Aim;
                 }
-                else
-                    GroundToMove = score[GameManager.OccupiedGround[i].PlayerBlood].Aim;
+            }
+        }
+        else
+        {
+            for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
+            {
+                if ((!GameManager.RealPlayerTeam.Contains(GameManager.OccupiedGround[i].PlayerOnGround.tag)) && !GameManager.OccupiedGround[i].Moved)
+                {
+                    if (score[GameManager.OccupiedGround[i].PlayerBlood].score <= maxScore)
+                        continue;
+                    maxScore = score[GameManager.OccupiedGround[i].PlayerBlood].score;
+                    GameManager.PlayerOnEdit = GameManager.OccupiedGround[i].PlayerOnGround;
+                    possibleEnemy = score[GameManager.OccupiedGround[i].PlayerBlood].Enemy;
+                    if (BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j] == score[GameManager.OccupiedGround[i].PlayerBlood].Aim)
+                    {
+                        GroundToMove = null;
+                    }
+                    else
+                        GroundToMove = score[GameManager.OccupiedGround[i].PlayerBlood].Aim;
+                }
             }
         }
         if (GroundToMove == null)
         {
+            foreach(KeyValuePair<GameObject,Color> key in PlayerController.CanMoveList)
+                key.Key.GetComponent<SpriteRenderer>().color = key.Value;
+            for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
+            {
+                string team = "Team" + (PlayerController.MovingTeam + 1).ToString();
+                if (!GameManager.OccupiedGround[i].Moved && GameManager.OccupiedGround[i].PlayerOnGround.tag == team)
+                {
+                    BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color = GameManager.OccupiedGround[i].OrigColor;
+                }
+            }
             for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
             {
                 if (GameManager.OccupiedGround[i].PlayerOnGround == GameManager.PlayerOnEdit)
@@ -291,6 +338,20 @@ public class AI : PlayerController
             {
                 t.gameObject.GetComponent<GroundClick>().PlayerMove();
                 break;
+            }
+        }
+        for (int i = 0; i < GameManager.OccupiedGround.Count;i++)
+        {
+            if(GameManager.OccupiedGround[i].PlayerOnGround.transform==GameManager.PlayerOnEdit.transform)
+            {
+                if(!score.ContainsKey(GameManager.OccupiedGround[i].PlayerBlood))
+                {
+                    SurroundScore surroundscore=new SurroundScore();
+                    surroundscore.Aim = GroundToMove;
+                    surroundscore.score = maxScore;
+                    surroundscore.Enemy = possibleEnemy;
+                    score.Add(GameManager.OccupiedGround[i].PlayerBlood, surroundscore);
+                }
             }
         }
     }
@@ -337,6 +398,16 @@ public class AI : PlayerController
             if (PlayerToAttack.tag == "Monster")
             {
                 Blood = GameObject.Find("MonsterBlood");
+                for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
+                {
+                    if (GameManager.OccupiedGround[i].PlayerOnGround == GameManager.PlayerOnEdit)
+                    {
+                        GameManager.GroundStage gstage = GameManager.OccupiedGround[i];
+                        gstage.Hate += attack;
+                        GameManager.OccupiedGround[i] = gstage;
+                        break;
+                    }
+                }
             }
             //对接攻击函数
             foreach (Transform t in GameObject.Find("Players").GetComponentsInChildren<Transform>())
@@ -369,12 +440,17 @@ public class AI : PlayerController
                 }
             if (PlayerToAttack == null)
             {
-                for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
-                    if (GameManager.OccupiedGround[i].PlayerOnGround.tag == "Monster")
+                foreach (Transform t in GameObject.Find("Players").GetComponentsInChildren<Transform>())
+                {
+                    if (t.name == "Players")
+                        continue;
+                    if (t.gameObject.tag == "Monster")
                     {
-                        PlayerToAttack = GameManager.OccupiedGround[i].PlayerOnGround;
+                        PlayerToAttack = t.gameObject;
                         break;
                     }
+                }
+
             }
             //对接攻击函数，可以不用看了
             //获取反击攻击力，反击范围与双方血条
@@ -402,6 +478,16 @@ public class AI : PlayerController
             if (PlayerToAttack.tag == "Monster")
             {
                 Blood = GameObject.Find("MonsterBlood");
+                for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
+                {
+                    if (GameManager.OccupiedGround[i].PlayerOnGround == GameManager.PlayerOnEdit)
+                    {
+                        GameManager.GroundStage gstage = GameManager.OccupiedGround[i];
+                        gstage.Hate += attack;
+                        GameManager.OccupiedGround[i] = gstage;
+                        break;
+                    }
+                }
             }
             //对接攻击函数
             foreach (Transform t in GameObject.Find("Players").GetComponentsInChildren<Transform>())

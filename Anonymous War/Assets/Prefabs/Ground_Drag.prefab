@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 3777425450030604289}
   - component: {fileID: 1842591062964324513}
   - component: {fileID: 2362721868649785707}
+  - component: {fileID: 4259849278719359120}
   m_Layer: 0
   m_Name: Ground_Drag
   m_TagString: Drag
@@ -95,15 +96,46 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   LongSoldier: {fileID: 4319592440285663039, guid: 85806a52e00715a44b1171bfab571f84,
     type: 3}
-  ShortSoldier: {fileID: 2481720175780188011, guid: c455796536e1e4d4ab9be8757cba50f8,
+  ShortSoldier: {fileID: 8887891261889884195, guid: f092f229a39c2164a9c817a9c557b010,
     type: 3}
-  DragSoldier: {fileID: 6882349054949763340, guid: bb8d3dde01f7b974180c1a0f3aabd018,
+  DragSoldier: {fileID: 6747744764353101295, guid: 75571fe0da6225c48a7877ef559649c9,
     type: 3}
   TearSoldier: {fileID: 129337885249873763, guid: fc132bce0c1be7247a4e80cf3993b695,
     type: 3}
   EmptySoldier: {fileID: 513919901963878563, guid: d1205dca1ee45ff4688b841d51b219c4,
     type: 3}
   Blood: {fileID: 1959562310762665233, guid: fa7e5273cadd19c4aa3f5e4371581a5d, type: 3}
+--- !u!60 &4259849278719359120
+PolygonCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 580524422330048604}
+  m_Enabled: 1
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_UsedByComposite: 0
+  m_Offset: {x: 0, y: 0}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0.5, y: 0.5}
+    oldSize: {x: 1, y: 1}
+    newSize: {x: 1, y: 1}
+    adaptiveTilingThreshold: 0.5
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  m_Points:
+    m_Paths:
+    - - {x: 0, y: 0.5}
+      - {x: -0.43301272, y: 0.24999999}
+      - {x: -0.4330127, y: -0.25000003}
+      - {x: 0.00000004371139, y: -0.5}
+      - {x: 0.43301272, y: -0.24999996}
+      - {x: 0.43301272, y: 0.24999996}
 --- !u!1 &8833720965896343825
 GameObject:
   m_ObjectHideFlags: 0
@@ -129,8 +161,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8833720965896343825}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.007, y: 0, z: 0}
-  m_LocalScale: {x: 1.5285, y: 1.5285, z: 1.5285}
+  m_LocalPosition: {x: 0.08, y: -0.05, z: 0}
+  m_LocalScale: {x: 0.8, y: 0.8, z: 1.5285}
   m_Children: []
   m_Father: {fileID: 3777425450030604289}
   m_RootOrder: 0
@@ -172,7 +204,7 @@ SpriteRenderer:
   m_SortingLayerID: 1405484489
   m_SortingLayer: 1
   m_SortingOrder: 0
-  m_Sprite: {fileID: 647170938249159631, guid: 81e79275b554d1e45988d307a5d63125, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 7ca72f1c7a387d6468d69505fef9ba9f, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0

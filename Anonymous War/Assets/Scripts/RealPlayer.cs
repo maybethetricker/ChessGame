@@ -57,6 +57,37 @@ public class RealPlayer : PlayerController
             //只有本回合能动的一方可动
             if (!GameManager.RealPlayerTeam.Contains(GameManager.PlayerOnEdit.tag))
                 return;
+            if ((!CanMoveList.ContainsKey(gameObject)) && (!OnlyLine))
+                return;
+            if (OnlyLine)
+            {
+                bool find = false;
+                for (int i = 0; i < LineCanAttack.Count; i++)
+                {
+                    if (LineCanAttack[i].Enemy == gameObject)
+                    {
+                        find = true;
+                        break;
+                    }
+                }
+                if(!find)
+                    return;
+            }
+            if (GameManager.RealPlayerTeam.Count < 2 && (!GameManager.UseAI))
+            {
+                ProtocolBytes protocol = new ProtocolBytes();
+                protocol.AddString("UpdateAttack");
+                protocol.AddFloat(this.transform.position.x);
+                protocol.AddFloat(this.transform.position.y);
+                protocol.AddFloat(this.transform.position.z);
+                if (OnlyLine)
+                    protocol.AddInt(1);
+                else
+                {
+                    protocol.AddInt(0);
+                }
+                NetMgr.srvConn.Send(protocol);
+            }
             //获取反击攻击力，反击范围与双方血条
             GameObject thisBlood = null;
             int aimRange = 0;
@@ -79,10 +110,6 @@ public class RealPlayer : PlayerController
                 {
                     thisBlood = GameManager.OccupiedGround[i].PlayerBlood;
                 }
-            }
-            if (gameObject.tag == "Monster")
-            {
-                Blood = GameObject.Find("MonsterBlood");
             }
             //是否直线攻击
             if (CanMoveList.ContainsKey(gameObject) && !OnlyLine)
