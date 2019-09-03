@@ -18,7 +18,7 @@ public class BoardManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        distance=21.6f;
+        distance = 21.6f;
         RandomGround.Add(LongGround);
         RandomGround.Add(ShortGround);
         RandomGround.Add(DragGround);
@@ -63,11 +63,11 @@ public class BoardManager : MonoBehaviour
                 case 5: if (i > 4) continue; break;
                 case 6: if (i > 3) continue; break;
             }
-            
+
             int rand = Random.Range(0, 3);
-            if(dragCount>3&&rand==2)
+            if (dragCount > 3 && rand == 2)
                 rand = Random.Range(0, 2);
-            if(rand==2)
+            if (rand == 2)
                 dragCount++;
             randomlist[i][j] = rand;
             k++;
@@ -103,6 +103,6 @@ public class BoardManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+
     }
 }

@@ -17,51 +17,34 @@ public class RemoteEnemy : PlayerController
             //只有本回合能动的一方可动
             if (!GameManager.RealPlayerTeam.Contains(GameManager.PlayerOnEdit.tag))
                 return;
-            if ((!CanMoveList.ContainsKey(gameObject)) && (!OnlyLine))
-                return;
-            if (OnlyLine)
+            bool find = false;
+            for (int i = 0; i < AimRangeList.Count; i++)
             {
-                bool find = false;
-                for (int i = 0; i < LineCanAttack.Count; i++)
+                if (AimRangeList[i].Aim == gameObject)
                 {
-                    if (LineCanAttack[i].Enemy == gameObject)
-                    {
-                        find = true;
-                        break;
-                    }
+                    find = true;
+                    break;
                 }
-                if(!find)
-                    return;
             }
+            if (!find)
+                return;
             //UpdateAttack协议，包含被攻击者位置与是否使用抓勾
             ProtocolBytes protocol = new ProtocolBytes();
             protocol.AddString("UpdateAttack");
             protocol.AddFloat(this.transform.position.x);
             protocol.AddFloat(this.transform.position.y);
             protocol.AddFloat(this.transform.position.z);
-            if (OnlyLine)
-                protocol.AddInt(1);
-            else
-            {
-                protocol.AddInt(0);
-            }
+            protocol.AddInt(GameManager.instance.AttackMode);
             NetMgr.srvConn.Send(protocol);
             //获取反击攻击力，反击范围与双方血条
             GameObject thisBlood = null;
-            int aimRange = 0;
-            int aimAttack = 0;
+            string aimWeapon = "";
             for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
             {
                 if (GameManager.OccupiedGround[i].PlayerOnGround == this.gameObject)
                 {
                     Blood = GameManager.OccupiedGround[i].PlayerBlood;
-                    switch (GameManager.OccupiedGround[i].PlayerWeapon)
-                    {
-                        case "Long": aimAttack = 2; aimRange = 2; break;
-                        case "Short": aimAttack = 4; aimRange = 1; break;
-                        case "Drag": aimAttack = 1; aimRange = 3; break;
-                        case "Tear": aimAttack = 50; aimRange = 0; break;
-                    }
+                    aimWeapon = GameManager.OccupiedGround[i].PlayerWeapon;
                     //change:data error
                 }
                 if (GameManager.OccupiedGround[i].PlayerOnGround == GameManager.PlayerOnEdit)
@@ -73,25 +56,18 @@ public class RemoteEnemy : PlayerController
             {
                 Blood = GameObject.Find("MonsterBlood");
             }
-            //是否直线攻击
-            if (!OnlyLine)
-                Attack(Blood, thisBlood, attack, aimAttack, aimRange);
-            if (OnlyLine)
+            switch (GameManager.instance.AttackMode)
             {
-
-                for (int i = 0; i < LineCanAttack.Count; i++)
-                {
-                    if (LineCanAttack[i].Enemy == gameObject)
-                    {
-                        DragAttack(Blood, thisBlood, attack, aimAttack, aimRange);
-                        OnlyLine = false;
-                        break;
-                    }
-                }
+                case 0:
+                    Attack(Blood, thisBlood, gameObject.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon);
+                    break;
+                case 1:
+                    DragAttack(Blood, thisBlood, attack, aimWeapon);
+                    break;
+                case 2:
+                    ArrowAttack(Blood, thisBlood, gameObject.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon);
+                    break;
             }
-
         }
     }
-
-    
 }

@@ -24,7 +24,7 @@ public class MonsterController : PlayerController
     {
         CheckAttack();
         //扩毒
-        if (GameManager.Turn > 2 && !GameManager.MudSetted)
+        if (GameManager.instance.Turn > 2 && !GameManager.MudSetted)
         {
             Monster.MonsterAttack();
             //SetMug((GameManager.Turn) / 2);
@@ -41,20 +41,20 @@ public class MonsterController : PlayerController
         {
             if (t.name == "Players")
                 continue;
-            if(t.gameObject.GetComponent<AI>())
+            if (t.gameObject.GetComponent<AI>())
                 Destroy(t.gameObject.GetComponent<AI>());
-            if(t.gameObject.GetComponent<RealPlayer>())
+            if (t.gameObject.GetComponent<RealPlayer>())
                 Destroy(t.gameObject.GetComponent<RealPlayer>());
 
         }
         ProtocolBytes protocol = new ProtocolBytes();
         protocol.AddString("EndGame");
-        if(DiedSoldiersTeam1<3&&DIedSoldiersTeam2<3)
+        if (DiedSoldiersTeam1 < 3 && DiedSoldiersTeam2 < 3)
         {
             protocol.AddInt(0);
             GameManager.Notice.text = "合作胜利";
         }
-        else if(DiedSoldiersTeam1>=3)
+        else if (DiedSoldiersTeam1 >= 3)
         {
             protocol.AddInt(2);
             GameManager.Notice.GetComponent<Text>().text = "队伍2胜利";
@@ -86,22 +86,17 @@ public class MonsterController : PlayerController
             //只有本回合能动的一方可动
             if (!GameManager.RealPlayerTeam.Contains(GameManager.PlayerOnEdit.tag))
                 return;
-            if ((!CanMoveList.ContainsKey(gameObject)) && (!OnlyLine))
-                return;
-            if (OnlyLine)
+            bool find = false;
+            for (int i = 0; i < AimRangeList.Count; i++)
             {
-                bool find = false;
-                for (int i = 0; i < LineCanAttack.Count; i++)
+                if (AimRangeList[i].Aim == gameObject)
                 {
-                    if (LineCanAttack[i].Enemy == gameObject)
-                    {
-                        find = true;
-                        break;
-                    }
+                    find = true;
+                    break;
                 }
-                if(!find)
-                    return;
             }
+            if (!find)
+                return;
             if (GameManager.RealPlayerTeam.Count < 2 && (!GameManager.UseAI))
             {
                 ProtocolBytes protocol = new ProtocolBytes();
@@ -109,31 +104,19 @@ public class MonsterController : PlayerController
                 protocol.AddFloat(this.transform.position.x);
                 protocol.AddFloat(this.transform.position.y);
                 protocol.AddFloat(this.transform.position.z);
-                if (OnlyLine)
-                    protocol.AddInt(1);
-                else
-                {
-                    protocol.AddInt(0);
-                }
+                protocol.AddInt(GameManager.instance.AttackMode);
                 NetMgr.srvConn.Send(protocol);
             }
             //获取反击攻击力，反击范围与双方血条
             GameObject thisBlood = null;
-            int aimRange = 0;
-            int aimAttack = 0;
+            string aimWeapon = "";
             for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
             {
                 if (GameManager.OccupiedGround[i].PlayerOnGround == this.gameObject)
                 {
                     Blood = GameManager.OccupiedGround[i].PlayerBlood;
-                    switch (GameManager.OccupiedGround[i].PlayerWeapon)
-                    {
-                        case "Long": aimAttack = 2; aimRange = 2; break;
-                        case "Short": aimAttack = 4; aimRange = 1; break;
-                        case "Drag": aimAttack = 1; aimRange = 3; break;
-                        case "Tear": aimAttack = 50; aimRange = 0; break;
-                    }
-//change:data error
+                    aimWeapon = GameManager.OccupiedGround[i].PlayerWeapon;
+                    //change:data error
                 }
                 if (GameManager.OccupiedGround[i].PlayerOnGround == GameManager.PlayerOnEdit)
                 {
@@ -154,25 +137,20 @@ public class MonsterController : PlayerController
                     }
                 }
             }
-            //是否直线攻击
-            if (CanMoveList.ContainsKey(gameObject) && !OnlyLine)
-                Attack(Blood, thisBlood, attack, aimAttack, aimRange);
-            if (OnlyLine)
+            switch (GameManager.instance.AttackMode)
             {
-
-                for (int i = 0; i < LineCanAttack.Count; i++)
-                {
-                    if (LineCanAttack[i].Enemy == gameObject)
-                    {
-                        DragAttack(Blood, thisBlood, attack, aimAttack, aimRange);
-                        OnlyLine = false;
-                        break;
-                    }
-                }
+                case 0:
+                    Attack(Blood, thisBlood, gameObject.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon);
+                    break;
+                case 1:
+                    DragAttack(Blood, thisBlood, attack, aimWeapon);
+                    break;
+                case 2:
+                    ArrowAttack(Blood, thisBlood, gameObject.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon);
+                    break;
             }
+
 
         }
     }
-
-    
 }

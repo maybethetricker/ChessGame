@@ -5,7 +5,7 @@ using UnityEngine;
 public class MonsterBase
 {
     public Vector3 monsterPosition;
-    Dictionary<GameObject,Color> groundRange = new Dictionary<GameObject, Color>();
+    Dictionary<GameObject, Color> groundRange = new Dictionary<GameObject, Color>();
     public virtual void OnMonsterCreate()
     {
 
@@ -15,7 +15,7 @@ public class MonsterBase
 
     }
 
-    public void MonsterHit(List<GameObject> Aims,int attack,string trigger)
+    public void MonsterHit(List<GameObject> Aims, int attack, string trigger)
     {
         GameObject PlayerToAttack = null;
         for (int j = 0; j < Aims.Count; j++)
@@ -25,8 +25,7 @@ public class MonsterBase
             //获取反击攻击力，反击范围与双方血条
             GameObject thisBlood = null;
             GameObject Blood = null;
-            int aimRange = 0;
-            int aimAttack = 0;
+            string aimWeapon = "";
             for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
             {
                 if (GameManager.OccupiedGround[i].PlayerOnGround == PlayerToAttack)
@@ -44,11 +43,11 @@ public class MonsterBase
                 if (Vector3.Distance(PlayerToAttack.transform.position, t.position) < BoardManager.distance / 2)
                 {
                     if (GameManager.RealPlayerTeam.Contains(t.tag))
-                        t.gameObject.GetComponent<RealPlayer>().Attack(Blood, thisBlood, attack, aimAttack, aimRange);
-                    else if(GameManager.UseAI)
-                        t.gameObject.GetComponent<AI>().Attack(Blood, thisBlood, attack, aimAttack, aimRange);
+                        t.gameObject.GetComponent<RealPlayer>().Attack(Blood, thisBlood, GameManager.PlayerOnEdit.transform.position, monsterPosition, attack, aimWeapon);
+                    else if (GameManager.UseAI)
+                        t.gameObject.GetComponent<AI>().Attack(Blood, thisBlood, GameManager.PlayerOnEdit.transform.position, monsterPosition, attack, aimWeapon);
                     else
-                        t.gameObject.GetComponent<RemoteEnemy>().Attack(Blood, thisBlood, attack, aimAttack, aimRange);
+                        t.gameObject.GetComponent<RemoteEnemy>().Attack(Blood, thisBlood, GameManager.PlayerOnEdit.transform.position, monsterPosition, attack, aimWeapon);
                     break;
                 }
             }
@@ -105,15 +104,15 @@ public class MonsterBase
                     && Vector3.Angle(Center - border1, Center - t.position) + Vector3.Angle(Center - border2, Center - t.position) < (Breadth) * 60 + 1
                     && Vector3.Dot(Center - border1, Center - t.position) > -0.01
                     && Vector3.Dot(Center - border2, Center - t.position) > -0.01
-                    &&Vector3.Distance(Center,t.position)<2.1f*BoardManager.distance)
+                    && Vector3.Distance(Center, t.position) < 2.1f * BoardManager.distance)
             {
                 groundRange.Add(t.gameObject, t.gameObject.GetComponent<SpriteRenderer>().color);
                 t.gameObject.GetComponent<SpriteRenderer>().color = new Color(0, 0, 0);
             }
         }
         System.Timers.Timer timer = new System.Timers.Timer(500);
-        timer.Elapsed += new System.Timers.ElapsedEventHandler(HandleTimer);    
-        timer.AutoReset = false;    
+        timer.Elapsed += new System.Timers.ElapsedEventHandler(HandleTimer);
+        timer.AutoReset = false;
         timer.Enabled = true;
         timer.Start();
         List<GameObject> aims = new List<GameObject>();
@@ -176,8 +175,8 @@ public class MonsterBase
     public GameObject FindMaxHate()
     {
         int max = 0;
-        GameObject MaxHatePlayer=null;
-        for (int i = 0; i < GameManager.OccupiedGround.Count;i++)
+        GameObject MaxHatePlayer = null;
+        for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
         {
             if (GameManager.OccupiedGround[i].Hate > max)
             {
@@ -188,13 +187,13 @@ public class MonsterBase
         return MaxHatePlayer;
     }
 
-    void HandleTimer(object sender, System.Timers.ElapsedEventArgs e) 
+    void HandleTimer(object sender, System.Timers.ElapsedEventArgs e)
     {
         Debug.Log("ChangeBack");
-        foreach(KeyValuePair<GameObject,Color> pair in groundRange)
+        foreach (KeyValuePair<GameObject, Color> pair in groundRange)
         {
             pair.Key.GetComponent<SpriteRenderer>().color = pair.Value;
         }
-        
+
     }
 }

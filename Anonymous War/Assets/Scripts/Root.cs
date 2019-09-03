@@ -13,13 +13,13 @@ public class Root : MonoBehaviour
     {
         DontDestroyOnLoad(gameObject);
         DontDestroyOnLoad(StaticUI);
-        Quit.onClick.AddListener(delegate () {Application.Quit(); });
+        Quit.onClick.AddListener(delegate () { Application.Quit(); });
         NetMgr.srvConn.msgDist.AddListener("StartFight", OnMatchBack);
         NetMgr.srvConn.msgDist.AddListener("UpdateMove", NetMove);
         NetMgr.srvConn.msgDist.AddListener("UpdateAttack", NetAttack);
         NetMgr.srvConn.msgDist.AddListener("SkipMove", SkipMove);
         NetMgr.srvConn.msgDist.AddListener("SkipAttack", SkipAttack);
-        NetMgr.srvConn.msgDist.AddListener("UpdateLand",NetLand);
+        NetMgr.srvConn.msgDist.AddListener("UpdateLand", NetLand);
         NetMgr.srvConn.msgDist.AddListener("FindMonster", NetFindMonster);
         NetMgr.srvConn.msgDist.AddListener("CreateMonster", NetCreateMonster);
         NetMgr.srvConn.msgDist.AddListener("EndGame", EndGame);
@@ -41,11 +41,11 @@ public class Root : MonoBehaviour
         GroundPosition.y = proto.GetFloat(start, ref start);
         GroundPosition.z = proto.GetFloat(start, ref start);
         //需要空降到的地块
-        GameObject GroundToLand=null;
+        GameObject GroundToLand = null;
         //降落到对应地块上
         foreach (Transform t in GameObject.Find("Grounds").GetComponentsInChildren<Transform>())
         {
-            if(t.name=="Grounds")
+            if (t.name == "Grounds")
                 continue;
             if (Vector3.Distance(t.position, GroundPosition) < BoardManager.distance / 2)
             {
@@ -58,9 +58,9 @@ public class Root : MonoBehaviour
         //对接降落函数，可以不用看了
         foreach (Transform t in GameObject.Find("Grounds").GetComponentsInChildren<Transform>())
         {
-            if(t.name=="Grounds")
+            if (t.name == "Grounds")
                 continue;
-            if(Vector3.Distance(GroundToLand.transform.position, t.position) < BoardManager.distance / 2)
+            if (Vector3.Distance(GroundToLand.transform.position, t.position) < BoardManager.distance / 2)
             {
                 t.gameObject.GetComponent<GroundClick>().PlaceSinglePlayer();
                 break;
@@ -94,7 +94,7 @@ public class Root : MonoBehaviour
         //移动到对应地块上
         foreach (Transform t in GameObject.Find("Grounds").GetComponentsInChildren<Transform>())
         {
-            if(t.name=="Grounds")
+            if (t.name == "Grounds")
                 continue;
             if (Vector3.Distance(t.position, GroundPosition) < BoardManager.distance / 2)
             {
@@ -111,7 +111,7 @@ public class Root : MonoBehaviour
         //对接移动函数
         foreach (Transform t in GameObject.Find("Grounds").GetComponentsInChildren<Transform>())
         {
-            if(t.name=="Grounds")
+            if (t.name == "Grounds")
                 continue;
             if (Vector3.Distance(GroundToMove.transform.position, t.position) < BoardManager.distance / 2)
             {
@@ -130,12 +130,12 @@ public class Root : MonoBehaviour
         EnemyPosition.x = proto.GetFloat(start, ref start);
         EnemyPosition.y = proto.GetFloat(start, ref start);
         EnemyPosition.z = proto.GetFloat(start, ref start);
-        int UseDrag = proto.GetInt(start, ref start);
+        int attackMode = proto.GetInt(start, ref start);
         GameObject PlayerToAttack = null;
         //攻击对应棋子
         foreach (Transform t in GameObject.Find("Players").GetComponentsInChildren<Transform>())
         {
-            if(t.name=="Players")
+            if (t.name == "Players")
                 continue;
             if (Vector3.Distance(EnemyPosition, t.position) < BoardManager.distance / 2)
             {
@@ -143,132 +143,80 @@ public class Root : MonoBehaviour
                 break;
             }
         }
-        GameObject Blood=null;
+        GameObject Blood = null;
         int attack = 0;
-        //如果是抓勾攻击
-        if (UseDrag == 1)
+
+        //对接攻击函数
+        //获取反击攻击力，反击范围与双方血条
+        GameObject thisBlood = null;
+        string aimWeapon = "";
+        for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
         {
-            //对接攻击函数
-            //获取反击攻击力，反击范围与双方血条
-            GameObject thisBlood = null;
-            int aimRange = 0;
-            int aimAttack = 0;
+            if (GameManager.OccupiedGround[i].PlayerOnGround == PlayerToAttack)
+            {
+                Blood = GameManager.OccupiedGround[i].PlayerBlood;
+                aimWeapon = GameManager.OccupiedGround[i].PlayerWeapon;
+            }
+            if (GameManager.OccupiedGround[i].PlayerOnGround == GameManager.PlayerOnEdit)
+            {
+                switch (GameManager.OccupiedGround[i].PlayerWeapon)
+                {
+                    case "Long": attack = 3; break;
+                    case "Short": attack = 4; break;
+                    case "Drag": attack = 1; break;
+                    case "Tear": attack = 50; break;
+                }
+                thisBlood = GameManager.OccupiedGround[i].PlayerBlood;
+            }
+        }
+        if (gameObject.tag == "Monster")
+        {
+            Blood = GameObject.Find("MonsterBlood");
             for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
             {
-                if (GameManager.OccupiedGround[i].PlayerOnGround == PlayerToAttack)
-                {
-                    Blood = GameManager.OccupiedGround[i].PlayerBlood;
-                    switch (GameManager.OccupiedGround[i].PlayerWeapon)
-                    {
-                        case "Long": aimAttack = 2; aimRange = 2; break;
-                        case "Short": aimAttack = 4; aimRange = 1; break;
-                        case "Drag": aimAttack = 1; aimRange = 3; break;
-                        case "Tear": aimAttack = 50; aimRange = 0; break;
-                    }
-                }
                 if (GameManager.OccupiedGround[i].PlayerOnGround == GameManager.PlayerOnEdit)
                 {
-                    switch (GameManager.OccupiedGround[i].PlayerWeapon)
-                    {
-                        case "Long": attack = 2;break;
-                        case "Short": attack = 4; break;
-                        case "Drag": attack = 1;break;
-                        case "Tear": attack = 50;break;
-                    }
-                    thisBlood = GameManager.OccupiedGround[i].PlayerBlood;
-                }
-            }
-            if (PlayerToAttack.tag == "Monster")
-            {
-                Blood = GameObject.Find("MonsterBlood");
-            }
-            //对接攻击函数
-            foreach (Transform t in GameObject.Find("Players").GetComponentsInChildren<Transform>())
-            {
-                if(t.name=="Players")
-                    continue;
-                if (Vector3.Distance(PlayerToAttack.transform.position, t.position) < BoardManager.distance / 2)
-                {
-                    if (t.tag == "Monster")
-                        t.gameObject.GetComponent<MonsterController>().DragAttack(Blood, thisBlood, attack, aimAttack, aimRange);
-                    else if (t.tag != GameManager.PlayerOnEdit.tag)
-                        t.gameObject.GetComponent<RealPlayer>().DragAttack(Blood, thisBlood, attack, aimAttack, aimRange);
-                    else
-                    {
-                        t.gameObject.GetComponent<RemoteEnemy>().DragAttack(Blood, thisBlood, attack, aimAttack, aimRange);
-                    }
-                    PlayerController.OnlyLine = false;
+                    GameManager.GroundStage gstage = GameManager.OccupiedGround[i];
+                    gstage.Hate += attack;
+                    GameManager.OccupiedGround[i] = gstage;
                     break;
                 }
             }
         }
-        else
+        //对接攻击函数
+        foreach (Transform t in GameObject.Find("Players").GetComponentsInChildren<Transform>())
         {
-            //对接攻击函数
-            //获取反击攻击力，反击范围与双方血条
-            GameObject thisBlood = null;
-            int aimRange = 0;
-            int aimAttack = 0;
-            for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
-            {
-                if (GameManager.OccupiedGround[i].PlayerOnGround == PlayerToAttack)
-                {
-                    Blood = GameManager.OccupiedGround[i].PlayerBlood;
-                    switch (GameManager.OccupiedGround[i].PlayerWeapon)
-                    {
-                        case "Long": aimAttack = 2; aimRange = 2; break;
-                        case "Short": aimAttack = 4; aimRange = 1; break;
-                        case "Drag": aimAttack = 1; aimRange = 3; break;
-                        case "Tear": aimAttack = 50; aimRange = 0; break;
-                    }
-                }
-                if (GameManager.OccupiedGround[i].PlayerOnGround == GameManager.PlayerOnEdit)
-                {
-                    switch (GameManager.OccupiedGround[i].PlayerWeapon)
-                    {
-                        case "Long": attack = 2;break;
-                        case "Short": attack = 4; break;
-                        case "Drag": attack = 1;break;
-                        case "Tear": attack = 50;break;
-                    }
-                    thisBlood = GameManager.OccupiedGround[i].PlayerBlood;
-                }
-            }
-            if (gameObject.tag == "Monster")
-            {
-                Blood = GameObject.Find("MonsterBlood");
-                for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
-                {
-                    if (GameManager.OccupiedGround[i].PlayerOnGround == GameManager.PlayerOnEdit)
-                    {
-                        GameManager.GroundStage gstage = GameManager.OccupiedGround[i];
-                        gstage.Hate += attack;
-                        GameManager.OccupiedGround[i] = gstage;
-                        break;
-                    }
-                }
-            }
-            if(Blood==null)
-                Debug.Log("NullBlood");
-            else
-            {
-                Debug.Log("HasBlood");
-            }
-            //对接攻击函数
-            foreach (Transform t in GameObject.Find("Players").GetComponentsInChildren<Transform>())
-            {
-                if(t.name=="Players")
+            if (t.name == "Players")
                 continue;
-                if (Vector3.Distance(PlayerToAttack.transform.position, t.position) < BoardManager.distance / 2)
+            if (Vector3.Distance(PlayerToAttack.transform.position, t.position) < BoardManager.distance / 2)
+            {
+                if (attackMode == 0)
                 {
                     if (t.tag == "Monster")
-                        t.gameObject.GetComponent<MonsterController>().Attack(Blood, thisBlood, attack, aimAttack, aimRange);
+                        t.gameObject.GetComponent<MonsterController>().Attack(Blood, thisBlood, gameObject.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon);
                     else
-                        t.gameObject.GetComponent<RealPlayer>().Attack(Blood, thisBlood, attack, aimAttack, aimRange);
+                        t.gameObject.GetComponent<RealPlayer>().Attack(Blood, thisBlood, gameObject.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon);
+                    break;
+                }
+                else if (attackMode == 1)
+                {
+                    if (t.tag == "Monster")
+                        t.gameObject.GetComponent<MonsterController>().DragAttack(Blood, thisBlood, attack, aimWeapon);
+                    else
+                        t.gameObject.GetComponent<RealPlayer>().DragAttack(Blood, thisBlood, attack, aimWeapon);
+                    break;
+                }
+                else
+                {
+                    if (t.tag == "Monster")
+                        t.gameObject.GetComponent<MonsterController>().ArrowAttack(Blood, thisBlood, gameObject.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon);
+                    else
+                        t.gameObject.GetComponent<RealPlayer>().ArrowAttack(Blood, thisBlood, gameObject.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon);
                     break;
                 }
             }
         }
+
     }
 
     void NetFindMonster(ProtocolBase protocol)
@@ -278,7 +226,7 @@ public class Root : MonoBehaviour
         string protoName = proto.GetString(start, ref start);
         Color color;
         //确定降怪点
-        Vector3 problePosition=new Vector3();
+        Vector3 problePosition = new Vector3();
         problePosition.x = proto.GetFloat(start, ref start);
         problePosition.y = proto.GetFloat(start, ref start);
         problePosition.z = proto.GetFloat(start, ref start);
@@ -312,7 +260,7 @@ public class Root : MonoBehaviour
         color = new Color(255, 255, 0, 0.2f);
         for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
         {
-            string team = "Team" + (PlayerController.MovingTeam + 1).ToString();
+            string team = "Team" + (GameManager.instance.MovingTeam + 1).ToString();
             if (GameManager.OccupiedGround[i].Moved == false && GameManager.OccupiedGround[i].PlayerOnGround.tag == team)
             {
                 BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color = color;
@@ -353,14 +301,14 @@ public class Root : MonoBehaviour
         //生成怪物
         foreach (Transform t in GameObject.Find("Grounds").GetComponentsInChildren<Transform>())
         {
-            if(t.name=="Grounds")
+            if (t.name == "Grounds")
                 continue;
-            if(Vector3.Distance(t.position,tearPosition)<BoardManager.distance/2)
+            if (Vector3.Distance(t.position, tearPosition) < BoardManager.distance / 2)
             {
                 GameManager.instance.TearGround = t.gameObject;
                 break;
             }
-            
+
         }
         Vector3 position = GameManager.instance.TearGround.transform.position + new Vector3(0, 0, -0.1f);
         //GroundStage GStage = new GroundStage();
@@ -456,21 +404,21 @@ public class Root : MonoBehaviour
         ProtocolBytes proto = (ProtocolBytes)protocol;
         int start = 0;
         string protoName = proto.GetString(start, ref start);
-        string winnerNotice="";
+        string winnerNotice = "";
         int winCase = proto.GetInt(start, ref start);
-        switch(winCase)
+        switch (winCase)
         {
             case 0:
-                winnerNotice ="合作胜利";
+                winnerNotice = "合作胜利";
                 break;
             case 1:
-                winnerNotice ="队伍1胜利";
+                winnerNotice = "队伍1胜利";
                 break;
             case 2:
-                winnerNotice ="队伍2胜利";
+                winnerNotice = "队伍2胜利";
                 break;
             case 3:
-                winnerNotice ="全员失败!";
+                winnerNotice = "全员失败!";
                 break;
         }
         GameManager.WinnerNotice.SetActive(true);

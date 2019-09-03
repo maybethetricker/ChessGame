@@ -20,7 +20,8 @@ public class GameManager : MonoBehaviour
     public static GameObject WinnerNotice;//获胜提示信息
     public static Text Notice;
     public Button Restart;
-    public struct GroundStage{
+    public struct GroundStage
+    {
         //public GameObject Ground;//所在地块
         public int i;//所在地块在数组中的第一个下标
         public int j;//。。。第二个下标
@@ -37,29 +38,32 @@ public class GameManager : MonoBehaviour
     public static GameObject PlayerOnEdit;//正准备移动或攻击的棋子
     public static List<GroundStage> OccupiedGround = new List<GroundStage>();//棋盘上所有棋子信息
     public static int TeamCount = 2;
-    public static List<string> RealPlayerTeam=new List<string>();//哪一队是玩家（其他是AI或者联机模块）
-    public static int Turn;
+    public static List<string> RealPlayerTeam = new List<string>();//哪一队是玩家（其他是AI或者联机模块）
+    public int Turn;
     public GameObject TearGround;//怪物生成地，因为之前不是怪所有名字有点不对
     public GameObject MonsterBlood;
     public List<GameObject> randomPlace = new List<GameObject>();//生成怪的范围
     public static bool MudSetted = false;//本回合是否已扩毒
-    public static bool TearCreated;//致死刀至多一把
+    public bool TearCreated;//致死刀至多一把
     public static bool UseAI;
-    public int PlayerBloodSum;
-    public int EnemyBloodSum;
+    public bool CoroutineStarted = false;
+    public int MovingTeam = 1;//在移动的队伍
+    public int SmallTurn;//每回合的小回合
+    public bool EnemyChecked;//是否检测了可攻击范围
+    public int AttackMode;
     //Button test;
     // Start is called before the first frame update
 
     void Start()
     {
-        if(instance==null)
+        if (instance == null)
             instance = this;
         else
         {
             Destroy(gameObject);
         }
         //胜利提示框
-        WinnerNotice=GameObject.Find("WinnerNotice");
+        WinnerNotice = GameObject.Find("WinnerNotice");
         Notice = GameObject.Find("Notice").GetComponent<Text>();
         WinnerNotice.SetActive(false);
         Restart.onClick.AddListener(delegate ()
@@ -67,30 +71,26 @@ public class GameManager : MonoBehaviour
             SceneManager.LoadScene("MainPage");
         });
         //初始化静态变量
-        Stage =0;
+        Stage = 0;
         Turn = 0;
         PlayerOnEdit = null;
         OccupiedGround = new List<GroundStage>();
         MudSetted = false;
-        GroundClick.SoldierCount = 0;
         GroundClick.TeamCounter = 0;
-        PlayerController.MovingTeam = 1;
-        PlayerController.SmallTurn = 0;
+        MovingTeam = 1;
+        SmallTurn = 0;
         PlayerController.FaintCount = 0;
         PlayerController.DiedSoldiersTeam1 = 0;
-        PlayerController.DIedSoldiersTeam2 = 0;
-        PlayerController.CanMoveList = new Dictionary<GameObject, Color>();
-        PlayerController.EnemyChecked = false;
-        PlayerController.LineCanAttack = new List<PlayerController.AttackLine>();
-        PlayerController.OnlyLine = false;
+        PlayerController.DiedSoldiersTeam2 = 0;
+        EnemyChecked = false;
+        PlayerController.AimRangeList = new List<PlayerController.AimNode>();
         PlayerController.MovedDead = 0;
-        AI.CoroutineStarted = false;
-        //RealPlayerTeam.Add("Team1");
+        CoroutineStarted = false;
+        RealPlayerTeam.Add("Team1");
         //RealPlayerTeam.Add("Team2");
         //UseAI = false;
-        //UseAI = true;
+        UseAI = true;
         TearCreated = false;
-        PlayerBloodSum = EnemyBloodSum = 6 * 33;
         /* 
         test = GameObject.Find("Test").GetComponent<Button>();
         test.onClick.AddListener(delegate () {
@@ -112,7 +112,7 @@ public class GameManager : MonoBehaviour
         if (UseAI && GameManager.Stage == 0 && !RealPlayerTeam.Contains("Team" + (GroundClick.TeamCounter + 1).ToString()))
         {
             //等待一会儿后空降
-            if (!AI.CoroutineStarted)
+            if (!CoroutineStarted)
                 StartCoroutine(WaitToLand());
         }
         if (Turn == 1 && !MudSetted)
@@ -125,7 +125,7 @@ public class GameManager : MonoBehaviour
             CreateMonster();
 
         //双方死完，都输
-        if (PlayerController.DiedSoldiersTeam1 == 3 && PlayerController.DIedSoldiersTeam2 == 3)
+        if (PlayerController.DiedSoldiersTeam1 == 3 && PlayerController.DiedSoldiersTeam2 == 3)
             if (int.Parse(MonsterBlood.GetComponent<Text>().text) > 0)
                 AllLose();
 
@@ -140,7 +140,7 @@ public class GameManager : MonoBehaviour
         Color color;
         //确定降怪点
         int randomx = Random.Range(0, BoardManager.row);
-        int randomy=Random.Range(0, BoardManager.col);
+        int randomy = Random.Range(0, BoardManager.col);
         TearGround = BoardManager.Grounds[randomx][randomy];
         while (TearGround == null)
         {
@@ -148,9 +148,9 @@ public class GameManager : MonoBehaviour
             randomy = Random.Range(0, BoardManager.col);
             TearGround = BoardManager.Grounds[randomx][randomy];
         }
-        Vector3 problePosition=TearGround.transform.position + new Vector3(-BoardManager.distance,0,0);
-        if(randomx%2==0)
-            problePosition = TearGround.transform.position + new Vector3(BoardManager.distance,0,0);
+        Vector3 problePosition = TearGround.transform.position + new Vector3(-BoardManager.distance, 0, 0);
+        if (randomx % 2 == 0)
+            problePosition = TearGround.transform.position + new Vector3(BoardManager.distance, 0, 0);
         if (RealPlayerTeam.Count < 2 && (!UseAI))
         {
             ProtocolBytes protocol = new ProtocolBytes();
@@ -190,7 +190,7 @@ public class GameManager : MonoBehaviour
         color = new Color(255, 255, 0, 0.2f);
         for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
         {
-            string team = "Team" + (PlayerController.MovingTeam + 1).ToString();
+            string team = "Team" + (MovingTeam + 1).ToString();
             if (GameManager.OccupiedGround[i].Moved == false && GameManager.OccupiedGround[i].PlayerOnGround.tag == team)
             {
                 BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color = color;
@@ -212,26 +212,26 @@ public class GameManager : MonoBehaviour
             Color color = new Color(255, 255, 255);
             randomPlace[i].GetComponent<SpriteRenderer>().color = color;
             if (randomPlace[i].tag == "Occupied")
+            {
+                for (int j = 0; j < GameManager.OccupiedGround.Count; j++)
                 {
-                    for (int j = 0; j < GameManager.OccupiedGround.Count; j++)
+                    if (BoardManager.Grounds[GameManager.OccupiedGround[j].i][GameManager.OccupiedGround[j].j] == randomPlace[i])
                     {
-                        if (BoardManager.Grounds[GameManager.OccupiedGround[j].i][GameManager.OccupiedGround[j].j] == randomPlace[i])
-                        {
-                            GameManager.GroundStage GStage = GameManager.OccupiedGround[j];
-                            GStage.OrigColor = randomPlace[i].GetComponent<SpriteRenderer>().color;
-                            GameManager.OccupiedGround[j] = GStage;
-                            break;
-                        }
+                        GameManager.GroundStage GStage = GameManager.OccupiedGround[j];
+                        GStage.OrigColor = randomPlace[i].GetComponent<SpriteRenderer>().color;
+                        GameManager.OccupiedGround[j] = GStage;
+                        break;
                     }
                 }
+            }
         }
-        
+
         //生成怪物
-        int random=Random.Range(0, randomPlace.Count-1);
-        int count=0;
+        int random = Random.Range(0, randomPlace.Count - 1);
+        int count = 0;
         if (TearGround.tag == "Occupied")
         {
-            while (randomPlace[random].tag=="Occupied")
+            while (randomPlace[random].tag == "Occupied")
             {
                 count++;
                 random = Random.Range(0, randomPlace.Count - 1);
@@ -250,16 +250,16 @@ public class GameManager : MonoBehaviour
             protocol.AddFloat(TearGround.transform.position.z);
             NetMgr.srvConn.Send(protocol);
         }
-        Vector3 position = TearGround.transform.position+new Vector3(0,0,-0.1f);
+        Vector3 position = TearGround.transform.position + new Vector3(0, 0, -0.1f);
         //GroundStage GStage = new GroundStage();
         TearGround.tag = "Occupied";
-        foreach(Transform t in TearGround.GetComponentsInChildren<Transform>())
-            if(t.tag=="Weapon")
+        foreach (Transform t in TearGround.GetComponentsInChildren<Transform>())
+            if (t.tag == "Weapon")
                 Destroy(t.gameObject);
-        monster=Instantiate(Monster, position, Quaternion.identity,GameObject.Find("Players").transform);
+        monster = Instantiate(Monster, position, Quaternion.identity, GameObject.Find("Players").transform);
         monster.transform.Rotate(-45, 0, 0);
-        Vector3 offset=new Vector3(6, -12f, -2f);
-        MonsterBlood=Instantiate(Blood,position+offset,Quaternion.identity,GameObject.Find("Canvas").transform);
+        Vector3 offset = new Vector3(6, -12f, -2f);
+        MonsterBlood = Instantiate(Blood, position + offset, Quaternion.identity, GameObject.Find("Canvas").transform);
         MonsterBlood.GetComponent<Text>().text = "50";
         MonsterBlood.name = "MonsterBlood";
         //monster.GetComponent<MonsterController>().Monster.OnMonsterCreate();
@@ -311,7 +311,7 @@ public class GameManager : MonoBehaviour
         protocol.AddString("EndGame");
         protocol.AddInt(3);
         NetMgr.srvConn.Send(protocol);
-        if (GameManager.UseAI)
+        if (UseAI)
         {
             Button Quit = GameObject.Find("Quit").GetComponent<Button>();
             Quit.GetComponentInChildren<Text>().text = "退出";
@@ -322,15 +322,15 @@ public class GameManager : MonoBehaviour
     public void CreateTear(Vector3 position)//产生致死刀
     {
         Debug.Log("OneTeamLost");
-        if(TearCreated)
+        if (TearCreated)
             return;
         Debug.Log("Pos" + position);
         TearCreated = true;
         foreach (Transform t in GameObject.Find("Grounds").GetComponentsInChildren<Transform>())
         {
-            if(t.name=="Grounds")
+            if (t.name == "Grounds")
                 continue;
-            if(Vector3.Distance(position,t.position)<0.1f)
+            if (Vector3.Distance(position, t.position) < 0.1f)
             {
                 Instantiate(Tear, position, Quaternion.identity, t);
                 t.gameObject.tag = "Tear";
@@ -342,16 +342,16 @@ public class GameManager : MonoBehaviour
     void AILand()
     {
         //需要空降到的地块
-        GameObject GroundToLand=null;
+        GameObject GroundToLand = null;
         List<GameObject> randomLandList = new List<GameObject>();
         //遍历所有有武器且未被其他棋子占据的地块，并在遍历到的第一个地块处降落,因为地上有武器，所有Tag也不能为Weapon
         foreach (Transform t in GameObject.Find("Grounds").GetComponentsInChildren<Transform>())
         {
-            if(t.name=="Grounds")
+            if (t.name == "Grounds")
                 continue;
-            if(t.tag!="Occupied"&&t.tag!="Untagged"&&t.tag!="Weapon")
+            if (t.tag != "Occupied" && t.tag != "Untagged" && t.tag != "Weapon")
             {
-                if(t.tag=="Drag")
+                if (t.tag == "Drag")
                     continue;
                 randomLandList.Add(t.gameObject);
             }
@@ -361,9 +361,9 @@ public class GameManager : MonoBehaviour
         //对接降落函数，可以不用看了
         foreach (Transform t in GameObject.Find("Grounds").GetComponentsInChildren<Transform>())
         {
-            if(t.name=="Grounds")
+            if (t.name == "Grounds")
                 continue;
-            if(Vector3.Distance(GroundToLand.transform.position, t.position) < BoardManager.distance / 2)
+            if (Vector3.Distance(GroundToLand.transform.position, t.position) < BoardManager.distance / 2)
             {
                 t.gameObject.GetComponent<GroundClick>().PlaceSinglePlayer();
                 break;
@@ -373,23 +373,24 @@ public class GameManager : MonoBehaviour
 
     IEnumerator WaitToLand()
     {
-        AI.CoroutineStarted = true;
+        CoroutineStarted = true;
         yield return new WaitForSeconds(1);
         AILand();
-        if (GroundClick.SoldierCount >= 3 * TeamCount && Stage == 0)
+        if (SmallTurn >= 3 * TeamCount && Stage == 0)
         {
+            SmallTurn = 0;
             Stage = 1;
             Color color = new Color(255, 255, 0, 0.2f);
             for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
             {
-                string team = "Team" + (PlayerController.MovingTeam + 1).ToString();
+                string team = "Team" + (MovingTeam + 1).ToString();
                 if (GameManager.OccupiedGround[i].Moved == false && GameManager.OccupiedGround[i].PlayerOnGround.tag == team)
                 {
                     BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color = color;
                 }
             }
         }
-        AI.CoroutineStarted = false;
+        CoroutineStarted = false;
     }
 
     public void DeleteDiedObject(GameObject diedobject)

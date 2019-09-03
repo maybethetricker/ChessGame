@@ -8,11 +8,11 @@ public class Monster1 : MonsterBase
     public override void OnMonsterCreate()
     {
         SetMug(1);
-        
+
     }
     public override void MonsterAttack()
-    {   
-        SetMug((GameManager.Turn) / 2);
+    {
+        SetMug((GameManager.instance.Turn) / 2);
         /* 
         GameObject centerAim = FindMaxHate();
         if(centerAim!=null)
@@ -30,7 +30,7 @@ public class Monster1 : MonsterBase
     public void SetMug(int Range)
     {
         Color color;
-        if (GameManager.Turn % 2 == 0)
+        if (GameManager.instance.Turn % 2 == 0)
         {
             //防止一出毒就被毒扩入的误差
             for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
@@ -62,7 +62,7 @@ public class Monster1 : MonsterBase
         //标记毒
         foreach (Transform t in GameObject.Find("Grounds").GetComponentsInChildren<Transform>())
         {
-            if(t.name=="Grounds")
+            if (t.name == "Grounds")
                 continue;
             int i1 = 0, j1 = 0, i2 = 0, j2 = 0;
             for (int j = 0; j < BoardManager.row; j++)
@@ -83,7 +83,7 @@ public class Monster1 : MonsterBase
                 && ((j1 >= j2 && (i1 >= i2 - Range && i1 <= i2 + Range + j2 - j1))
                 || (j1 < j2 && (i1 >= i2 - Range + j2 - j1 && i1 <= i2 + Range))))
             {
-                color=new Color(0, 10, 0);;
+                color = new Color(0, 10, 0); ;
                 color.a = 0.2f;
                 if (t == GameManager.instance.TearGround.transform)
                     continue;
@@ -134,13 +134,21 @@ public class Monster1 : MonsterBase
                     GameManager.instance.DeleteDiedObject(GameManager.OccupiedGround[i].PlayerBlood);
                     //Destroy(GameManager.OccupiedGround[i].PlayerBlood);
                     BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].tag = "Untagged";
-                    if (PlayerController.CanMoveList.ContainsKey(GameManager.OccupiedGround[i].PlayerOnGround))
-                        PlayerController.CanMoveList.Remove(GameManager.OccupiedGround[i].PlayerOnGround);
+                    for (int j = 0; j < GameManager.OccupiedGround.Count; j++)
+                    {
+                        if (GameManager.OccupiedGround[j].PlayerOnGround == GameManager.OccupiedGround[j].PlayerOnGround)
+                        {
+                            GameManager.OccupiedGround[j].PlayerBlood.SetActive(false);
+                            BoardManager.Grounds[GameManager.OccupiedGround[j].i][GameManager.OccupiedGround[j].j].tag = "Untagged";
+                            GameManager.OccupiedGround.RemoveAt(j);
+                            break;
+                        }
+                    }
                     if (GameManager.OccupiedGround[i].PlayerOnGround.tag == "Team1")
                         PlayerController.DiedSoldiersTeam1++;
                     if (GameManager.OccupiedGround[i].PlayerOnGround.tag == "Team2")
-                        PlayerController.DIedSoldiersTeam2++;
-                    if (PlayerController.DiedSoldiersTeam1 == 3 || PlayerController.DIedSoldiersTeam2 == 3)
+                        PlayerController.DiedSoldiersTeam2++;
+                    if (PlayerController.DiedSoldiersTeam1 == 3 || PlayerController.DiedSoldiersTeam2 == 3)
                         GameManager.instance.CreateTear(BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.position);
                     GameManager.OccupiedGround[i].PlayerOnGround.SetActive(false);
                     //Destroy(GameManager.OccupiedGround[i].PlayerOnGround);
@@ -175,7 +183,7 @@ public class Monster1 : MonsterBase
         {
             for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
             {
-                string team = "Team" + (PlayerController.MovingTeam + 1).ToString();
+                string team = "Team" + (GameManager.instance.MovingTeam + 1).ToString();
                 if (GameManager.OccupiedGround[i].Moved == false && GameManager.OccupiedGround[i].PlayerOnGround.tag == team)
                 {
                     teamHaveMove = true;
@@ -183,11 +191,11 @@ public class Monster1 : MonsterBase
                 }
             }
             if (!teamHaveMove)
-                PlayerController.MovingTeam = (PlayerController.MovingTeam + 1) % GameManager.TeamCount;
+                GameManager.instance.MovingTeam = (GameManager.instance.MovingTeam + 1) % GameManager.TeamCount;
             counter++;
             if (counter >= 2 * GameManager.TeamCount)
             {
-                Debug.Log("Died1,2" + PlayerController.DiedSoldiersTeam1 + PlayerController.DIedSoldiersTeam2);
+                Debug.Log("Died1,2" + PlayerController.DiedSoldiersTeam1 + PlayerController.DiedSoldiersTeam2);
                 Debug.Log("faint,MovedDied" + PlayerController.FaintCount + PlayerController.MovedDead);
                 for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
                     Debug.Log("position,moved" + BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.transform.position + GameManager.OccupiedGround[i].Moved);
@@ -198,16 +206,16 @@ public class Monster1 : MonsterBase
                     break;
                 }
                 GameManager.MudSetted = false;
-                PlayerController.SmallTurn = 0;
+                GameManager.instance.SmallTurn = 0;
                 PlayerController.MovedDead = 0;
                 oGround = new List<GameManager.GroundStage>();
                 for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
                 {
-                    GameManager.GroundStage GStage =GameManager.OccupiedGround[i];
+                    GameManager.GroundStage GStage = GameManager.OccupiedGround[i];
                     GStage.Moved = false;
                     oGround.Add(GStage);
                 }
-                GameManager.Turn++;
+                GameManager.instance.Turn++;
                 GameManager.OccupiedGround = oGround;
                 break;
             }
@@ -215,7 +223,7 @@ public class Monster1 : MonsterBase
         color = new Color(255, 255, 0, 0.2f);
         for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
         {
-            string team = "Team" + (PlayerController.MovingTeam + 1).ToString();
+            string team = "Team" + (GameManager.instance.MovingTeam + 1).ToString();
             if (GameManager.OccupiedGround[i].Moved == false && GameManager.OccupiedGround[i].PlayerOnGround.tag == team)
             {
                 BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color = color;
@@ -223,5 +231,5 @@ public class Monster1 : MonsterBase
         }
     }
 
-    
+
 }

@@ -16,16 +16,16 @@ public class MainPageUI : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+
     }
 
     void StartMatch()
     {
-        ProtocolBytes protocol=new ProtocolBytes();
+        ProtocolBytes protocol = new ProtocolBytes();
         protocol.AddString("StartMatch");
         NetMgr.srvConn.Send(protocol);
         StartGame.onClick.RemoveAllListeners();
     }
 
-    
+
 }
