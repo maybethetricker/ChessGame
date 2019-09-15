@@ -40,17 +40,16 @@ public class GameManager : MonoBehaviour
     public static int TeamCount = 2;
     public static List<string> RealPlayerTeam = new List<string>();//哪一队是玩家（其他是AI或者联机模块）
     public int Turn;
-    public GameObject TearGround;//怪物生成地，因为之前不是怪所有名字有点不对
-    public GameObject MonsterBlood;
+    public GameObject ArtifactGround=null;//怪物生成地
     public List<GameObject> randomPlace = new List<GameObject>();//生成怪的范围
     public static bool MudSetted = false;//本回合是否已扩毒
-    public bool TearCreated;//致死刀至多一把
     public static bool UseAI;
     public bool CoroutineStarted = false;
     public int MovingTeam = 1;//在移动的队伍
     public int SmallTurn;//每回合的小回合
     public bool EnemyChecked;//是否检测了可攻击范围
     public int AttackMode;
+    public int[] TeamDiedSoldiers=new int[TeamCount];//各队死亡人数
     //Button test;
     // Start is called before the first frame update
 
@@ -80,8 +79,8 @@ public class GameManager : MonoBehaviour
         MovingTeam = 1;
         SmallTurn = 0;
         PlayerController.FaintCount = 0;
-        PlayerController.DiedSoldiersTeam1 = 0;
-        PlayerController.DiedSoldiersTeam2 = 0;
+        for (int i = 0; i < TeamCount;i++)
+            TeamDiedSoldiers[i] = 0;
         EnemyChecked = false;
         PlayerController.AimRangeList = new List<PlayerController.AimNode>();
         PlayerController.MovedDead = 0;
@@ -90,7 +89,6 @@ public class GameManager : MonoBehaviour
         //RealPlayerTeam.Add("Team2");
         //UseAI = false;
         UseAI = true;
-        TearCreated = false;
         /* 
         test = GameObject.Find("Test").GetComponent<Button>();
         test.onClick.AddListener(delegate () {
@@ -118,19 +116,16 @@ public class GameManager : MonoBehaviour
         if (Turn == 1 && !MudSetted)
         {
             //降怪前准备
-            FindMonster();
+            FindArtifact();
         }
         //降怪
         if (Turn == 2 && !MudSetted)
-            CreateMonster();
+            CreateArtifact();
 
-        //双方死完，都输
-        if (PlayerController.DiedSoldiersTeam1 == 3 && PlayerController.DiedSoldiersTeam2 == 3)
-            if (int.Parse(MonsterBlood.GetComponent<Text>().text) > 0)
-                AllLose();
+        CheckWinner();
 
     }
-    void FindMonster()
+    void FindArtifact()
     {
         if (RealPlayerTeam.Count < 2 && (!UseAI) && RealPlayerTeam.Contains("Team2"))
         {
@@ -141,17 +136,17 @@ public class GameManager : MonoBehaviour
         //确定降怪点
         int randomx = Random.Range(0, BoardManager.row);
         int randomy = Random.Range(0, BoardManager.col);
-        TearGround = BoardManager.Grounds[randomx][randomy];
-        while (TearGround == null)
+        ArtifactGround = BoardManager.Grounds[randomx][randomy];
+        while (ArtifactGround == null)
         {
             randomx = Random.Range(0, BoardManager.row);
             randomy = Random.Range(0, BoardManager.col);
-            TearGround = BoardManager.Grounds[randomx][randomy];
+            ArtifactGround = BoardManager.Grounds[randomx][randomy];
         }
-        Vector3 problePosition = TearGround.transform.position + new Vector3(-BoardManager.distance, 0, 0);
+        Vector3 problePosition = ArtifactGround.transform.position + new Vector3(-BoardManager.distance, 0, 0);
         if (randomx % 2 == 0)
-            problePosition = TearGround.transform.position + new Vector3(BoardManager.distance, 0, 0);
-        if (RealPlayerTeam.Count < 2 && (!UseAI))
+            problePosition = ArtifactGround.transform.position + new Vector3(BoardManager.distance, 0, 0);
+        if (RealPlayerTeam.Count < GameManager.TeamCount && (!UseAI))
         {
             ProtocolBytes protocol = new ProtocolBytes();
             protocol.AddString("FindMonster");
@@ -198,14 +193,14 @@ public class GameManager : MonoBehaviour
         }
         MudSetted = true;
     }
-    void CreateMonster()
+    void CreateArtifact()
     {
         if (RealPlayerTeam.Count < 2 && (!UseAI) && RealPlayerTeam.Contains("Team2"))
         {
             MudSetted = true;
             return;
         }
-        GameObject monster;
+        GameObject artifact;
         //清除提示圈
         for (int i = 0; i < randomPlace.Count; i++)
         {
@@ -225,11 +220,10 @@ public class GameManager : MonoBehaviour
                 }
             }
         }
-
         //生成怪物
         int random = Random.Range(0, randomPlace.Count - 1);
         int count = 0;
-        if (TearGround.tag == "Occupied")
+        if (ArtifactGround.tag == "Occupied")
         {
             while (randomPlace[random].tag == "Occupied")
             {
@@ -239,29 +233,25 @@ public class GameManager : MonoBehaviour
                 if (count > 20)
                     break;
             }
-            TearGround = randomPlace[random];
+            ArtifactGround = randomPlace[random];
         }
-        if (RealPlayerTeam.Count < 2 && (!UseAI))
+        if (RealPlayerTeam.Count < GameManager.TeamCount && (!UseAI))
         {
             ProtocolBytes protocol = new ProtocolBytes();
             protocol.AddString("CreateMonster");
-            protocol.AddFloat(TearGround.transform.position.x);
-            protocol.AddFloat(TearGround.transform.position.y);
-            protocol.AddFloat(TearGround.transform.position.z);
+            protocol.AddFloat(ArtifactGround.transform.position.x);
+            protocol.AddFloat(ArtifactGround.transform.position.y);
+            protocol.AddFloat(ArtifactGround.transform.position.z);
             NetMgr.srvConn.Send(protocol);
         }
-        Vector3 position = TearGround.transform.position + new Vector3(0, 0, -0.1f);
+        Vector3 position = ArtifactGround.transform.position + new Vector3(0, 0, -0.1f);
         //GroundStage GStage = new GroundStage();
-        TearGround.tag = "Occupied";
-        foreach (Transform t in TearGround.GetComponentsInChildren<Transform>())
+        ArtifactGround.tag = "Occupied";
+        foreach (Transform t in ArtifactGround.GetComponentsInChildren<Transform>())
             if (t.tag == "Weapon")
                 Destroy(t.gameObject);
-        monster = Instantiate(Monster, position, Quaternion.identity, GameObject.Find("Players").transform);
-        monster.transform.Rotate(-45, 0, 0);
-        Vector3 offset = new Vector3(6, -12f, -2f);
-        MonsterBlood = Instantiate(Blood, position + offset, Quaternion.identity, GameObject.Find("Canvas").transform);
-        MonsterBlood.GetComponent<Text>().text = "50";
-        MonsterBlood.name = "MonsterBlood";
+        artifact = Instantiate(Monster, position, Quaternion.identity, GameObject.Find("Players").transform);
+        artifact.transform.Rotate(-45, 0, 0);
         //monster.GetComponent<MonsterController>().Monster.OnMonsterCreate();
         /*bool containPlayer=false;
         for (int i = 0; i < OccupiedGround.Count; i++)
@@ -301,40 +291,44 @@ public class GameManager : MonoBehaviour
         }*/
     }
 
-
-
-    void AllLose()
+    void CheckWinner()
     {
-        WinnerNotice.SetActive(true);
-        Notice.text = "全员失败!";
-        ProtocolBytes protocol = new ProtocolBytes();
-        protocol.AddString("EndGame");
-        protocol.AddInt(3);
-        NetMgr.srvConn.Send(protocol);
-        if (UseAI)
+        int RemainingTeam = TeamCount;
+        int lastTeam=0;
+        for (int i = 0; i < TeamCount;i++)
         {
-            Button Quit = GameObject.Find("Quit").GetComponent<Button>();
-            Quit.GetComponentInChildren<Text>().text = "退出";
-            Quit.onClick.RemoveAllListeners();
-            Quit.onClick.AddListener(delegate () { Application.Quit(); });
-        }
-    }
-    public void CreateTear(Vector3 position)//产生致死刀
-    {
-        Debug.Log("OneTeamLost");
-        if (TearCreated)
-            return;
-        Debug.Log("Pos" + position);
-        TearCreated = true;
-        foreach (Transform t in GameObject.Find("Grounds").GetComponentsInChildren<Transform>())
-        {
-            if (t.name == "Grounds")
-                continue;
-            if (Vector3.Distance(position, t.position) < 0.1f)
+            if(TeamDiedSoldiers[i]>=3)
+                RemainingTeam--;
+            else
             {
-                Instantiate(Tear, position, Quaternion.identity, t);
-                t.gameObject.tag = "Tear";
-                break;
+                lastTeam = i;
+            }
+        }
+        if (RemainingTeam == 1)
+        {
+            GameManager.WinnerNotice.SetActive(true);
+            foreach (Transform t in GameObject.Find("Players").GetComponentsInChildren<Transform>())
+            {
+                if (t.name == "Players")
+                    continue;
+                if (t.gameObject.GetComponent<AI>())
+                    Destroy(t.gameObject.GetComponent<AI>());
+                if (t.gameObject.GetComponent<RealPlayer>())
+                    Destroy(t.gameObject.GetComponent<RealPlayer>());
+
+            }
+            lastTeam++;
+            ProtocolBytes protocol = new ProtocolBytes();
+            protocol.AddString("EndGame");
+            protocol.AddInt(lastTeam);
+            GameManager.Notice.GetComponent<Text>().text = "队伍"+lastTeam+"胜利";
+            NetMgr.srvConn.Send(protocol);
+            if (GameManager.UseAI)
+            {
+                Button Quit = GameObject.Find("Quit").GetComponent<Button>();
+                Quit.GetComponentInChildren<Text>().text = "退出";
+                Quit.onClick.RemoveAllListeners();
+                Quit.onClick.AddListener(delegate () { Application.Quit(); });
             }
         }
     }

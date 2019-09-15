@@ -68,7 +68,7 @@ SpriteRenderer:
   m_SortingLayerID: 1405484489
   m_SortingLayer: 1
   m_SortingOrder: 0
-  m_Sprite: {fileID: 21300000, guid: a0a9048c3e70b0e48aa6c3db9e8ac6e1, type: 3}
+  m_Sprite: {fileID: 21300000, guid: ac56d420254aa0147bbda72887827754, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -183,7 +183,6 @@ MonoBehaviour:
     type: 3}
   EmptySoldier: {fileID: 513919901963878563, guid: d1205dca1ee45ff4688b841d51b219c4,
     type: 3}
-  Blood: {fileID: 1959562310762665233, guid: fa7e5273cadd19c4aa3f5e4371581a5d, type: 3}
 --- !u!60 &-8799034462531432629
 PolygonCollider2D:
   m_ObjectHideFlags: 0

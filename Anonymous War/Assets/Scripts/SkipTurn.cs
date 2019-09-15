@@ -12,7 +12,7 @@ public class SkipTurn : MonoBehaviour
         {
             if (GameManager.PlayerOnEdit != null && GameManager.RealPlayerTeam.Contains(GameManager.PlayerOnEdit.tag))
             {
-                if ((!GameManager.UseAI) && GameManager.RealPlayerTeam.Count < 2)
+                if ((!GameManager.UseAI) && GameManager.RealPlayerTeam.Count < GameManager.TeamCount)
                 {
                     if (GameManager.Stage == 1)
                     {

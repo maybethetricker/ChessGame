@@ -20,8 +20,8 @@ public class Root : MonoBehaviour
         NetMgr.srvConn.msgDist.AddListener("SkipMove", SkipMove);
         NetMgr.srvConn.msgDist.AddListener("SkipAttack", SkipAttack);
         NetMgr.srvConn.msgDist.AddListener("UpdateLand", NetLand);
-        NetMgr.srvConn.msgDist.AddListener("FindMonster", NetFindMonster);
-        NetMgr.srvConn.msgDist.AddListener("CreateMonster", NetCreateMonster);
+        NetMgr.srvConn.msgDist.AddListener("FindMonster", NetFindArtifact);
+        NetMgr.srvConn.msgDist.AddListener("CreateMonster", NetCreateArtifact);
         NetMgr.srvConn.msgDist.AddListener("EndGame", EndGame);
     }
 
@@ -161,26 +161,12 @@ public class Root : MonoBehaviour
             {
                 switch (GameManager.OccupiedGround[i].PlayerWeapon)
                 {
-                    case "Long": attack = 3; break;
+                    case "Long": attack = 2; break;
                     case "Short": attack = 4; break;
                     case "Drag": attack = 1; break;
                     case "Tear": attack = 50; break;
                 }
                 thisBlood = GameManager.OccupiedGround[i].PlayerBlood;
-            }
-        }
-        if (gameObject.tag == "Monster")
-        {
-            Blood = GameObject.Find("MonsterBlood");
-            for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
-            {
-                if (GameManager.OccupiedGround[i].PlayerOnGround == GameManager.PlayerOnEdit)
-                {
-                    GameManager.GroundStage gstage = GameManager.OccupiedGround[i];
-                    gstage.Hate += attack;
-                    GameManager.OccupiedGround[i] = gstage;
-                    break;
-                }
             }
         }
         //对接攻击函数
@@ -190,36 +176,32 @@ public class Root : MonoBehaviour
                 continue;
             if (Vector3.Distance(PlayerToAttack.transform.position, t.position) < BoardManager.distance / 2)
             {
-                if (attackMode == 0)
-                {
-                    if (t.tag == "Monster")
-                        t.gameObject.GetComponent<MonsterController>().Attack(Blood, thisBlood, gameObject.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon);
-                    else
-                        t.gameObject.GetComponent<RealPlayer>().Attack(Blood, thisBlood, gameObject.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon);
-                    break;
-                }
-                else if (attackMode == 1)
-                {
-                    if (t.tag == "Monster")
-                        t.gameObject.GetComponent<MonsterController>().DragAttack(Blood, thisBlood, attack, aimWeapon);
-                    else
-                        t.gameObject.GetComponent<RealPlayer>().DragAttack(Blood, thisBlood, attack, aimWeapon);
-                    break;
-                }
+                if (t.tag == "Monster")
+                        t.gameObject.GetComponent<ArtifactController>().Artifact.ArtOnHit();
                 else
                 {
-                    if (t.tag == "Monster")
-                        t.gameObject.GetComponent<MonsterController>().ArrowAttack(Blood, thisBlood, gameObject.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon);
+                    if (attackMode == 0)
+                    {
+                        t.gameObject.GetComponent<RealPlayer>().Attack(Blood, thisBlood, gameObject.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon);
+                        break;
+                    }
+                    else if (attackMode == 1)
+                    {
+                        t.gameObject.GetComponent<RealPlayer>().DragAttack(Blood, thisBlood, attack, aimWeapon);
+                        break;
+                    }
                     else
+                    {
                         t.gameObject.GetComponent<RealPlayer>().ArrowAttack(Blood, thisBlood, gameObject.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon);
-                    break;
+                        break;
+                    }
                 }
             }
         }
 
     }
 
-    void NetFindMonster(ProtocolBase protocol)
+    void NetFindArtifact(ProtocolBase protocol)
     {
         ProtocolBytes proto = (ProtocolBytes)protocol;
         int start = 0;
@@ -269,7 +251,7 @@ public class Root : MonoBehaviour
         GameManager.MudSetted = true;
 
     }
-    void NetCreateMonster(ProtocolBase protocol)
+    void NetCreateArtifact(ProtocolBase protocol)
     {
         ProtocolBytes proto = (ProtocolBytes)protocol;
         int start = 0;
@@ -305,23 +287,20 @@ public class Root : MonoBehaviour
                 continue;
             if (Vector3.Distance(t.position, tearPosition) < BoardManager.distance / 2)
             {
-                GameManager.instance.TearGround = t.gameObject;
+                GameManager.instance.ArtifactGround = t.gameObject;
                 break;
             }
 
         }
-        Vector3 position = GameManager.instance.TearGround.transform.position + new Vector3(0, 0, -0.1f);
+        Vector3 position = GameManager.instance.ArtifactGround.transform.position + new Vector3(0, 0, -0.1f);
         //GroundStage GStage = new GroundStage();
-        GameManager.instance.TearGround.tag = "Occupied";
-        foreach (Transform t in GameManager.instance.TearGround.GetComponentsInChildren<Transform>())
+        GameManager.instance.ArtifactGround.tag = "Occupied";
+        foreach (Transform t in GameManager.instance.ArtifactGround.GetComponentsInChildren<Transform>())
             if (t.tag == "Weapon")
                 Destroy(t.gameObject);
         monster = Instantiate(GameManager.instance.Monster, position, Quaternion.identity, GameObject.Find("Players").transform);
         monster.transform.Rotate(-45, 0, 0);
         Vector3 offset = new Vector3(6, -12f, -2f);
-        GameManager.instance.MonsterBlood = Instantiate(GameManager.instance.Blood, position + offset, Quaternion.identity, GameObject.Find("Canvas").transform);
-        GameManager.instance.MonsterBlood.GetComponent<Text>().text = "50";
-        GameManager.instance.MonsterBlood.name = "MonsterBlood";
         //monster.GetComponent<MonsterController>().Monster.OnMonsterCreate();
     }
     void OnMatchBack(ProtocolBase protocol)
@@ -408,17 +387,11 @@ public class Root : MonoBehaviour
         int winCase = proto.GetInt(start, ref start);
         switch (winCase)
         {
-            case 0:
-                winnerNotice = "合作胜利";
-                break;
             case 1:
                 winnerNotice = "队伍1胜利";
                 break;
             case 2:
                 winnerNotice = "队伍2胜利";
-                break;
-            case 3:
-                winnerNotice = "全员失败!";
                 break;
         }
         GameManager.WinnerNotice.SetActive(true);

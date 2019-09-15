@@ -7,10 +7,17 @@ using UnityEngine.SceneManagement;
 public class MainPageUI : MonoBehaviour
 {
     public Button StartGame;
+    public Button Help;
+    public GameObject HelpPage;
+    public Button CloseHelp;
     // Start is called before the first frame update
     void Start()
     {
         StartGame.onClick.AddListener(StartMatch);
+        Help.onClick.AddListener(OpenHelp);
+        CloseHelp.onClick.AddListener(closeHelp);
+        HelpPage.SetActive(false);
+        CloseHelp.gameObject.SetActive(false);
     }
 
     // Update is called once per frame
@@ -27,5 +34,14 @@ public class MainPageUI : MonoBehaviour
         StartGame.onClick.RemoveAllListeners();
     }
 
-
+    void OpenHelp()
+    {
+        HelpPage.SetActive(true);
+        CloseHelp.gameObject.SetActive(true);
+    }
+    void closeHelp()
+    {
+        HelpPage.SetActive(false);
+        CloseHelp.gameObject.SetActive(false);
+    }
 }

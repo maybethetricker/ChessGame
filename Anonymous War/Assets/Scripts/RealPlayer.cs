@@ -69,7 +69,7 @@ public class RealPlayer : PlayerController
             }
             if (!find)
                 return;
-            if (GameManager.RealPlayerTeam.Count < 2 && (!GameManager.UseAI))
+            if (GameManager.RealPlayerTeam.Count < GameManager.TeamCount && (!GameManager.UseAI))
             {
                 ProtocolBytes protocol = new ProtocolBytes();
                 protocol.AddString("UpdateAttack");
@@ -107,9 +107,6 @@ public class RealPlayer : PlayerController
                     ArrowAttack(Blood, thisBlood, gameObject.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon);
                     break;
             }
-
-
         }
-
     }
 }

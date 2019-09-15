@@ -45,7 +45,7 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
             if (GameManager.RealPlayerTeam.Contains("Team" + (TeamCounter + 1).ToString()))
             {
                 PlaceSinglePlayer();
-                if ((!GameManager.UseAI) && GameManager.RealPlayerTeam.Count < 2)
+                if ((!GameManager.UseAI) && GameManager.RealPlayerTeam.Count < GameManager.TeamCount)
                 {
                     ProtocolBytes protocol = new ProtocolBytes();
                     protocol.AddString("UpdateLand");
@@ -87,7 +87,7 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
                 }
                 if (!find)
                     return;
-                if ((!GameManager.UseAI) && (GameManager.RealPlayerTeam.Count < 2))
+                if ((!GameManager.UseAI) && (GameManager.RealPlayerTeam.Count < GameManager.TeamCount))
                 {
                     //Update Move协议，包含移动者位置与待移动地块位置
                     ProtocolBytes protocol = new ProtocolBytes();

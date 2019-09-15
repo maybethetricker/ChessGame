@@ -506,7 +506,7 @@ PrefabInstance:
     - target: {fileID: 4164467258163085681, guid: 3710783eb6f408748a2617d08355596e,
         type: 3}
       propertyPath: m_Text
-      value: Wake Up
+      value: "\u5F52\u589F\u6EA2\u6EE1"
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3710783eb6f408748a2617d08355596e, type: 3}

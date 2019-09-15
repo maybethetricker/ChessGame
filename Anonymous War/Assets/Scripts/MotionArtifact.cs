@@ -2,56 +2,23 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class MonsterBase
+public class MotionArtifact
 {
-    public Vector3 monsterPosition;
+    public Vector3 artPosition;
     Dictionary<GameObject, Color> groundRange = new Dictionary<GameObject, Color>();
-    public virtual void OnMonsterCreate()
-    {
-
-    }
-    public virtual void MonsterAttack()
+    public virtual void OnArtCreate()
     {
 
     }
 
-    public void MonsterHit(List<GameObject> Aims, int attack, string trigger)
+    public virtual void ArtPower()
     {
-        GameObject PlayerToAttack = null;
-        for (int j = 0; j < Aims.Count; j++)
-        {
-            PlayerToAttack = Aims[j];
-            //对接攻击函数，可以不用看了
-            //获取反击攻击力，反击范围与双方血条
-            GameObject thisBlood = null;
-            GameObject Blood = null;
-            string aimWeapon = "";
-            for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
-            {
-                if (GameManager.OccupiedGround[i].PlayerOnGround == PlayerToAttack)
-                {
-                    Blood = GameManager.OccupiedGround[i].PlayerBlood;
-                    break;
-                }
-            }
-            thisBlood = GameObject.Find("MonsterBlood");
-            //对接攻击函数
-            foreach (Transform t in GameObject.Find("Players").GetComponentsInChildren<Transform>())
-            {
-                if (t.name == "Players")
-                    continue;
-                if (Vector3.Distance(PlayerToAttack.transform.position, t.position) < BoardManager.distance / 2)
-                {
-                    if (GameManager.RealPlayerTeam.Contains(t.tag))
-                        t.gameObject.GetComponent<RealPlayer>().Attack(Blood, thisBlood, GameManager.PlayerOnEdit.transform.position, monsterPosition, attack, aimWeapon);
-                    else if (GameManager.UseAI)
-                        t.gameObject.GetComponent<AI>().Attack(Blood, thisBlood, GameManager.PlayerOnEdit.transform.position, monsterPosition, attack, aimWeapon);
-                    else
-                        t.gameObject.GetComponent<RemoteEnemy>().Attack(Blood, thisBlood, GameManager.PlayerOnEdit.transform.position, monsterPosition, attack, aimWeapon);
-                    break;
-                }
-            }
-        }
+
+    }
+
+    public virtual void ArtOnHit()
+    {
+        
     }
 
     public List<GameObject> FindAimsSector(Vector3 Center, Vector3 Sectorcenter, int Range, int Breadth)

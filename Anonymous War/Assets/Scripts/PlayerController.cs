@@ -9,7 +9,7 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
     {
         public GameObject Aim;
         public Color color;
-        public GameObject JudgeHelper;//若与AIm相同则说明存储的是地块，直线攻击时为Null，抓勾时为被抓到的地块
+        public GameObject JudgeHelper;//若与Aim相同则说明存储的是地块，直线攻击时为Null，抓勾时为被抓到的地块
     }//用于直线抓勾记录攻击范围内的棋子的数据，以实现抓勾拉过来的操作
     //public static Dictionary<GameObject, Color> CanMoveList = new Dictionary<GameObject, Color>();//记录移动/攻击范围
     //棋子数据，通过更改颜色标识
@@ -18,8 +18,6 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
     public static int attack = 0;
     int range = 0;
     public static int FaintCount = 0;//被晕的棋子数
-    public static int DiedSoldiersTeam1 = 0;//死亡的队1人数
-    public static int DiedSoldiersTeam2 = 0;//。。。队2。。
     public static int MovedDead = 0;
     public static List<AimNode> AimRangeList = new List<AimNode>();//抓勾可抓取范围
 
@@ -125,18 +123,16 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                         GameManager.OccupiedGround[i].PlayerBlood.SetActive(false);
                         Destroy(GameManager.OccupiedGround[i].PlayerBlood);
                         BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].tag = "Untagged";
-                        BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color = GameManager.OccupiedGround[i].OrigColor;
+                        //BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color = GameManager.OccupiedGround[i].OrigColor;
                         GameManager.OccupiedGround.RemoveAt(i);
                         break;
                     }
                 }
                 //统计死亡人数
                 if (GameManager.PlayerOnEdit.tag == "Team1")
-                    DiedSoldiersTeam1++;
+                    GameManager.instance.TeamDiedSoldiers[0]++;
                 if (GameManager.PlayerOnEdit.tag == "Team2")
-                    DiedSoldiersTeam2++;
-                if (DiedSoldiersTeam1 == 3 || DiedSoldiersTeam2 == 3)
-                    CreateTear(DiedPosition);
+                    GameManager.instance.TeamDiedSoldiers[1]++;
                 ThisDie();
             }
         }
@@ -148,7 +144,6 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                 {
                     if (!GameManager.OccupiedGround[j].Moved)
                         break;
-
                     MovedDead++;
                     break;
                 }
@@ -160,22 +155,19 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                     GameManager.OccupiedGround[i].PlayerBlood.SetActive(false);
                     Destroy(GameManager.OccupiedGround[i].PlayerBlood);
                     BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].tag = "Untagged";
-                    BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color = GameManager.OccupiedGround[i].OrigColor;
+                    //BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color = GameManager.OccupiedGround[i].OrigColor;
                     GameManager.OccupiedGround.RemoveAt(i);
                     break;
                 }
             }
             if (gameObject.tag == "Team1")
-                DiedSoldiersTeam1++;
+                GameManager.instance.TeamDiedSoldiers[0]++;
             if (gameObject.tag == "Team2")
-                DiedSoldiersTeam2++;
-            if (DiedSoldiersTeam1 == 3 || DiedSoldiersTeam2 == 3)
-                CreateTear(gameObject.transform.position);
+                GameManager.instance.TeamDiedSoldiers[1]++;
             Die();
 
         }
         ChangeTurn();
-
         GameManager.instance.EnemyChecked = false;
 
 
@@ -191,7 +183,7 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
             {
                 if (gameObject.tag == "Monster")
                 {
-                    GameManager.instance.TearGround.GetComponent<SpriteRenderer>().color = AimRangeList[i].color;
+                    GameManager.instance.ArtifactGround.GetComponent<SpriteRenderer>().color = AimRangeList[i].color;
                     surround = AimRangeList[i].JudgeHelper;
                     break;
                 }
@@ -368,7 +360,6 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                 if (t.tag == "Weapon")
                     continue;
                 Surround.Add(t.gameObject);
-
             }
         }//是否在范围内
         foreach (Transform t in GameObject.Find(Groups).GetComponentsInChildren<Transform>())
@@ -396,6 +387,19 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
             {
                 GameObject surroundLine = null;
                 bool inLine = false;
+                AimNode line = new AimNode();
+                line.Aim = t.gameObject;
+                Color color = new Color(0, 255, 255, 0.2f);
+                if (t.gameObject.tag == "Monster")
+                {
+                    if(Vector3.Distance(CenterPosition,t.position)>BoardManager.distance *1.5)
+                        continue;
+                    line.color = GameManager.instance.ArtifactGround.GetComponent<SpriteRenderer>().color;
+                    GameManager.instance.ArtifactGround.GetComponent<SpriteRenderer>().color = color;
+                    line.JudgeHelper = null;
+                    AimRangeList.Add(line);
+                    continue;
+                }
                 foreach (GameObject g in Surround)
                 {
                     if (Vector3.Angle(CenterPosition - t.position, CenterPosition - g.transform.position) < 1)
@@ -435,14 +439,6 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                 }
                 if (Groups == "Players" && CanAttackFriendly && Center.transform.position == t.position)
                     continue;
-                AimNode line = new AimNode();
-                line.Aim = t.gameObject;
-                Color color = new Color(0, 255, 255, 0.2f);
-                if (t.gameObject.tag == "Monster")
-                {
-                    line.color = GameManager.instance.TearGround.GetComponent<SpriteRenderer>().color;
-                    GameManager.instance.TearGround.GetComponent<SpriteRenderer>().color = color;
-                }
                 if (Groups == "Grounds")
                 {
                     line.color = t.gameObject.GetComponent<SpriteRenderer>().color;
@@ -481,22 +477,25 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
         GameManager.Stage = 1;
         GameManager.instance.SmallTurn++;
         //若本回合结束更换大回合
-        if (GameManager.instance.SmallTurn >= GameManager.TeamCount * 3 - FaintCount - DiedSoldiersTeam1 - DiedSoldiersTeam2 + MovedDead)
-        {
-            GameManager.MudSetted = false;
-            GameManager.instance.SmallTurn = 0;
-            MovedDead = 0;
-            List<GameManager.GroundStage> oGround = new List<GameManager.GroundStage>();
-            for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
+        int totalSmallTurns = GameManager.TeamCount * 3 - FaintCount + MovedDead;
+        for (int k = 0; k < GameManager.TeamCount;k++)
+            totalSmallTurns -= GameManager.instance.TeamDiedSoldiers[k];
+        if (GameManager.instance.SmallTurn >= totalSmallTurns)
             {
-                GameManager.GroundStage GStage = GameManager.OccupiedGround[i];
-                GStage.Moved = false;
-                oGround.Add(GStage);
-            }
+                GameManager.MudSetted = false;
+                GameManager.instance.SmallTurn = 0;
+                MovedDead = 0;
+                List<GameManager.GroundStage> oGround = new List<GameManager.GroundStage>();
+                for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
+                {
+                    GameManager.GroundStage GStage = GameManager.OccupiedGround[i];
+                    GStage.Moved = false;
+                    oGround.Add(GStage);
+                }
 
-            GameManager.instance.Turn++;
-            GameManager.OccupiedGround = oGround;
-        }
+                GameManager.instance.Turn++;
+                GameManager.OccupiedGround = oGround;
+            }
         bool teamHaveMove = false;
         int counter = 0;
         //若死人或晕人导致一队可能连续移动（一队全部动不了就再次更改下小回合移动的一方
@@ -518,7 +517,6 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
             if (counter > 2 * GameManager.TeamCount)
             {
                 Debug.Log("SmallTurn" + GameManager.instance.SmallTurn);
-                Debug.Log("Died1,2" + DiedSoldiersTeam1 + DiedSoldiersTeam2);
                 Debug.Log("faint,MovedDied" + FaintCount + MovedDead);
                 for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
                     Debug.Log("position,moved" + BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.transform.position + GameManager.OccupiedGround[i].Moved);
@@ -533,6 +531,9 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
             string team = "Team" + (GameManager.instance.MovingTeam + 1).ToString();
             if (GameManager.OccupiedGround[i].Moved == false && GameManager.OccupiedGround[i].PlayerOnGround.tag == team)
             {
+                GameManager.GroundStage GStage=GameManager.OccupiedGround[i];
+                GStage.OrigColor = BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color;
+                GameManager.OccupiedGround[i] = GStage;
                 BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color = color;
             }
         }
@@ -540,10 +541,6 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
         GameManager.PlayerOnEdit = null;
     }
 
-    void CreateTear(Vector3 position)
-    {
-        GameObject.Find("GameManager").GetComponent<GameManager>().CreateTear(position);
-    }
     public void ClearHighlight()
     {
         foreach (AimNode line in AimRangeList)
@@ -555,7 +552,7 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
             }
             if (line.Aim.tag == "Monster")
             {
-                GameManager.instance.TearGround.GetComponent<SpriteRenderer>().color = line.color;
+                GameManager.instance.ArtifactGround.GetComponent<SpriteRenderer>().color = line.color;
             }
             if (line.Aim == line.JudgeHelper)
                 line.Aim.GetComponent<SpriteRenderer>().color = line.color;
