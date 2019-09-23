@@ -11,7 +11,7 @@ public class LoginUI : MonoBehaviour
     public Button loginBtn;
     public Button regBtn;
     public Text Warning;
-    string host = "114.55.95.111"; 
+    string host = "106.54.90.80"; 
     int port = 1234; 
     /// <summary>
     /// Start is called on the frame when a script is enabled just before

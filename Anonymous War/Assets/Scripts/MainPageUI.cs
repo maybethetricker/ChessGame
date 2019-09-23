@@ -28,6 +28,7 @@ public class MainPageUI : MonoBehaviour
 
     void StartMatch()
     {
+        StartGame.GetComponentInChildren<Text>().text = "匹配中";
         ProtocolBytes protocol = new ProtocolBytes();
         protocol.AddString("StartMatch");
         NetMgr.srvConn.Send(protocol);

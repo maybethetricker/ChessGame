@@ -15,6 +15,7 @@ public class Root : MonoBehaviour
         DontDestroyOnLoad(StaticUI);
         Quit.onClick.AddListener(delegate () { Application.Quit(); });
         NetMgr.srvConn.msgDist.AddListener("StartFight", OnMatchBack);
+        NetMgr.srvConn.msgDist.AddListener("SetBoard", NetSetBoard);
         NetMgr.srvConn.msgDist.AddListener("UpdateMove", NetMove);
         NetMgr.srvConn.msgDist.AddListener("UpdateAttack", NetAttack);
         NetMgr.srvConn.msgDist.AddListener("SkipMove", SkipMove);
@@ -182,17 +183,20 @@ public class Root : MonoBehaviour
                 {
                     if (attackMode == 0)
                     {
-                        t.gameObject.GetComponent<RealPlayer>().Attack(Blood, thisBlood, gameObject.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon);
+                        t.gameObject.GetComponent<RealPlayer>().Attack(Blood, thisBlood, PlayerToAttack.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon);
                         break;
                     }
                     else if (attackMode == 1)
                     {
-                        t.gameObject.GetComponent<RealPlayer>().DragAttack(Blood, thisBlood, attack, aimWeapon);
+                        if(GameManager.RealPlayerTeam.Contains(t.tag))
+                            t.gameObject.GetComponent<RealPlayer>().DragAttack(Blood, thisBlood, attack, aimWeapon);
+                        else
+                            t.gameObject.GetComponent<RemoteEnemy>().DragAttack(Blood, thisBlood, attack, aimWeapon);    
                         break;
                     }
                     else
                     {
-                        t.gameObject.GetComponent<RealPlayer>().ArrowAttack(Blood, thisBlood, gameObject.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon);
+                        t.gameObject.GetComponent<RealPlayer>().ArrowAttack(Blood, thisBlood, PlayerToAttack.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon);
                         break;
                     }
                 }
@@ -399,5 +403,31 @@ public class Root : MonoBehaviour
         Quit.GetComponentInChildren<Text>().text = "退出";
         Quit.onClick.RemoveAllListeners();
         Quit.onClick.AddListener(delegate () { Application.Quit(); });
+    }
+
+    void NetSetBoard(ProtocolBase protocol)
+    {
+        Debug.Log("ReceiveSETBOARD");
+        ProtocolBytes proto = (ProtocolBytes)protocol;
+        int start = 0;
+        string protoName = proto.GetString(start, ref start);
+        BoardManager.row = 7;
+        BoardManager.col = 7;
+        int[][] randomlist = new int[BoardManager.row][];
+        BoardManager.Grounds = new GameObject[BoardManager.row][];
+        for (int i = 0; i < BoardManager.row; i++)
+        {
+            BoardManager.Grounds[i] = new GameObject[BoardManager.col];
+            randomlist[i] = new int[BoardManager.col];
+        }
+        for (int i = 0; i < BoardManager.row; i++)
+        {
+            for (int j = 0; j < BoardManager.col; j++)
+            {
+                randomlist[i][j] = proto.GetInt(start, ref start);
+            }
+        }
+        BoardManager board = GameObject.Find("BoardManager").GetComponent<BoardManager>();
+        board.InstantiateBoard(randomlist);
     }
 }

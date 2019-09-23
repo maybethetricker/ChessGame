@@ -23,15 +23,14 @@ public class BoardManager : MonoBehaviour
         RandomGround.Add(ShortGround);
         RandomGround.Add(DragGround);
         RandomGround.Add(NothingGround);
-        SetBoard();
+        if(GameManager.UseAI||GameManager.RealPlayerTeam.Contains("Team1"))
+            SetBoard();
     }
 
     void SetBoard()//生成地图
     {
         row = 7;
         col = 7;
-        int random;
-        Vector3 position;
         int[][] randomlist = new int[row][];
         Grounds = new GameObject[row][];
         for (int i = 0; i < row; i++)
@@ -72,7 +71,31 @@ public class BoardManager : MonoBehaviour
             randomlist[i][j] = rand;
             k++;
         }
+        if (!GameManager.UseAI)
+        {
+            ProtocolBytes protocol = new ProtocolBytes();
+            protocol.AddString("SetBoard");
+            for (int i = 0; i < row; i++)
+            {
+                for (int j = 0; j < col; j++) 
+                {
+                    protocol.AddInt(randomlist[i][j]);
+                }
+            }
+            //StartCoroutine(WaitToSent(protocol));
+            NetMgr.srvConn.Send(protocol);
+        }
         //固定地图
+        InstantiateBoard(randomlist);
+    }
+    IEnumerator WaitToSent(ProtocolBytes protocol)
+    {
+        for (int i = 0; i < 100;i++)
+            yield return 0;
+        NetMgr.srvConn.Send(protocol);
+    }
+    public void InstantiateBoard(int[][] randomlist)
+    {
         for (int i = 0; i < row; i++)
         {
 
@@ -93,8 +116,8 @@ public class BoardManager : MonoBehaviour
                 //随机地图
                 //random = Random.Range(0, 3);
                 //固定地图
-                random = randomlist[i][j];
-                position = new Vector3(distance * i - 3 - 55, 1.732f * 0.5f * distance * j - 3 + 50, 78);
+                int random = randomlist[i][j];
+                Vector3 position = new Vector3(distance * i - 3 - 55, 1.732f * 0.5f * distance * j - 3 + 50, 78);
                 position.x += (j - 3) * distance / 2;
                 Grounds[i][j] = Instantiate(RandomGround[random], position, Quaternion.identity, GameObject.Find("Grounds").transform);
             }

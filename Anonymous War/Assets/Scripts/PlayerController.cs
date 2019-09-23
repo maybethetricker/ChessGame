@@ -66,6 +66,7 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
     public void Attack(GameObject AimBlood, GameObject ThisBlood, Vector3 AimPosition, Vector3 ThisPosition, int Hurt, string AimWeapon)//攻击，参数为
     //对方血条，己方血条，己方攻击力，对方攻击力与反击范围
     {
+        Debug.Log("AimWeapon:" + AimWeapon);
         ClearHighlight();
         //change:use AimBlood instead of Blood
         //攻击
@@ -89,6 +90,7 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
             if (AimRangeList[i].Aim.transform.position == ThisPosition)
                 canHitBack = true;
         }
+        Debug.Log("CanHitBackFormer"+canHitBack);
         for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
         {
             //死亡/眩晕不反击
@@ -100,6 +102,7 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                 canHitBack = false;
         }
         ClearHighlight();
+        Debug.Log("CanHitBack" + canHitBack);
         if (canHitBack)
         {
             int thisblood = int.Parse(ThisBlood.GetComponent<Text>().text);
@@ -476,26 +479,27 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
     {
         GameManager.Stage = 1;
         GameManager.instance.SmallTurn++;
+        //Debug.Log("SmallTurn:"+GameManager.instance.SmallTurn);
         //若本回合结束更换大回合
         int totalSmallTurns = GameManager.TeamCount * 3 - FaintCount + MovedDead;
         for (int k = 0; k < GameManager.TeamCount;k++)
             totalSmallTurns -= GameManager.instance.TeamDiedSoldiers[k];
         if (GameManager.instance.SmallTurn >= totalSmallTurns)
+        {
+            //Debug.Log("AddTurn");
+            GameManager.MudSetted = false;
+            GameManager.instance.SmallTurn = 0;
+            MovedDead = 0;
+            List<GameManager.GroundStage> oGround = new List<GameManager.GroundStage>();
+            for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
             {
-                GameManager.MudSetted = false;
-                GameManager.instance.SmallTurn = 0;
-                MovedDead = 0;
-                List<GameManager.GroundStage> oGround = new List<GameManager.GroundStage>();
-                for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
-                {
-                    GameManager.GroundStage GStage = GameManager.OccupiedGround[i];
-                    GStage.Moved = false;
-                    oGround.Add(GStage);
-                }
-
-                GameManager.instance.Turn++;
-                GameManager.OccupiedGround = oGround;
+                GameManager.GroundStage GStage = GameManager.OccupiedGround[i];
+                GStage.Moved = false;
+                oGround.Add(GStage);
             }
+            GameManager.instance.Turn++;
+            GameManager.OccupiedGround = oGround;
+        }
         bool teamHaveMove = false;
         int counter = 0;
         //若死人或晕人导致一队可能连续移动（一队全部动不了就再次更改下小回合移动的一方

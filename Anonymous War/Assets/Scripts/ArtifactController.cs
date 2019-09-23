@@ -77,9 +77,7 @@ public class ArtifactController : PlayerController
                 NetMgr.srvConn.Send(protocol);
             }
             Artifact.ArtOnHit();
-            ClearHighlight();
-            ChangeTurn();
-            GameManager.instance.EnemyChecked = false;
+            
         }
     }
 

@@ -56,20 +56,6 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
                 }
             }
         }
-        if (GameManager.instance.SmallTurn >= 3 * GameManager.TeamCount && GameManager.Stage == 0)
-        {
-            GameManager.instance.SmallTurn = 0;
-            GameManager.Stage = 1;
-            Color color = new Color(255, 255, 0, 0.2f);
-            for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
-            {
-                string team = "Team" + (GameManager.instance.MovingTeam + 1).ToString();
-                if (GameManager.OccupiedGround[i].Moved == false && GameManager.OccupiedGround[i].PlayerOnGround.tag == team)
-                {
-                    BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color = color;
-                }
-            }
-        }
         //按所在地块移动
         if (GameManager.Stage == 1 && GameManager.PlayerOnEdit != null)
         {
@@ -178,7 +164,20 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
         GameManager.instance.SmallTurn++;
         this.gameObject.tag = "Occupied";
         TeamCounter = (TeamCounter + 1) % GameManager.TeamCount;
-
+        if (GameManager.instance.SmallTurn >= 3 * GameManager.TeamCount && GameManager.Stage == 0)
+        {
+            GameManager.instance.SmallTurn = 0;
+            GameManager.Stage = 1;
+            Color color = new Color(255, 255, 0, 0.2f);
+            for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
+            {
+                string team = "Team" + (GameManager.instance.MovingTeam + 1).ToString();
+                if (GameManager.OccupiedGround[i].Moved == false && GameManager.OccupiedGround[i].PlayerOnGround.tag == team)
+                {
+                    BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color = color;
+                }
+            }
+        }
     }
     public void PlayerMove()//玩家移动
     //棋子移动，若该地块位于已检测到的移动范围内，则移动，参数为待移动棋子

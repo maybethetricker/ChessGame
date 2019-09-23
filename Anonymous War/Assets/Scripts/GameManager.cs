@@ -50,6 +50,7 @@ public class GameManager : MonoBehaviour
     public bool EnemyChecked;//是否检测了可攻击范围
     public int AttackMode;
     public int[] TeamDiedSoldiers=new int[TeamCount];//各队死亡人数
+    bool InGame = true;
     //Button test;
     // Start is called before the first frame update
 
@@ -85,10 +86,10 @@ public class GameManager : MonoBehaviour
         PlayerController.AimRangeList = new List<PlayerController.AimNode>();
         PlayerController.MovedDead = 0;
         CoroutineStarted = false;
-        RealPlayerTeam.Add("Team1");
+        //RealPlayerTeam.Add("Team1");
         //RealPlayerTeam.Add("Team2");
         //UseAI = false;
-        UseAI = true;
+        //UseAI = true;
         /* 
         test = GameObject.Find("Test").GetComponent<Button>();
         test.onClick.AddListener(delegate () {
@@ -121,8 +122,8 @@ public class GameManager : MonoBehaviour
         //降怪
         if (Turn == 2 && !MudSetted)
             CreateArtifact();
-
-        CheckWinner();
+        if(InGame)
+            CheckWinner();
 
     }
     void FindArtifact()
@@ -306,6 +307,7 @@ public class GameManager : MonoBehaviour
         }
         if (RemainingTeam == 1)
         {
+            InGame = false;
             GameManager.WinnerNotice.SetActive(true);
             foreach (Transform t in GameObject.Find("Players").GetComponentsInChildren<Transform>())
             {
@@ -370,7 +372,7 @@ public class GameManager : MonoBehaviour
         CoroutineStarted = true;
         yield return new WaitForSeconds(1);
         AILand();
-        if (SmallTurn >= 3 * TeamCount && Stage == 0)
+        /*if (SmallTurn >= 3 * TeamCount && Stage == 0)
         {
             SmallTurn = 0;
             Stage = 1;
@@ -383,7 +385,7 @@ public class GameManager : MonoBehaviour
                     BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color = color;
                 }
             }
-        }
+        }*/
         CoroutineStarted = false;
     }
 

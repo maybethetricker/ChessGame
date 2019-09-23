@@ -41,8 +41,11 @@ public class AngerCrystal : MotionArtifact
                         GameManager.instance.TeamDiedSoldiers[1]++;
                     GameManager.instance.DeleteDiedObject(diedObject);
                 }   
-            }
+            }  
         }
+        ArtifactController.instance.ClearHighlight();
+        ArtifactController.instance.ChangeTurn();
+        GameManager.instance.EnemyChecked = false;
     }
     public override void ArtPower()
     {
