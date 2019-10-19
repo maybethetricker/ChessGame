@@ -511,14 +511,16 @@ public class AI : PlayerController
         {
             StopCoroutine(WaitToAttack());
         }
-        yield return new WaitForSeconds(1);
+        int second = Random.Range(2, 6);
+        yield return new WaitForSeconds(second);
         AIAttack();
         GameManager.instance.CoroutineStarted = false;
     }
     IEnumerator WaitToMove()
     {
         GameManager.instance.CoroutineStarted = true;
-        yield return new WaitForSeconds(3);
+        int second = Random.Range(3, 6);
+        yield return new WaitForSeconds(second);
         AIMove();
         GameManager.instance.CoroutineStarted = false;
     }

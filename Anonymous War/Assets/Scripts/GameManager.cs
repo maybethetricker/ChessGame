@@ -10,16 +10,9 @@ public class GameManager : MonoBehaviour
     public GameObject LongSoldier;
     public GameObject ShortSoldier;
     public GameObject DragSoldier;
-    public GameObject TearSoldier;
-    public GameObject Short;
-    public GameObject Long;
-    public GameObject Drag;
-    public GameObject Tear;//致死刀
     public GameObject Monster;//怪
-    public GameObject Blood;//血条prefab
-    public static GameObject WinnerNotice;//获胜提示信息
-    public static Text Notice;
-    public Button Restart;
+    public Image Timer;
+    public Text TimerText;
     public struct GroundStage
     {
         //public GameObject Ground;//所在地块
@@ -51,11 +44,20 @@ public class GameManager : MonoBehaviour
     public int AttackMode;
     public int[] TeamDiedSoldiers=new int[TeamCount];//各队死亡人数
     bool InGame = true;
+    public GameObject SkipButton;
+    public Coroutine timer;
+    public static bool IsTraining;
+    public static int Mode=1;//随天梯分数提高而有游戏性变化
+    //1:无天降神器
+    //2愤怒水晶
     //Button test;
+    public static int Guide = -1;//1,2,3...为各教程
+
     // Start is called before the first frame update
 
-    void Start()
+    public virtual void Start()
     {
+        Guide = 1;
         if (instance == null)
             instance = this;
         else
@@ -63,14 +65,11 @@ public class GameManager : MonoBehaviour
             Destroy(gameObject);
         }
         //胜利提示框
-        WinnerNotice = GameObject.Find("WinnerNotice");
-        Notice = GameObject.Find("Notice").GetComponent<Text>();
-        WinnerNotice.SetActive(false);
-        Restart.onClick.AddListener(delegate ()
-        {
-            SceneManager.LoadScene("MainPage");
-        });
-        //初始化静态变量
+        Timer.gameObject.SetActive(false);
+        SkipButton = GameObject.Find("Skip");
+        Timer.fillAmount = 1;
+        TimerText.text = "20";
+        //初始化变量
         Stage = 0;
         Turn = 0;
         PlayerOnEdit = null;
@@ -90,6 +89,17 @@ public class GameManager : MonoBehaviour
         //RealPlayerTeam.Add("Team2");
         //UseAI = false;
         //UseAI = true;
+        if(Guide>0)
+        {
+            RealPlayerTeam.Add("Team2");
+            IsTraining = true;
+            if(Guide>=2)
+                Mode = 1;
+            else
+            {
+                Mode = 0;
+            }
+        }
         /* 
         test = GameObject.Find("Test").GetComponent<Button>();
         test.onClick.AddListener(delegate () {
@@ -114,13 +124,13 @@ public class GameManager : MonoBehaviour
             if (!CoroutineStarted)
                 StartCoroutine(WaitToLand());
         }
-        if (Turn == 1 && !MudSetted)
+        if (Mode>=1&&Turn == 1 && !MudSetted)
         {
             //降怪前准备
             FindArtifact();
         }
         //降怪
-        if (Turn == 2 && !MudSetted)
+        if (Mode>=1&&Turn == 2 && !MudSetted)
             CreateArtifact();
         if(InGame)
             CheckWinner();
@@ -308,7 +318,33 @@ public class GameManager : MonoBehaviour
         if (RemainingTeam == 1)
         {
             InGame = false;
-            GameManager.WinnerNotice.SetActive(true);
+            try
+            {
+                StopCoroutine(timer);
+            }
+            catch
+            {
+                Debug.Log("stopTimerError");
+            }
+            string notice="";
+            if (RealPlayerTeam.Contains("Team" + (lastTeam + 1).ToString()))
+            {
+                notice = "胜利";
+                if (!IsTraining)
+                {
+                    ProtocolBytes prot = new ProtocolBytes();
+                    prot.AddString("AddScore");
+                    prot.AddInt(50);
+                    NetMgr.srvConn.Send(prot);
+                }
+            }
+            else
+            {
+                notice = "失败";
+            }
+            Root.instance.ShowNotice(notice, "返回", delegate () {
+                SceneManager.LoadScene("MainPage");
+            });
             foreach (Transform t in GameObject.Find("Players").GetComponentsInChildren<Transform>())
             {
                 if (t.name == "Players")
@@ -318,19 +354,6 @@ public class GameManager : MonoBehaviour
                 if (t.gameObject.GetComponent<RealPlayer>())
                     Destroy(t.gameObject.GetComponent<RealPlayer>());
 
-            }
-            lastTeam++;
-            ProtocolBytes protocol = new ProtocolBytes();
-            protocol.AddString("EndGame");
-            protocol.AddInt(lastTeam);
-            GameManager.Notice.GetComponent<Text>().text = "队伍"+lastTeam+"胜利";
-            NetMgr.srvConn.Send(protocol);
-            if (GameManager.UseAI)
-            {
-                Button Quit = GameObject.Find("Quit").GetComponent<Button>();
-                Quit.GetComponentInChildren<Text>().text = "退出";
-                Quit.onClick.RemoveAllListeners();
-                Quit.onClick.AddListener(delegate () { Application.Quit(); });
             }
         }
     }
@@ -370,8 +393,15 @@ public class GameManager : MonoBehaviour
     IEnumerator WaitToLand()
     {
         CoroutineStarted = true;
-        yield return new WaitForSeconds(1);
-        AILand();
+        int second = Random.Range(2, 6);
+        yield return new WaitForSeconds(second);
+        if(Guide!=1)
+            AILand();
+        else
+        {
+            BoardManager.Grounds[5][3].GetComponent<SpriteRenderer>().color = new Color(0, 20, 0, 0.2f);
+            BoardManager.Grounds[4][4].GetComponent<GroundClick>().PlaceSinglePlayer();
+        }
         /*if (SmallTurn >= 3 * TeamCount && Stage == 0)
         {
             SmallTurn = 0;
@@ -392,5 +422,66 @@ public class GameManager : MonoBehaviour
     public void DeleteDiedObject(GameObject diedobject)
     {
         Destroy(diedobject);
+    }
+
+    public IEnumerator HandleTimer()
+    {
+        int lastFlameStage=Stage;
+        while (true)
+        {
+            TimerEvent(lastFlameStage);
+            lastFlameStage = Stage;
+            yield return new WaitForSeconds(1);
+        }
+    }
+    
+    public void TimerEvent(int lastFlameStage)
+    {
+        int leftTime = int.Parse(TimerText.text);
+        if(lastFlameStage!=Stage)
+        {
+            if(Stage==1)
+                leftTime = 20;
+            else
+            {
+                leftTime = 10;
+            }
+            Timer.fillAmount = 1;
+        }
+        if(Stage==1)
+            Timer.fillAmount -= 1f / 20;
+        else
+        {
+            Timer.fillAmount -= 1f / 10;
+        }
+        leftTime--;
+        if(leftTime<=0)
+        {
+            if(Stage==1)
+                leftTime = 10;
+            else
+            {
+                leftTime = 20;
+            }
+            Timer.fillAmount = 1;
+            if ((Stage==1&&RealPlayerTeam.Contains("Team"+(MovingTeam+1).ToString()))
+                ||(Stage==2&&RealPlayerTeam.Contains(PlayerOnEdit.tag)))
+            {
+                Debug.Log("TimeUpSkip");
+                if (PlayerOnEdit == null)
+                {
+                    for (int i = 0; i < OccupiedGround.Count; i++)
+                    {
+                        if (RealPlayerTeam.Contains(OccupiedGround[i].PlayerOnGround.tag) && OccupiedGround[i].Moved == false)
+                        {
+                            PlayerOnEdit = OccupiedGround[i].PlayerOnGround;
+                            break;
+                        }
+                    }
+                }
+                SkipButton.GetComponent<SkipTurn>().SkipOnClick();
+            }
+        }
+        TimerText.text = leftTime.ToString();
     }
 }

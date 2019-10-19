@@ -10,7 +10,7 @@ public class BoardManager : MonoBehaviour
     public GameObject DragGround;
     public GameObject NothingGround;
     //用于生成地图
-    List<GameObject> RandomGround = new List<GameObject>();
+    List<GameObject> setBoardRandomGround = new List<GameObject>();
     public static float distance;//格子间距离
     public static GameObject[][] Grounds;
     public static int row;
@@ -19,15 +19,15 @@ public class BoardManager : MonoBehaviour
     void Start()
     {
         distance = 21.6f;
-        RandomGround.Add(LongGround);
-        RandomGround.Add(ShortGround);
-        RandomGround.Add(DragGround);
-        RandomGround.Add(NothingGround);
+        setBoardRandomGround.Add(LongGround);
+        setBoardRandomGround.Add(ShortGround);
+        setBoardRandomGround.Add(DragGround);
+        setBoardRandomGround.Add(NothingGround);
         if(GameManager.UseAI||GameManager.RealPlayerTeam.Contains("Team1"))
             SetBoard();
     }
 
-    void SetBoard()//生成地图
+    public virtual void SetBoard()//生成地图
     {
         row = 7;
         col = 7;
@@ -42,50 +42,55 @@ public class BoardManager : MonoBehaviour
                 randomlist[i][j] = 3;
             }
         }
-        /* 
-        randomlist[2][1] = randomlist[5][0] = randomlist[3][3] = randomlist[4][3] = randomlist[2][6] = 0;
-        randomlist[2][2] = randomlist[5][2] = randomlist[0][3] = randomlist[5][3] = randomlist[4][4] = randomlist[0][4] = 1;
-        randomlist[4][2] = randomlist[5][4] = randomlist[1][5] = 2;*/
-        int k = 0;
-        int dragCount = 0;
-        while (k < 15)
+        if (GameManager.Guide >= 1)
         {
-            int i = Random.Range(0, 7);
-            int j = Random.Range(0, 7);
-            switch (j)
-            {
-                case 0: if (i < 3 || i > 6) continue; break;
-                case 1: if (i < 2 || i > 6) continue; break;
-                case 2: if (i == 0 || i > 6) continue; break;
-                case 3: if (i > 6) continue; break;
-                case 4: if (i > 5) continue; break;
-                case 5: if (i > 4) continue; break;
-                case 6: if (i > 3) continue; break;
-            }
-
-            int rand = Random.Range(0, 3);
-            if (dragCount > 3 && rand == 2)
-                rand = Random.Range(0, 2);
-            if (rand == 2)
-                dragCount++;
-            randomlist[i][j] = rand;
-            k++;
+            randomlist[2][1] = randomlist[5][0] = randomlist[3][3] = randomlist[4][3] = randomlist[2][6] = 0;
+            randomlist[2][2] = randomlist[5][2] = randomlist[0][3] = randomlist[5][3] = randomlist[4][4] = randomlist[0][4] = 1;
+            randomlist[4][2] = randomlist[5][4] = randomlist[1][5] = 2;
         }
-        if (!GameManager.UseAI)
+        else
         {
-            ProtocolBytes protocol = new ProtocolBytes();
-            protocol.AddString("SetBoard");
-            for (int i = 0; i < row; i++)
+            int k = 0;
+            int dragCount = 0;
+            while (k < 15)
             {
-                for (int j = 0; j < col; j++) 
+                int i = Random.Range(0, 7);
+                int j = Random.Range(0, 7);
+                switch (j)
                 {
-                    protocol.AddInt(randomlist[i][j]);
+                    case 0: if (i < 3 || i > 6) continue; break;
+                    case 1: if (i < 2 || i > 6) continue; break;
+                    case 2: if (i == 0 || i > 6) continue; break;
+                    case 3: if (i > 6) continue; break;
+                    case 4: if (i > 5) continue; break;
+                    case 5: if (i > 4) continue; break;
+                    case 6: if (i > 3) continue; break;
                 }
+
+                int rand = Random.Range(0, 3);
+                if (dragCount > 3 && rand == 2)
+                    rand = Random.Range(0, 2);
+                if (rand == 2)
+                    dragCount++;
+                randomlist[i][j] = rand;
+                k++;
             }
-            //StartCoroutine(WaitToSent(protocol));
-            NetMgr.srvConn.Send(protocol);
+            if (!GameManager.UseAI)
+            {
+                ProtocolBytes protocol = new ProtocolBytes();
+                protocol.AddString("SetBoard");
+                for (int i = 0; i < row; i++)
+                {
+                    for (int j = 0; j < col; j++)
+                    {
+                        protocol.AddInt(randomlist[i][j]);
+                    }
+                }
+                //StartCoroutine(WaitToSent(protocol));
+                NetMgr.srvConn.Send(protocol);
+            }
+            //固定地图
         }
-        //固定地图
         InstantiateBoard(randomlist);
     }
     IEnumerator WaitToSent(ProtocolBytes protocol)
@@ -113,13 +118,10 @@ public class BoardManager : MonoBehaviour
                     case 5: if (i > 4) continue; break;
                     case 6: if (i > 3) continue; break;
                 }
-                //随机地图
-                //random = Random.Range(0, 3);
-                //固定地图
                 int random = randomlist[i][j];
                 Vector3 position = new Vector3(distance * i - 3 - 55, 1.732f * 0.5f * distance * j - 3 + 50, 78);
                 position.x += (j - 3) * distance / 2;
-                Grounds[i][j] = Instantiate(RandomGround[random], position, Quaternion.identity, GameObject.Find("Grounds").transform);
+                Grounds[i][j] = Instantiate(setBoardRandomGround[random], position, Quaternion.identity, GameObject.Find("Grounds").transform);
             }
         }
     }

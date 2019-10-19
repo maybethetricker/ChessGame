@@ -54,6 +54,8 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
             if (AimRangeList.Count == 0)
             {
                 ClearHighlight();
+                GameManager.instance.TimerText.text = "20";
+                GameManager.instance.Timer.fillAmount = 1;
                 ChangeTurn();
                 GameManager.instance.EnemyChecked = false;
             }
@@ -221,6 +223,13 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                     GStage = GameManager.OccupiedGround[i];
                     BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].tag = "Untagged";
                     bloodNum = int.Parse(AimBlood.GetComponentInChildren<Text>().text);
+                    if(GStage.Moved==false&&GStage.InMug==false&&surround.GetComponent<SpriteRenderer>().color==new Color(0,10,0,0.2f))
+                    {
+                        GStage.Moved = true;
+                        GStage.InMug = true;
+                        GStage.Faint = true;
+                        FaintCount++;
+                    }
                     GameManager.OccupiedGround.RemoveAt(i);
                     break;
                 }
@@ -277,8 +286,8 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                     }
                     gameObject.SetActive(false);
                     break;
-                case "Tear":
-                    anotherObject = Instantiate(GameObject.Find("GameManager").GetComponent<GameManager>().TearSoldier, this.transform.position, Quaternion.identity, GameObject.Find("Players").transform);
+                /*case "Tear":
+                    //anotherObject = Instantiate(GameObject.Find("GameManager").GetComponent<GameManager>().TearSoldier, this.transform.position, Quaternion.identity, GameObject.Find("Players").transform);
                     if (GameManager.RealPlayerTeam.Contains(tag))
                     {
                         anotherObject.AddComponent<RealPlayer>();
@@ -292,7 +301,7 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                         anotherObject.AddComponent<RemoteEnemy>();
                     }
                     gameObject.SetActive(false);
-                    break;
+                    break;*/
                 default:
                     anotherObject = gameObject;
                     anotherObject.transform.Rotate(45, 0, 0);

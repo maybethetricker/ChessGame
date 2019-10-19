@@ -3,17 +3,34 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using Fungus;
 
 public class Root : MonoBehaviour
 {
+    public static Root instance;
     public Button Quit;
     public GameObject StaticUI;
+    public GameObject Notice;
+    public Text NoticeText;
+    public Button ConfirmNotice;
+    public Flowchart flowchart;
+
+    //public GameObject Plot;
+    //public Text PlotText;
     // Start is called before the first frame update
     void Start()
     {
+        if (instance == null)
+            instance = this;
+        else
+        {
+            Destroy(gameObject);
+        }
         DontDestroyOnLoad(gameObject);
         DontDestroyOnLoad(StaticUI);
-        Quit.onClick.AddListener(delegate () { Application.Quit(); });
+        Notice.SetActive(false);
+        //Plot.SetActive(false);
+        Quit.onClick.AddListener(QuitGame);
         NetMgr.srvConn.msgDist.AddListener("StartFight", OnMatchBack);
         NetMgr.srvConn.msgDist.AddListener("SetBoard", NetSetBoard);
         NetMgr.srvConn.msgDist.AddListener("UpdateMove", NetMove);
@@ -24,6 +41,9 @@ public class Root : MonoBehaviour
         NetMgr.srvConn.msgDist.AddListener("FindMonster", NetFindArtifact);
         NetMgr.srvConn.msgDist.AddListener("CreateMonster", NetCreateArtifact);
         NetMgr.srvConn.msgDist.AddListener("EndGame", EndGame);
+        NetMgr.srvConn.msgDist.AddListener("Logout", OnLogoutBack);
+        NetMgr.srvConn.msgDist.AddListener("WinGame", WinGame);
+        NetMgr.srvConn.msgDist.AddListener("GetScore", GetScore);
     }
 
     // Update is called once per frame
@@ -309,17 +329,22 @@ public class Root : MonoBehaviour
     }
     void OnMatchBack(ProtocolBase protocol)
     {
+        Root.instance.Notice.SetActive(false);
         ProtocolBytes proto = (ProtocolBytes)protocol;
         int start = 0;
         string protoName = proto.GetString(start, ref start);
         int team = proto.GetInt(start, ref start);
         GameManager.RealPlayerTeam = new List<string>();
+        GameManager.IsTraining = false;
         GameManager.RealPlayerTeam.Add("Team" + (team + 1).ToString());
         int useAI = proto.GetInt(start, ref start);
         if (useAI == 1)
             GameManager.UseAI = true;
         else
             GameManager.UseAI = false;
+        int mode = proto.GetInt(start, ref start);
+        GameManager.Mode = mode;
+        GameManager.Guide = -1;
         Quit.GetComponentInChildren<Text>().text = "投降";
         Quit.onClick.RemoveAllListeners();
         Quit.onClick.AddListener(delegate ()
@@ -330,13 +355,12 @@ public class Root : MonoBehaviour
             if (GameManager.RealPlayerTeam.Contains("Team1"))
             {
                 prot.AddInt(2);
-                winnerNotice = "队伍2胜利";
             }
             else
             {
                 prot.AddInt(1);
-                winnerNotice = "队伍1胜利";
             }
+            winnerNotice = "失败";
             if (GameManager.RealPlayerTeam.Count < 2 && (!GameManager.UseAI))
             {
 
@@ -345,8 +369,9 @@ public class Root : MonoBehaviour
             Quit.GetComponentInChildren<Text>().text = "退出";
             Quit.onClick.RemoveAllListeners();
             Quit.onClick.AddListener(delegate () { Application.Quit(); });
-            GameManager.WinnerNotice.SetActive(true);
-            GameManager.Notice.text = winnerNotice;
+            ShowNotice(winnerNotice, "返回", delegate () {
+                SceneManager.LoadScene("MainPage");
+            });
             //SceneManager.LoadScene("MainPage");
         });
         SceneManager.LoadScene("Game");
@@ -392,14 +417,33 @@ public class Root : MonoBehaviour
         switch (winCase)
         {
             case 1:
-                winnerNotice = "队伍1胜利";
+                if(GameManager.RealPlayerTeam.Contains("Team1"))
+                    winnerNotice = "胜利";
+                else
+                {
+                    winnerNotice = "失败";
+                }
                 break;
             case 2:
-                winnerNotice = "队伍2胜利";
+                if(GameManager.RealPlayerTeam.Contains("Team2"))
+                    winnerNotice = "胜利";
+                else
+                {
+                    winnerNotice = "失败";
+                }
                 break;
         }
-        GameManager.WinnerNotice.SetActive(true);
-        GameManager.Notice.text = winnerNotice;
+        if (winnerNotice == "胜利")
+        {
+            ProtocolBytes prot = new ProtocolBytes();
+            prot.AddString("AddScore");
+            prot.AddInt(50);
+            NetMgr.srvConn.Send(prot);
+        }
+        ShowNotice(winnerNotice, "返回", delegate ()
+        {
+            SceneManager.LoadScene("MainPage");
+        });
         Quit.GetComponentInChildren<Text>().text = "退出";
         Quit.onClick.RemoveAllListeners();
         Quit.onClick.AddListener(delegate () { Application.Quit(); });
@@ -429,5 +473,68 @@ public class Root : MonoBehaviour
         }
         BoardManager board = GameObject.Find("BoardManager").GetComponent<BoardManager>();
         board.InstantiateBoard(randomlist);
+    }
+
+    public void ShowNotice(string text,string ButtonText,UnityEngine.Events.UnityAction action)
+    {
+        Notice.SetActive(true);
+        NoticeText.text = text;
+        ConfirmNotice.GetComponentInChildren<Text>().text = ButtonText;
+        ConfirmNotice.onClick.AddListener(delegate(){
+            action();
+            Notice.SetActive(false);
+        });
+    }
+
+    public void ShowPlot(string plotText)
+    {
+        //PlotText.text = plotText;
+        
+    }
+
+    void OnLogoutBack(ProtocolBase protocol)
+    {
+        ShowNotice("网络断开或您的账号在其他地方登录", "好的", QuitGame);
+    }
+    void QuitGame()
+    {
+        Application.Quit();
+    }
+
+    void WinGame(ProtocolBase protocol)
+    {
+        ProtocolBytes prot = new ProtocolBytes();
+        prot.AddString("AddScore");
+        prot.AddInt(50);
+        NetMgr.srvConn.Send(prot);
+        string winnerNotice = "";
+        winnerNotice = "胜利";
+        ShowNotice(winnerNotice, "返回", delegate ()
+        {
+            SceneManager.LoadScene("MainPage");
+        });
+    }
+
+    public int FindMode(int score)
+    {
+        int mode = 0;
+        if(score>=150)
+            mode = 1;
+        return mode;
+    }
+
+    void GetScore(ProtocolBase protocol)
+    {
+        ProtocolBytes proto = (ProtocolBytes)protocol;
+        int start = 0;
+        string protoName = proto.GetString(start, ref start);
+        try
+        {
+            GameObject.Find("Score").GetComponent<Text>().text = proto.GetInt(start, ref start).ToString();
+        }
+        catch
+        {
+            Debug.Log("SetScoreError");
+        }
     }
 }
