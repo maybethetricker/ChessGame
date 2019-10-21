@@ -394,12 +394,13 @@ public class GameManager : MonoBehaviour
     {
         CoroutineStarted = true;
         int second = Random.Range(2, 6);
-        yield return new WaitForSeconds(second);
-        if(Guide!=1)
+        if (Guide != 1)
+        {
+            yield return new WaitForSeconds(second);
             AILand();
+        }
         else
         {
-            BoardManager.Grounds[5][3].GetComponent<SpriteRenderer>().color = new Color(0, 20, 0, 0.2f);
             BoardManager.Grounds[4][4].GetComponent<GroundClick>().PlaceSinglePlayer();
         }
         /*if (SmallTurn >= 3 * TeamCount && Stage == 0)

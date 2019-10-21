@@ -10,6 +10,8 @@ public class RealPlayer : PlayerController
     /// </summary>
     void OnMouseDown()//在移动/攻击时点击该回合可操作棋子触发操作
     {
+        if(!Root.instance.MouseClickLimit(gameObject,Root.instance.LimitClickException,ref Root.instance.UseLimitClick,Root.instance.LimitClickFinished))
+            return;
         if (GameManager.Stage == 1 && GameManager.PlayerOnEdit == null)//移动
         {
             //只有本回合能动的一方可动

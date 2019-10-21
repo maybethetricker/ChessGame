@@ -38,18 +38,10 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
     /// </summary>
     void OnMouseDown()
     {
+        if(!Root.instance.MouseClickLimit(gameObject,Root.instance.LimitClickException,ref Root.instance.UseLimitClick,Root.instance.LimitClickFinished))
+            return;
         if (GameManager.Stage == 0)
         {
-            if (GameManager.Guide == 1 && gameObject.GetComponent<SpriteRenderer>().color != new Color(0, 20, 0, 0.2f))
-            {
-                Root.instance.flowchart.SetBooleanVariable("RepeatCommand",true);
-                return;
-            }
-            else
-            {
-                gameObject.GetComponent<SpriteRenderer>().color = new Color(255, 255, 255);
-                Root.instance.flowchart.SetBooleanVariable("FinnshCommand", true);
-            }
             if (this.tag == "Occupied" || this.tag == "Untagged")
                 return;
             if (GameManager.RealPlayerTeam.Contains("Team" + (TeamCounter + 1).ToString()))
@@ -71,7 +63,6 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
         {
             if (GameManager.RealPlayerTeam.Contains("Team" + (GameManager.instance.MovingTeam + 1).ToString()))
             {
-
                 bool find = false;
                 for (int i = 0; i < PlayerController.AimRangeList.Count; i++)
                 {
@@ -128,7 +119,10 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
         if (GameManager.RealPlayerTeam.Contains(newPlayer.tag))
         {
             newPlayer.AddComponent<RealPlayer>();
-
+        }
+        else if(GameManager.Guide>0)
+        {
+            newPlayer.AddComponent<Trainer>();
         }
         else if (GameManager.UseAI)
         {
@@ -174,6 +168,7 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
         GameManager.instance.SmallTurn++;
         this.gameObject.tag = "Occupied";
         TeamCounter = (TeamCounter + 1) % GameManager.TeamCount;
+        //For Guide
         if(GameManager.Guide==1&&GameManager.instance.SmallTurn==1)
         {
             Root.instance.flowchart.SendFungusMessage("Guide1Start");

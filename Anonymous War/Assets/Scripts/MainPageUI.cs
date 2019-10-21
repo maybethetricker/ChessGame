@@ -53,6 +53,7 @@ public class MainPageUI : MonoBehaviour
             if(int.Parse(ScoreText.text) == 100)
                 GameManager.Guide = 3;
             GameManager.UseAI = true;
+            Root.instance.Quit.gameObject.SetActive(false);
             SceneManager.LoadScene("Guide");
         }
 

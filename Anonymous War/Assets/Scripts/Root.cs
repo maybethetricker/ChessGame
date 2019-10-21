@@ -14,6 +14,11 @@ public class Root : MonoBehaviour
     public Text NoticeText;
     public Button ConfirmNotice;
     public Flowchart flowchart;
+    public bool UseLimitClick;
+    public GameObject LimitClickException;
+    //public GameObject BlockUIPanel;
+    public delegate void VoidDelegate();
+    public VoidDelegate LimitClickFinished;
 
     //public GameObject Plot;
     //public Text PlotText;
@@ -535,6 +540,25 @@ public class Root : MonoBehaviour
         catch
         {
             Debug.Log("SetScoreError");
+        }
+    }
+    public bool MouseClickLimit(GameObject clickedObject,GameObject except,ref bool useLimit,VoidDelegate FinishedAction)
+    {
+        if(!useLimit)
+            return true;
+        if(except==null)
+            return false;
+        if (clickedObject != except)
+        {
+            Root.instance.flowchart.SetBooleanVariable("RepeatCommand", true);
+            return false;
+        }
+        else
+        {
+            useLimit = false;
+            Root.instance.flowchart.SetBooleanVariable("FinnishCommand", true);
+            FinishedAction();
+            return true;
         }
     }
 }
