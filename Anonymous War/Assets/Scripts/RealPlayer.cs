@@ -12,6 +12,18 @@ public class RealPlayer : PlayerController
     {
         if(!Root.instance.MouseClickLimit(gameObject,Root.instance.LimitClickException,ref Root.instance.UseLimitClick,Root.instance.LimitClickFinished))
             return;
+        if(GameManager.Stage==0)
+        {
+            if (this.tag != "Team" + (GameManager.instance.MovingTeam + 1).ToString() || !GameManager.RealPlayerTeam.Contains(this.tag))
+                return;
+            foreach (GameManager.GroundStage gstage in GameManager.OccupiedGround)
+                if (gstage.PlayerOnGround == gameObject && gstage.i == -1)
+                    return;
+            if(GameManager.PlayerOnEdit==null)
+                GameManager.PlayerOnEdit = gameObject;
+            StartCoroutine(OnClickJump());
+
+        }
         if (GameManager.Stage == 1 && GameManager.PlayerOnEdit == null)//移动
         {
             //只有本回合能动的一方可动
@@ -23,6 +35,7 @@ public class RealPlayer : PlayerController
             //标记出移动者并计算可移动范围
             //transform.localScale *= 1.1f;
             GameManager.PlayerOnEdit = gameObject;
+            StartCoroutine(OnClickJump());
             foreach (GameManager.GroundStage gstage in GameManager.OccupiedGround)
                 if (gstage.PlayerOnGround == GameManager.PlayerOnEdit)
                 {
@@ -46,6 +59,7 @@ public class RealPlayer : PlayerController
             //mistake:haven't change scale back after move, won't change as way of highlighting isn't ready
             //transform.localScale *= 1.1f;
             //GameManager.PlayerOnEdit.transform.localScale /= 1.1f;
+            StartCoroutine(OnClickJump());
             GameManager.PlayerOnEdit = gameObject;
             foreach (GameManager.GroundStage gstage in GameManager.OccupiedGround)
                 if (gstage.PlayerOnGround == GameManager.PlayerOnEdit)

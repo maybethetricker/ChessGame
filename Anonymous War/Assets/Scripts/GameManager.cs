@@ -48,8 +48,8 @@ public class GameManager : MonoBehaviour
     public Coroutine timer;
     public static bool IsTraining;
     public static int Mode=1;//随天梯分数提高而有游戏性变化
-    //1:无天降神器
-    //2愤怒水晶
+    //0:无天降神器
+    //1愤怒水晶
     //Button test;
     public static int Guide = -1;//1,2,3...为各教程
 
@@ -57,7 +57,6 @@ public class GameManager : MonoBehaviour
 
     public virtual void Start()
     {
-        Guide = 1;
         if (instance == null)
             instance = this;
         else
@@ -74,6 +73,26 @@ public class GameManager : MonoBehaviour
         Turn = 0;
         PlayerOnEdit = null;
         OccupiedGround = new List<GroundStage>();
+        /* 
+        for (int i = 0; i < TeamCount * 3;i++)
+        {
+            GroundStage groundStage = new GroundStage();
+            Vector3 position = new Vector3();
+            position.z = 78;
+            groundStage.i = groundStage.j = -1;
+            if(i<TeamCount*1.5)
+                position.x = -60;
+            else
+            {
+                position.x = 100;
+            }
+            position.y = 20 + (i % 3) * BoardManager.distance * 2;
+            GameObject newPlayer = Instantiate(ShortSoldier, position, Quaternion.identity);
+            groundStage.PlayerOnGround = newPlayer;
+
+            OccupiedGround.Add(groundStage);
+        }
+        */
         MudSetted = false;
         GroundClick.TeamCounter = 0;
         MovingTeam = 1;
@@ -89,11 +108,23 @@ public class GameManager : MonoBehaviour
         //RealPlayerTeam.Add("Team2");
         //UseAI = false;
         //UseAI = true;
+        Debug.Log("Guide"+Guide);
         if(Guide>0)
         {
-            RealPlayerTeam.Add("Team2");
+            if(Guide==1)
+                RealPlayerTeam.Add("Team2");
+            if (Guide == 2)
+            {
+                RealPlayerTeam.Add("Team1");
+                Root.instance.flowchart.SendFungusMessage("Guide2Start");
+            }
+            if(Guide==3)
+            {
+                RealPlayerTeam.Add("Team1");
+                Root.instance.flowchart.SendFungusMessage("Guide3Start");
+            }
             IsTraining = true;
-            if(Guide>=2)
+            if(Guide>=3)
                 Mode = 1;
             else
             {
@@ -126,12 +157,18 @@ public class GameManager : MonoBehaviour
         }
         if (Mode>=1&&Turn == 1 && !MudSetted)
         {
+            if(Guide==3)
+                Root.instance.flowchart.SetBooleanVariable("FinnishCommand",true);
             //降怪前准备
             FindArtifact();
         }
         //降怪
-        if (Mode>=1&&Turn == 2 && !MudSetted)
+        if (Mode >= 1 && Turn == 2 && !MudSetted)
+        {
+            if(Guide==3)
+                Root.instance.flowchart.SetBooleanVariable("FinnishCommand",true);
             CreateArtifact();
+        }
         if(InGame)
             CheckWinner();
 
@@ -330,7 +367,7 @@ public class GameManager : MonoBehaviour
             if (RealPlayerTeam.Contains("Team" + (lastTeam + 1).ToString()))
             {
                 notice = "胜利";
-                if (!IsTraining)
+                if (!IsTraining||Guide==2||Guide==3)
                 {
                     ProtocolBytes prot = new ProtocolBytes();
                     prot.AddString("AddScore");
@@ -394,6 +431,8 @@ public class GameManager : MonoBehaviour
     {
         CoroutineStarted = true;
         int second = Random.Range(2, 6);
+        if(IsTraining)
+            second = 1;
         if (Guide != 1)
         {
             yield return new WaitForSeconds(second);
@@ -401,6 +440,7 @@ public class GameManager : MonoBehaviour
         }
         else
         {
+            yield return new WaitForSeconds(1);
             BoardManager.Grounds[4][4].GetComponent<GroundClick>().PlaceSinglePlayer();
         }
         /*if (SmallTurn >= 3 * TeamCount && Stage == 0)

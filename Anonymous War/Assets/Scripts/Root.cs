@@ -19,6 +19,8 @@ public class Root : MonoBehaviour
     //public GameObject BlockUIPanel;
     public delegate void VoidDelegate();
     public VoidDelegate LimitClickFinished;
+    public Button SkipPlot;
+    public bool OncePlotOpen = false;
 
     //public GameObject Plot;
     //public Text PlotText;
@@ -33,6 +35,15 @@ public class Root : MonoBehaviour
         }
         DontDestroyOnLoad(gameObject);
         DontDestroyOnLoad(StaticUI);
+        SkipPlot.onClick.AddListener(delegate () {
+            //Debug.Log("skipplot");
+            foreach(Block block in flowchart.GetExecutingBlocks())
+            {
+                //Debug.Log(block.name);
+                block.Stop();
+            }
+            flowchart.SetBooleanVariable("Finnished", true);
+        });
         Notice.SetActive(false);
         //Plot.SetActive(false);
         Quit.onClick.AddListener(QuitGame);
@@ -546,6 +557,7 @@ public class Root : MonoBehaviour
     {
         if(!useLimit)
             return true;
+        Debug.Log("ClickLimited");
         if(except==null)
             return false;
         if (clickedObject != except)

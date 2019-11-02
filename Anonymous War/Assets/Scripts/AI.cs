@@ -134,7 +134,7 @@ public class AI : PlayerController
                     node.JudgeHelper = node.Aim;
                     node.color = color;
                     AimRangeList.Add(node);
-                    int enemyScore = 0, enemyMaxScore = -10;
+                    int enemyScore = 0, enemyMaxScore = 0;
                     foreach (AimNode Node in AimRangeList)
                     {
                         if (Node.Aim.tag == "Weapon")
@@ -212,7 +212,7 @@ public class AI : PlayerController
                                                 || (j1 < j2 && (i1 >= i2 - Range + j2 - j1 && i1 <= i2 + Range))))
                                             {
                                                 if (Vector3.Distance(GameManager.OccupiedGround[j].PlayerOnGround.transform.position, Node.Aim.transform.position) < BoardManager.distance * 1.5f)
-                                                    enemyScore = 1;
+                                                    enemyScore = 0;
                                                 else
                                                 {
                                                     enemyScore = 40 - int.Parse(GameManager.OccupiedGround[j].PlayerBlood.GetComponent<Text>().text);
@@ -281,6 +281,10 @@ public class AI : PlayerController
                             thisScore = enemyScore;
 
                         }
+                        if(surroundscore.MaxScoreEnemy==null&&surroundscore.AveScoreAim==null)
+                        {
+                            surroundscore.AveScoreAim = Node.Aim;
+                        }
                         if (thisScore > maxScore)
                         {
                             surroundscore.MaxScoreAim = Node.Aim;
@@ -302,8 +306,12 @@ public class AI : PlayerController
             {
                 if ((!GameManager.RealPlayerTeam.Contains(GameManager.OccupiedGround[i].PlayerOnGround.tag)) && !GameManager.OccupiedGround[i].Moved)
                 {
-                    if (score[GameManager.OccupiedGround[i].PlayerBlood].AverageScoreEnemy==null||score[GameManager.OccupiedGround[i].PlayerBlood].AveScoreAim==null)
+                    if (score[GameManager.OccupiedGround[i].PlayerBlood].AveScoreAim == null)
+                    {
+                        if(GameManager.PlayerOnEdit==null)
+                            GameManager.PlayerOnEdit = GameManager.OccupiedGround[i].PlayerOnGround;
                         continue;
+                    }
                     GameManager.PlayerOnEdit = GameManager.OccupiedGround[i].PlayerOnGround;
                     possibleEnemy = score[GameManager.OccupiedGround[i].PlayerBlood].AverageScoreEnemy;
                     if (BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j] == score[GameManager.OccupiedGround[i].PlayerBlood].AveScoreAim)
@@ -315,7 +323,7 @@ public class AI : PlayerController
                 }
             }
         }
-        if(PlayerBloodSum >= EnemyBloodSum - 4 || possibleEnemy == null)
+        if(PlayerBloodSum >= EnemyBloodSum - 4||(GroundToMove==null&&possibleEnemy==null))
         {
             Debug.Log("Normal");
             for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
@@ -511,7 +519,9 @@ public class AI : PlayerController
         {
             StopCoroutine(WaitToAttack());
         }
-        int second = Random.Range(2, 6);
+        int second = Random.Range(2, 4);
+        if(GameManager.IsTraining)
+            second = 1;
         yield return new WaitForSeconds(second);
         AIAttack();
         GameManager.instance.CoroutineStarted = false;
@@ -519,7 +529,9 @@ public class AI : PlayerController
     IEnumerator WaitToMove()
     {
         GameManager.instance.CoroutineStarted = true;
-        int second = Random.Range(3, 6);
+        int second = Random.Range(3, 5);
+        if(GameManager.IsTraining)
+            second = 2;
         yield return new WaitForSeconds(second);
         AIMove();
         GameManager.instance.CoroutineStarted = false;

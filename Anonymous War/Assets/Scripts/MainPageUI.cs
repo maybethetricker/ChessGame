@@ -16,10 +16,11 @@ public class MainPageUI : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        Root.instance.SkipPlot.gameObject.SetActive(true);
         ProtocolBytes prot = new ProtocolBytes();
         prot.AddString("SetScore");
         prot.AddInt(0);
-        NetMgr.srvConn.Send(prot);
+        //NetMgr.srvConn.Send(prot);
         ScoreText.text = "-1";
         ProtocolBytes protocol = new ProtocolBytes();
         protocol.AddString("GetScore");
@@ -31,6 +32,8 @@ public class MainPageUI : MonoBehaviour
         HelpPage.SetActive(false);
         CloseHelp.gameObject.SetActive(false);
         StartWithAI.onClick.AddListener(StartFightWithAI);
+        Root.instance.flowchart.SetBooleanVariable("Started", false);
+        Root.instance.flowchart.SetBooleanVariable("Finnished", false);
     }
 
     // Update is called once per frame
@@ -41,6 +44,22 @@ public class MainPageUI : MonoBehaviour
             Root.instance.flowchart.SendFungusMessage("Beginer1");
             Root.instance.flowchart.SetBooleanVariable("Started", true);
         }
+        if(int.Parse(ScoreText.text) == 50 && !Root.instance.flowchart.GetBooleanVariable("Started"))
+        {
+            Root.instance.flowchart.SendFungusMessage("Beginer2");
+            Root.instance.flowchart.SetBooleanVariable("Started", true);
+        }
+        if(int.Parse(ScoreText.text) == 100 && !Root.instance.flowchart.GetBooleanVariable("Started"))
+        {
+            Root.instance.flowchart.SendFungusMessage("Beginer3");
+            Root.instance.flowchart.SetBooleanVariable("Started", true);
+        }
+        if(int.Parse(ScoreText.text) == 150 && !Root.instance.flowchart.GetBooleanVariable("Started")
+        &&Root.instance.OncePlotOpen)
+        {
+            Root.instance.flowchart.SendFungusMessage("Beginer4");
+            Root.instance.flowchart.SetBooleanVariable("Started", true);
+        }
         if (Root.instance.flowchart.GetBooleanVariable("Finnished"))
         {
             //open guide
@@ -48,12 +67,19 @@ public class MainPageUI : MonoBehaviour
             GameManager.RealPlayerTeam = new List<string>();
             if(int.Parse(ScoreText.text) == 0)
                 GameManager.Guide = 1;
-            if(int.Parse(ScoreText.text) == 50)
+            else if(int.Parse(ScoreText.text) == 50)
                 GameManager.Guide = 2;
-            if(int.Parse(ScoreText.text) == 100)
+            else if(int.Parse(ScoreText.text) == 100)
                 GameManager.Guide = 3;
+            else
+            {
+                return;
+            }
             GameManager.UseAI = true;
             Root.instance.Quit.gameObject.SetActive(false);
+            Root.instance.flowchart.SetBooleanVariable("RepeatCommand", false);
+            Root.instance.flowchart.SetBooleanVariable("FinnishCommand", false);
+            Root.instance.flowchart.SetIntegerVariable("GuideStep", 0);
             SceneManager.LoadScene("Guide");
         }
 

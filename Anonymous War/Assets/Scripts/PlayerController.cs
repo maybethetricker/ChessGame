@@ -491,6 +491,8 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
         //Debug.Log("SmallTurn:"+GameManager.instance.SmallTurn);
         //若本回合结束更换大回合
         int totalSmallTurns = GameManager.TeamCount * 3 - FaintCount + MovedDead;
+        if(GameManager.Guide==1)
+            totalSmallTurns = GameManager.TeamCount - FaintCount - MovedDead;
         for (int k = 0; k < GameManager.TeamCount;k++)
             totalSmallTurns -= GameManager.instance.TeamDiedSoldiers[k];
         if (GameManager.instance.SmallTurn >= totalSmallTurns)
@@ -579,5 +581,23 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
             }
         }
         AimRangeList = new List<AimNode>();
+    }
+
+    public IEnumerator OnClickJump()
+    {
+        Vector3 nowPosition = transform.position;
+        //Vector3 nowPosition = position;
+        for (int i = 0; i < 10;i++)
+        {
+            nowPosition.z += 0.1f;
+            transform.position = nowPosition;
+            yield return 0;
+        }
+        for (int i = 0; i < 10;i++)
+        {
+            nowPosition.z -= 0.1f;
+            transform.position = nowPosition;
+            yield return 0;
+        }
     }
 }

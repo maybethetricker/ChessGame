@@ -14,7 +14,7 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
     public GameObject TearSoldier;
     public GameObject EmptySoldier;
 
-    int BloodCount;
+    int BloodCount=33;
     public static int TeamCounter = 0;//用于队伍轮转
     // Start is called before the first frame update
     void Start()
@@ -236,7 +236,10 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
                 if (GameManager.RealPlayerTeam.Contains(tag))
                 {
                     GameManager.PlayerOnEdit.AddComponent<RealPlayer>();
-
+                }
+                else if(GameManager.Guide>0)
+                {
+                    GameManager.PlayerOnEdit.AddComponent<Trainer>();
                 }
                 else if (GameManager.UseAI)
                 {
@@ -256,6 +259,10 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
                     GameManager.PlayerOnEdit.AddComponent<RealPlayer>();
 
                 }
+                else if(GameManager.Guide>0)
+                {
+                    GameManager.PlayerOnEdit.AddComponent<Trainer>();
+                }
                 else if (GameManager.UseAI)
                 {
                     GameManager.PlayerOnEdit.AddComponent<AI>();
@@ -274,6 +281,10 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
                     GameManager.PlayerOnEdit.AddComponent<RealPlayer>();
 
                 }
+                else if(GameManager.Guide>0)
+                {
+                    GameManager.PlayerOnEdit.AddComponent<Trainer>();
+                }
                 else if (GameManager.UseAI)
                 {
                     GameManager.PlayerOnEdit.AddComponent<AI>();
@@ -291,6 +302,10 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
                 {
                     GameManager.PlayerOnEdit.AddComponent<RealPlayer>();
 
+                }
+                else if(GameManager.Guide>0)
+                {
+                    GameManager.PlayerOnEdit.AddComponent<Trainer>();
                 }
                 else if (GameManager.UseAI)
                 {
