@@ -16,6 +16,7 @@ TagManager:
   - Tear
   - Monster
   - Blood
+  - PlayerSprite
   layers:
   - Default
   - TransparentFX

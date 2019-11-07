@@ -21,6 +21,33 @@ public class MotionArtifact
         
     }
 
+    //same as playercontroller.onhitation
+    public IEnumerator OnHitAction(Vector3 attackerposotion,GameObject aim)
+    {
+        float singleFlameMovement=0.1f;
+        if(attackerposotion.x>aim.transform.position.x)
+            singleFlameMovement = -0.1f;
+        Vector3 nowPosition = aim.transform.position;
+        Vector3 OrigPosition = nowPosition;
+        for (int i = 0; i < 10;i++)
+        {
+            if(aim==null)
+                break;
+            nowPosition.x += singleFlameMovement;
+            aim.transform.position = nowPosition;
+            yield return 0;
+        }
+        for (int i = 0; i < 10;i++)
+        {
+            if(aim==null)
+                break;
+            nowPosition.y -= singleFlameMovement;
+            aim.transform.position = nowPosition;
+            yield return 0;
+        }
+        aim.transform.position = OrigPosition;
+    }
+
     public List<GameObject> FindAimsSector(Vector3 Center, Vector3 Sectorcenter, int Range, int Breadth)
     {
         List<GameObject> Surround = new List<GameObject>();
@@ -141,14 +168,14 @@ public class MotionArtifact
 
     public GameObject FindMaxHate()
     {
-        int max = 0;
+        //int max = 0;
         GameObject MaxHatePlayer = null;
         for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
         {
-            if (GameManager.OccupiedGround[i].Hate > max)
+            //if (GameManager.OccupiedGround[i].Hate > max)
             {
                 MaxHatePlayer = GameManager.OccupiedGround[i].PlayerOnGround;
-                max = GameManager.OccupiedGround[i].Hate;
+                //max = GameManager.OccupiedGround[i].Hate;
             }
         }
         return MaxHatePlayer;

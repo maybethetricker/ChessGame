@@ -1092,20 +1092,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 796f37f96c6005d48b784c6d8b12fe30, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  LongSoldier: {fileID: 4319592440285663039, guid: 85806a52e00715a44b1171bfab571f84,
+  LongSoldier: {fileID: 21300000, guid: 759e96f4baaf6c84184c3c7b649b1388, type: 3}
+  ShortSoldier: {fileID: 21300000, guid: cd257e7ed8a484f409108f1633e35806, type: 3}
+  DragSoldier: {fileID: 21300000, guid: 482bb928544aa1c408edd9eaf9ef9ece, type: 3}
+  OrigSoldier: {fileID: 8887891261889884195, guid: f092f229a39c2164a9c817a9c557b010,
     type: 3}
-  ShortSoldier: {fileID: 8887891261889884195, guid: f092f229a39c2164a9c817a9c557b010,
-    type: 3}
-  DragSoldier: {fileID: 6747744764353101295, guid: 75571fe0da6225c48a7877ef559649c9,
-    type: 3}
-  TearSoldier: {fileID: 129337885249873763, guid: fc132bce0c1be7247a4e80cf3993b695,
-    type: 3}
-  Short: {fileID: 2196757628317213394, guid: 74c182ed24fd99e4aa01592c84c36d2a, type: 3}
-  Long: {fileID: 5861715006425365771, guid: 250e264dcb69e61458b4ebc95f2dc0a2, type: 3}
-  Drag: {fileID: 3335133884325783597, guid: 2219874e529f3ce45836de12deaa2f19, type: 3}
-  Tear: {fileID: 6677337581583436081, guid: 17aeb40c84473a7499a040242fcf934e, type: 3}
   Monster: {fileID: 7174348744320852066, guid: 6aac8f5c9ac2e0a469436af8d22add9c, type: 3}
-  Blood: {fileID: 1959562310762665233, guid: fa7e5273cadd19c4aa3f5e4371581a5d, type: 3}
   Timer: {fileID: 450034364}
   TimerText: {fileID: 1464417450}
   Turn: 0
@@ -1117,6 +1109,7 @@ MonoBehaviour:
   EnemyChecked: 0
   AttackMode: 0
   TeamDiedSoldiers: 0000000000000000
+  SkipButton: {fileID: 0}
 --- !u!4 &1164979708
 Transform:
   m_ObjectHideFlags: 0

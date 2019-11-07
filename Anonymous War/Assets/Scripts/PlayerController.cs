@@ -25,6 +25,8 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
     // Update is called once per frame
     void Update()
     {
+        if(GameManager.instance.SmoothMoveOnWay)
+            return;
         //若攻击阶段，则检测攻击范围
         CheckAttack();
     }
@@ -39,6 +41,7 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
             {
                 if (GameManager.OccupiedGround[i].PlayerOnGround == GameManager.PlayerOnEdit)
                 {
+                    //BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.transform.localScale *= 1.1f;
                     switch (GameManager.OccupiedGround[i].PlayerWeapon)
                     {
                         //change:use position of ground instead of army to check range
@@ -70,6 +73,7 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
     {
         Debug.Log("AimWeapon:" + AimWeapon);
         ClearHighlight();
+        StartCoroutine(OnHitAction(GameManager.PlayerOnEdit, gameObject));
         //change:use AimBlood instead of Blood
         //攻击
         int bloodamount = int.Parse(AimBlood.GetComponent<Text>().text);
@@ -107,6 +111,7 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
         Debug.Log("CanHitBack" + canHitBack);
         if (canHitBack)
         {
+            StartCoroutine(OnHitAction(gameObject,GameManager.PlayerOnEdit));
             int thisblood = int.Parse(ThisBlood.GetComponent<Text>().text);
             thisblood -= aimattack;
             ThisBlood.GetComponent<Text>().text = thisblood.ToString();
@@ -180,6 +185,9 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
     //抓勾攻击，与普通攻击大体一样，没有统一函数所有看起来比较冗余
     public void DragAttack(GameObject AimBlood, GameObject ThisBlood, int Hurt, string AimWeapon)//抓勾攻击，参数同上
     {
+        if(GameManager.instance.SmoothMoveOnWay)
+            return;
+        GameManager.instance.SmoothMoveOnWay = true;
         //寻找对应被拉去的地块
         GameObject surround = null;
         for (int i = 0; i < AimRangeList.Count; i++)
@@ -214,15 +222,41 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
 
             //下同Ground Click。PlayerMove
             Vector3 playeroffset = new Vector3(0, 0, -0.1f);
-            gameObject.transform.position = surround.transform.position + playeroffset;
-            int bloodNum = 0;
+            StartCoroutine(GameManager.instance.smoothMove(gameObject, surround.transform.position + playeroffset, 60, delegate ()
+            {
+                switch (surround.tag)
+                {
+                    case "Long":
+                        foreach (Transform t in gameObject.GetComponentsInChildren<Transform>())
+                            if (t.tag == "PlayerSprite")
+                                t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.LongSoldier;
+                        break;
+                    case "Short":
+                        foreach (Transform t in gameObject.GetComponentsInChildren<Transform>())
+                            if (t.tag == "PlayerSprite")
+                                t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.ShortSoldier;
+                        break;
+                    case "Drag":
+                        foreach (Transform t in gameObject.GetComponentsInChildren<Transform>())
+                            if (t.tag == "PlayerSprite")
+                                t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.DragSoldier;
+                        break;
+                }
+                surround.tag = "Occupied";
+                foreach (Transform t in surround.GetComponentsInChildren<Transform>())
+                    if (t.tag == "Weapon")
+                        t.gameObject.SetActive(false);
+                Attack(GStage.PlayerBlood, ThisBlood, OrigPosition, GameManager.PlayerOnEdit.transform.position, Hurt, AimWeapon);
+                if (!gameObject.activeSelf)
+                    Destroy(gameObject);
+                GameManager.instance.SmoothMoveOnWay = false;
+            }));
             for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
             {
                 if (GameManager.OccupiedGround[i].PlayerOnGround == gameObject)
                 {
                     GStage = GameManager.OccupiedGround[i];
                     BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].tag = "Untagged";
-                    bloodNum = int.Parse(AimBlood.GetComponentInChildren<Text>().text);
                     if(GStage.Moved==false&&GStage.InMug==false&&surround.GetComponent<SpriteRenderer>().color==new Color(0,10,0,0.2f))
                     {
                         GStage.Moved = true;
@@ -234,87 +268,10 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                     break;
                 }
             }
-            string tag = gameObject.tag;
-            GameObject anotherObject = null;
-            switch (surround.tag)
-            {
-                case "Long":
-                    anotherObject = Instantiate(GameObject.Find("GameManager").GetComponent<GameManager>().LongSoldier, this.transform.position, Quaternion.identity, GameObject.Find("Players").transform);
-                    if (GameManager.RealPlayerTeam.Contains(tag))
-                    {
-                        anotherObject.AddComponent<RealPlayer>();
-                    }
-                    else if (GameManager.UseAI)
-                    {
-                        anotherObject.AddComponent<AI>();
-                    }
-                    else
-                    {
-                        anotherObject.AddComponent<RemoteEnemy>();
-                    }
-                    gameObject.SetActive(false);
-                    break;
-                case "Short":
-                    anotherObject = Instantiate(GameObject.Find("GameManager").GetComponent<GameManager>().ShortSoldier, this.transform.position, Quaternion.identity, GameObject.Find("Players").transform);
-                    if (GameManager.RealPlayerTeam.Contains(tag))
-                    {
-                        anotherObject.AddComponent<RealPlayer>();
-                    }
-                    else if (GameManager.UseAI)
-                    {
-                        anotherObject.AddComponent<AI>();
-                    }
-                    else
-                    {
-                        anotherObject.AddComponent<RemoteEnemy>();
-                    }
-                    gameObject.SetActive(false);
-                    break;
-                case "Drag":
-                    anotherObject = Instantiate(GameObject.Find("GameManager").GetComponent<GameManager>().DragSoldier, this.transform.position, Quaternion.identity, GameObject.Find("Players").transform);
-                    if (GameManager.RealPlayerTeam.Contains(tag))
-                    {
-                        anotherObject.AddComponent<RealPlayer>();
-                    }
-                    else if (GameManager.UseAI)
-                    {
-                        anotherObject.AddComponent<AI>();
-                    }
-                    else
-                    {
-                        anotherObject.AddComponent<RemoteEnemy>();
-                    }
-                    gameObject.SetActive(false);
-                    break;
-                /*case "Tear":
-                    //anotherObject = Instantiate(GameObject.Find("GameManager").GetComponent<GameManager>().TearSoldier, this.transform.position, Quaternion.identity, GameObject.Find("Players").transform);
-                    if (GameManager.RealPlayerTeam.Contains(tag))
-                    {
-                        anotherObject.AddComponent<RealPlayer>();
-                    }
-                    else if (GameManager.UseAI)
-                    {
-                        anotherObject.AddComponent<AI>();
-                    }
-                    else
-                    {
-                        anotherObject.AddComponent<RemoteEnemy>();
-                    }
-                    gameObject.SetActive(false);
-                    break;*/
-                default:
-                    anotherObject = gameObject;
-                    anotherObject.transform.Rotate(45, 0, 0);
-                    break;
-            }
+            
             if (tag == "Team2")
-                anotherObject.GetComponentInChildren<SpriteRenderer>().color = new Color(0, 8, 8);
-            anotherObject.transform.Rotate(-45, 0, 0);
-            anotherObject.tag = tag;
+                gameObject.GetComponentInChildren<SpriteRenderer>().color = new Color(0, 8, 8);
             //AimBlood.transform.position = this.transform.position + offset;
-            foreach (Transform t in surround.GetComponentsInChildren<Transform>())
-                if (t.tag == "Weapon")
-                    t.gameObject.SetActive(false);
             for (int i = 0; i < BoardManager.row; i++)
                 for (int j = 0; j < BoardManager.col; j++)
                     if (BoardManager.Grounds[i][j] != null && Vector3.Distance(BoardManager.Grounds[i][j].transform.position, surround.transform.position) < BoardManager.distance / 2)
@@ -322,21 +279,21 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                         GStage.i = i;
                         GStage.j = j;
                     }
-            GStage.PlayerOnGround = anotherObject;
-            foreach (Transform t in anotherObject.GetComponentsInChildren<Transform>())
-                if (t.tag == "Blood")
-                    GStage.PlayerBlood = t.gameObject;
-            GStage.PlayerBlood.GetComponentInChildren<Text>().text = bloodNum.ToString();
             //GStage.PlayerBlood = AimBlood;
             if (surround.tag != "Untagged")
                 GStage.PlayerWeapon = surround.tag;
-            surround.tag = "Occupied";
+            
             GameManager.OccupiedGround.Add(GStage);
+            ClearHighlight();
+        }
+        else
+        {
+            GameManager.instance.SmoothMoveOnWay = false;
+            Attack(GStage.PlayerBlood, ThisBlood, OrigPosition, GameManager.PlayerOnEdit.transform.position, Hurt, AimWeapon);
+            if (!gameObject.activeSelf)
+                Destroy(gameObject);
         }
         //GStage.PlayerBlood.transform.localScale *= 1.2f;
-        Attack(GStage.PlayerBlood, ThisBlood, OrigPosition, GameManager.PlayerOnEdit.transform.position, Hurt, AimWeapon);
-        if (!gameObject.activeSelf)
-            Destroy(gameObject);
     }
 
     public void ArrowAttack(GameObject AimBlood, GameObject ThisBlood, Vector3 AimPosition, Vector3 ThisPosition, int Hurt, string AimWeapon)
@@ -416,7 +373,6 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                 {
                     if (Vector3.Angle(CenterPosition - t.position, CenterPosition - g.transform.position) < 1)
                     {
-
                         inLine = true;
                         surroundLine = g;
                     }
@@ -586,18 +542,46 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
     public IEnumerator OnClickJump()
     {
         Vector3 nowPosition = transform.position;
+        Vector3 OrigPosition = nowPosition;
         //Vector3 nowPosition = position;
         for (int i = 0; i < 10;i++)
         {
-            nowPosition.z += 0.1f;
+            nowPosition.y += 0.1f;
             transform.position = nowPosition;
             yield return 0;
         }
         for (int i = 0; i < 10;i++)
         {
-            nowPosition.z -= 0.1f;
+            nowPosition.y -= 0.1f;
             transform.position = nowPosition;
             yield return 0;
         }
+        transform.position = OrigPosition;
+    }
+    IEnumerator OnHitAction(GameObject attacker,GameObject aim)
+    {
+        Vector3 OrigPosition = aim.transform.position;
+        float singleFlameMovement=0.1f;
+        if(attacker.transform.position.x>aim.transform.position.x)
+            singleFlameMovement = -0.1f;
+        Vector3 nowPosition = aim.transform.position;
+        //Vector3 nowPosition = position;
+        for (int i = 0; i < 10;i++)
+        {
+            if(aim==null)
+                break;
+            nowPosition.x += singleFlameMovement;
+            aim.transform.position = nowPosition;
+            yield return 0;
+        }
+        for (int i = 0; i < 10;i++)
+        {
+            if(aim==null)
+                break;
+            nowPosition.y -= singleFlameMovement;
+            aim.transform.position = nowPosition;
+            yield return 0;
+        }
+        aim.transform.position = OrigPosition;
     }
 }

@@ -21,6 +21,8 @@ public class GuideActOrder : MonoBehaviour
     /// </summary>
     void Update()
     {
+        if(GameManager.instance.SmoothMoveOnWay)
+            return;
         if(GameManager.Guide==1)
         {
             Guide1();
@@ -115,7 +117,7 @@ public class GuideActOrder : MonoBehaviour
             Root.instance.flowchart.SetIntegerVariable("GuideStep", -3);
             for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
             {
-                if (Vector3.Distance(BoardManager.Grounds[5][3].transform.position, GameManager.OccupiedGround[i].PlayerOnGround.transform.position) < 0.1f)
+                if (GameManager.RealPlayerTeam.Contains(GameManager.OccupiedGround[i].PlayerOnGround.tag))
                 {
                     Root.instance.LimitClickException = GameManager.OccupiedGround[i].PlayerOnGround;
                     break;

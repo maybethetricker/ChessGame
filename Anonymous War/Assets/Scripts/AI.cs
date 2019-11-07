@@ -20,6 +20,8 @@ public class AI : PlayerController
     // Update is called once per frame
     void Update()
     {
+        if(GameManager.instance.SmoothMoveOnWay)
+            return;
         //检测攻击范围
         CheckAttack();
         if (GameManager.Stage == 1 && this.tag == "Team" + (GameManager.instance.MovingTeam + 1).ToString() && !GameManager.RealPlayerTeam.Contains(this.tag))
@@ -44,6 +46,8 @@ public class AI : PlayerController
     /// </summary>
     void OnMouseDown()
     {
+        if(GameManager.instance.SmoothMoveOnWay)
+            return;
         //玩家攻击时的受击检测，与AI逻辑无关，可不看
         if (GameManager.Stage == 2 && Vector2.Distance(GameManager.PlayerOnEdit.transform.position, transform.position) > 0.1f)
         {

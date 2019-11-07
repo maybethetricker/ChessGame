@@ -10,17 +10,18 @@ public class RealPlayer : PlayerController
     /// </summary>
     void OnMouseDown()//在移动/攻击时点击该回合可操作棋子触发操作
     {
+        if(GameManager.instance.SmoothMoveOnWay)
+            return;
         if(!Root.instance.MouseClickLimit(gameObject,Root.instance.LimitClickException,ref Root.instance.UseLimitClick,Root.instance.LimitClickFinished))
             return;
         if(GameManager.Stage==0)
         {
-            if (this.tag != "Team" + (GameManager.instance.MovingTeam + 1).ToString() || !GameManager.RealPlayerTeam.Contains(this.tag))
+            if (this.tag != "Team" + (GroundClick.TeamCounter + 1).ToString() || !GameManager.RealPlayerTeam.Contains(this.tag))
                 return;
             foreach (GameManager.GroundStage gstage in GameManager.OccupiedGround)
-                if (gstage.PlayerOnGround == gameObject && gstage.i == -1)
+                if (gstage.PlayerOnGround == gameObject && gstage.i != -1)
                     return;
-            if(GameManager.PlayerOnEdit==null)
-                GameManager.PlayerOnEdit = gameObject;
+            GameManager.PlayerOnEdit = gameObject;
             StartCoroutine(OnClickJump());
 
         }

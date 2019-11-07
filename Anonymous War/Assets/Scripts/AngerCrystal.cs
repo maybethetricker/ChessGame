@@ -24,6 +24,7 @@ public class AngerCrystal : MotionArtifact
                 int bloodamount = int.Parse(Blood.GetComponent<Text>().text);
                 bloodamount -= 5;
                 Blood.GetComponent<Text>().text = bloodamount.ToString();
+                GameManager.instance.startCoroutine(OnHitAction(artPosition, GameManager.OccupiedGround[i].PlayerOnGround));
                 if (bloodamount <= 0)
                 {
                     //被攻击者死亡，与之上相似

@@ -7,9 +7,10 @@ using UnityEngine.SceneManagement;
 public class GameManager : MonoBehaviour
 {
     public static GameManager instance;
-    public GameObject LongSoldier;
-    public GameObject ShortSoldier;
-    public GameObject DragSoldier;
+    public Sprite LongSoldier;
+    public Sprite ShortSoldier;
+    public Sprite DragSoldier;
+    public GameObject OrigSoldier;
     public GameObject Monster;//怪
     public Image Timer;
     public Text TimerText;
@@ -25,7 +26,7 @@ public class GameManager : MonoBehaviour
         public bool InMug;//是否位于泥地中
         public bool Faint;//是否被眩晕
         public Color OrigColor;
-        public int Hate;
+        public int Ability;//0:nothing,1:attack+1,2:blood+10,3:one more moving turn
     }//每个棋子及其所在地块，血条与基本属性
     public static int Stage;
     public static GameObject PlayerOnEdit;//正准备移动或攻击的棋子
@@ -48,6 +49,7 @@ public class GameManager : MonoBehaviour
     public Coroutine timer;
     public static bool IsTraining;
     public static int Mode=1;//随天梯分数提高而有游戏性变化
+    public bool SmoothMoveOnWay;
     //0:无天降神器
     //1愤怒水晶
     //Button test;
@@ -73,32 +75,13 @@ public class GameManager : MonoBehaviour
         Turn = 0;
         PlayerOnEdit = null;
         OccupiedGround = new List<GroundStage>();
-        /* 
-        for (int i = 0; i < TeamCount * 3;i++)
-        {
-            GroundStage groundStage = new GroundStage();
-            Vector3 position = new Vector3();
-            position.z = 78;
-            groundStage.i = groundStage.j = -1;
-            if(i<TeamCount*1.5)
-                position.x = -60;
-            else
-            {
-                position.x = 100;
-            }
-            position.y = 20 + (i % 3) * BoardManager.distance * 2;
-            GameObject newPlayer = Instantiate(ShortSoldier, position, Quaternion.identity);
-            groundStage.PlayerOnGround = newPlayer;
-
-            OccupiedGround.Add(groundStage);
-        }
-        */
         MudSetted = false;
+        SmoothMoveOnWay = false;
         GroundClick.TeamCounter = 0;
         MovingTeam = 1;
         SmallTurn = 0;
         PlayerController.FaintCount = 0;
-        for (int i = 0; i < TeamCount;i++)
+        for (int i = 0; i < TeamCount; i++)
             TeamDiedSoldiers[i] = 0;
         EnemyChecked = false;
         PlayerController.AimRangeList = new List<PlayerController.AimNode>();
@@ -108,28 +91,87 @@ public class GameManager : MonoBehaviour
         //RealPlayerTeam.Add("Team2");
         //UseAI = false;
         //UseAI = true;
-        Debug.Log("Guide"+Guide);
-        if(Guide>0)
+        Debug.Log("Guide" + Guide);
+        if (Guide > 0)
         {
-            if(Guide==1)
+            if (Guide == 1)
                 RealPlayerTeam.Add("Team2");
             if (Guide == 2)
             {
                 RealPlayerTeam.Add("Team1");
                 Root.instance.flowchart.SendFungusMessage("Guide2Start");
             }
-            if(Guide==3)
+            if (Guide == 3)
             {
                 RealPlayerTeam.Add("Team1");
                 Root.instance.flowchart.SendFungusMessage("Guide3Start");
             }
             IsTraining = true;
-            if(Guide>=3)
+            if (Guide >= 3)
                 Mode = 1;
             else
             {
                 Mode = 0;
             }
+        }
+        int totalSoldier = TeamCount * 3;
+        if (Guide == 1)
+            totalSoldier = TeamCount;
+        for (int i = 0; i < totalSoldier; i++)
+        {
+            GroundStage groundStage = new GroundStage();
+            Vector3 position = new Vector3();
+            position.z = 78;
+            groundStage.i = groundStage.j = -1;
+            if (i < totalSoldier / 2)
+            {
+                position.x = -80;
+            }
+            else
+            {
+                position.x = 100;
+            }
+            if (Guide==1)
+                position.y = 70;
+            else
+            {
+                position.y = 50 + (i % 3) * 20 * 2;
+            }
+            GameObject newPlayer = Instantiate(OrigSoldier, position, Quaternion.identity, GameObject.Find("Players").transform);
+            if (i < totalSoldier / 2)
+            {
+                newPlayer.tag = RealPlayerTeam[0];
+            }
+            else
+            {
+                if (RealPlayerTeam[0] == "Team1")
+                    newPlayer.tag = "Team2";
+                else
+                {
+                    newPlayer.tag = "Team1";
+                }
+            }
+            if (newPlayer.tag == "Team2")
+                newPlayer.GetComponentInChildren<SpriteRenderer>().color = new Color(0, 8, 8);
+            newPlayer.transform.Rotate(-45, 0, 0);
+            newPlayer.AddComponent<RealPlayer>();
+            groundStage.PlayerOnGround = newPlayer;
+            groundStage.Moved = false;
+            groundStage.InMug = false;
+            groundStage.Faint = false;
+            if (Mode >= 2)
+                groundStage.Ability = i % 3;
+            else
+            {
+                groundStage.Ability = 0;
+            }
+            //生成血条
+            GameObject blood = null;
+            foreach (Transform t in newPlayer.GetComponentsInChildren<Transform>())
+                if (t.tag == "Blood")
+                    blood = t.gameObject;
+            groundStage.PlayerBlood = blood;
+            OccupiedGround.Add(groundStage);
         }
         /* 
         test = GameObject.Find("Test").GetComponent<Button>();
@@ -149,6 +191,8 @@ public class GameManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if(SmoothMoveOnWay)
+            return;
         if (UseAI && GameManager.Stage == 0 && !RealPlayerTeam.Contains("Team" + (GroundClick.TeamCounter + 1).ToString()))
         {
             //等待一会儿后空降
@@ -397,6 +441,15 @@ public class GameManager : MonoBehaviour
 
     void AILand()
     {
+        for (int i = 0; i < GameManager.OccupiedGround.Count;i++)
+        {
+            GameObject player = GameManager.OccupiedGround[i].PlayerOnGround;
+            if(!RealPlayerTeam.Contains(player.tag)&&GameManager.OccupiedGround[i].i==-1)
+            {
+                PlayerOnEdit = player;
+                break;
+            }
+        }
         //需要空降到的地块
         GameObject GroundToLand = null;
         List<GameObject> randomLandList = new List<GameObject>();
@@ -441,6 +494,15 @@ public class GameManager : MonoBehaviour
         else
         {
             yield return new WaitForSeconds(1);
+            for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
+            {
+                GameObject player = GameManager.OccupiedGround[i].PlayerOnGround;
+                if (!RealPlayerTeam.Contains(player.tag) && GameManager.OccupiedGround[i].i == -1)
+                {
+                    PlayerOnEdit = player;
+                    break;
+                }
+            }
             BoardManager.Grounds[4][4].GetComponent<GroundClick>().PlaceSinglePlayer();
         }
         /*if (SmallTurn >= 3 * TeamCount && Stage == 0)
@@ -495,7 +557,8 @@ public class GameManager : MonoBehaviour
         {
             Timer.fillAmount -= 1f / 10;
         }
-        leftTime--;
+        if(!SmoothMoveOnWay)
+            leftTime--;
         if(leftTime<=0)
         {
             if(Stage==1)
@@ -524,5 +587,27 @@ public class GameManager : MonoBehaviour
             }
         }
         TimerText.text = leftTime.ToString();
+    }
+    public IEnumerator smoothMove(GameObject MovingObject, Vector3 aimPosition,float speed,UnityEngine.Events.UnityAction finnishAction)//匀速移动
+    {
+        //change:as I've edited playeronedit in "PlayerController.ChangeTurn,I need one more parameter"
+        while (aimPosition != MovingObject.transform.position)
+        {
+
+            MovingObject.transform.position = Vector3.MoveTowards(MovingObject.transform.position, aimPosition, speed * Time.deltaTime);
+            yield return 0;
+            if (MovingObject == null)
+            {
+                Debug.Log("NullMovingObject");
+                break;
+            }
+        }
+        MovingObject.transform.position = aimPosition;
+        finnishAction();
+        //GameManager.PlayerOnEdit.transform.position = transform.position;
+    }
+    public void startCoroutine(IEnumerator ienu)
+    {
+        StartCoroutine(ienu);
     }
 }

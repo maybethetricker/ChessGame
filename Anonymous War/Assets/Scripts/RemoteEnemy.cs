@@ -11,6 +11,8 @@ public class RemoteEnemy : PlayerController
     /// </summary>
     void OnMouseDown()
     {
+        if(GameManager.instance.SmoothMoveOnWay)
+            return;
         //玩家攻击时的受击检测
         if (GameManager.Stage == 2 && Vector2.Distance(GameManager.PlayerOnEdit.transform.position, transform.position) > 0.1f)
         {

@@ -94,12 +94,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 104b9335462af3b4687decc58747a3d4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  LongSoldier: {fileID: 4319592440285663039, guid: 85806a52e00715a44b1171bfab571f84,
-    type: 3}
-  ShortSoldier: {fileID: 8887891261889884195, guid: f092f229a39c2164a9c817a9c557b010,
-    type: 3}
-  DragSoldier: {fileID: 6747744764353101295, guid: 75571fe0da6225c48a7877ef559649c9,
-    type: 3}
+  LongSoldier: {fileID: 21300000, guid: 759e96f4baaf6c84184c3c7b649b1388, type: 3}
+  ShortSoldier: {fileID: 21300000, guid: cd257e7ed8a484f409108f1633e35806, type: 3}
+  DragSoldier: {fileID: 21300000, guid: 482bb928544aa1c408edd9eaf9ef9ece, type: 3}
   TearSoldier: {fileID: 129337885249873763, guid: fc132bce0c1be7247a4e80cf3993b695,
     type: 3}
   EmptySoldier: {fileID: 513919901963878563, guid: d1205dca1ee45ff4688b841d51b219c4,

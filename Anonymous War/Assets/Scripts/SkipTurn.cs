@@ -38,11 +38,6 @@ public class SkipTurn : MonoBehaviour
             Skip();
         }
     }
-    // Update is called once per frame
-    void Update()
-    {
-
-    }
     public void Skip()//跳过移动或攻击阶段
     {
         //跳过移动，修改状态为已移动并删除高亮

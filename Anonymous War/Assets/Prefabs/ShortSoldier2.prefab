@@ -111,7 +111,7 @@ GameObject:
   - component: {fileID: 908798817049480494}
   m_Layer: 0
   m_Name: ShortSoldier
-  m_TagString: Untagged
+  m_TagString: PlayerSprite
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

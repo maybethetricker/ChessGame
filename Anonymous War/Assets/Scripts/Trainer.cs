@@ -19,6 +19,8 @@ public class Trainer : PlayerController
     // Update is called once per frame
     void Update()
     {
+        if(GameManager.instance.SmoothMoveOnWay)
+            return;
         if (GameManager.Guide == 1)
             AIGuide1();
         if(GameManager.Guide==2)
@@ -39,10 +41,11 @@ public class Trainer : PlayerController
         }
         if(Step==7)
         {
+            CheckAttack();
             GameObject aim=null;
             for (int i = 0; i < GameManager.OccupiedGround.Count;i++)
             {
-                if(Vector3.Distance(BoardManager.Grounds[5][3].transform.position,GameManager.OccupiedGround[i].PlayerOnGround.transform.position)<0.1f)
+                if (GameManager.RealPlayerTeam.Contains(GameManager.OccupiedGround[i].PlayerOnGround.tag))
                 {
                     aim = GameManager.OccupiedGround[i].PlayerOnGround;
                 }
@@ -59,10 +62,11 @@ public class Trainer : PlayerController
         }
         if(Step==13)
         {
+            CheckAttack();
             GameObject aim=null;
             for (int i = 0; i < GameManager.OccupiedGround.Count;i++)
             {
-                if(Vector3.Distance(BoardManager.Grounds[4][3].transform.position,GameManager.OccupiedGround[i].PlayerOnGround.transform.position)<0.1f)
+                if (GameManager.RealPlayerTeam.Contains(GameManager.OccupiedGround[i].PlayerOnGround.tag))
                 {
                     aim = GameManager.OccupiedGround[i].PlayerOnGround;
                 }
@@ -207,6 +211,8 @@ public class Trainer : PlayerController
     /// </summary>
     void OnMouseDown()
     {
+        if(GameManager.instance.SmoothMoveOnWay)
+            return;
         if(!Root.instance.MouseClickLimit(gameObject,Root.instance.LimitClickException,ref Root.instance.UseLimitClick,Root.instance.LimitClickFinished))
             return;
         //玩家攻击时的受击检测，与AI逻辑无关，可不看
