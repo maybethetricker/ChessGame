@@ -165,6 +165,7 @@ public class AngerCrystal : MotionArtifact
                 int bloodamount = int.Parse(GameManager.OccupiedGround[i].PlayerBlood.GetComponent<Text>().text);
                 bloodamount -= 1;
                 GameManager.OccupiedGround[i].PlayerBlood.GetComponent<Text>().text = bloodamount.ToString();
+                OnHitAction(artPosition, GameManager.OccupiedGround[i].PlayerOnGround);
                 //死亡
                 if (bloodamount <= 0)
                 {
@@ -207,7 +208,7 @@ public class AngerCrystal : MotionArtifact
         int counter = 0;
         //若都被晕住则开始新回合
         bool teamHaveMove = false;
-        GameManager.MudSetted = true;
+        GameManager.ArtActFinished = true;
         while (!teamHaveMove)
         {
             for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
@@ -230,10 +231,10 @@ public class AngerCrystal : MotionArtifact
                 Debug.Log("ProbleBug");
                 if (counter >= 10)
                 {
-                    GameManager.MudSetted = true;
+                    GameManager.ArtActFinished = true;
                     break;
                 }
-                GameManager.MudSetted = false;
+                GameManager.ArtActFinished = false;
                 GameManager.instance.SmallTurn = 0;
                 PlayerController.MovedDead = 0;
                 oGround = new List<GameManager.GroundStage>();

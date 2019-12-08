@@ -11,6 +11,8 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
     public Sprite LongSoldier;
     public Sprite ShortSoldier;
     public Sprite DragSoldier;
+    public Sprite AxSoldier;
+    public Sprite ShieldSoldier;
     int BloodCount=33;
     public static int TeamCounter = 0;//用于队伍轮转
     // Start is called before the first frame update
@@ -43,18 +45,23 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
         {
             if (this.tag == "Occupied" || this.tag == "Untagged")
                 return;
+            if(GameManager.PlayerOnEdit==null)
+                return;
             if (GameManager.RealPlayerTeam.Contains("Team" + (TeamCounter + 1).ToString()))
             {
-                PlaceSinglePlayer();
                 if ((!GameManager.UseAI) && GameManager.RealPlayerTeam.Count < GameManager.TeamCount)
                 {
                     ProtocolBytes protocol = new ProtocolBytes();
                     protocol.AddString("UpdateLand");
+                    protocol.AddFloat(GameManager.PlayerOnEdit.transform.position.x);
+                    protocol.AddFloat(GameManager.PlayerOnEdit.transform.position.y);
+                    protocol.AddFloat(GameManager.PlayerOnEdit.transform.position.z);
                     protocol.AddFloat(this.transform.position.x);
                     protocol.AddFloat(this.transform.position.y);
                     protocol.AddFloat(this.transform.position.z);
                     NetMgr.srvConn.Send(protocol);
                 }
+                PlaceSinglePlayer();
             }
         }
         //按所在地块移动
@@ -88,7 +95,35 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
                 }
                 PlayerMove();
             }
-
+        }
+        if(GameManager.Stage==2)
+        {
+            bool find = false;
+            for (int i = 0; i < PlayerController.AimRangeList.Count;i++)
+            {
+                if(PlayerController.AimRangeList[i].Aim==gameObject)
+                    find = true;
+            }
+            if(!find)
+                return;
+            if(!GameManager.UseAI && !GameManager.IsTraining)
+            {
+                ProtocolBytes protocol = new ProtocolBytes();
+                protocol.AddString("HopeSpringMove");
+                protocol.AddFloat(gameObject.transform.position.x);
+                protocol.AddFloat(gameObject.transform.position.y);
+                protocol.AddFloat(gameObject.transform.position.z);
+                NetMgr.srvConn.Send(protocol);
+            }
+            GameManager.instance.ArtifactGround.tag = "Untagged";
+            GameManager.instance.ArtifactGround = gameObject;
+            gameObject.tag = "Occupied";
+            ArtifactController.instance.ClearHighlight();
+            StartCoroutine(GameManager.instance.smoothMove(ArtifactController.instance.gameObject, transform.position+new Vector3(0, 0, -0.1f), 30, delegate () {
+                ArtifactController.instance.Artifact.OnArtCreate();
+                ArtifactController.instance.ChangeTurn();
+                GameManager.instance.EnemyChecked = false;
+            }));
         }
     }
     public void PlaceSinglePlayer()//空降单个玩家
@@ -111,6 +146,7 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
         }
         StartCoroutine(GameManager.instance.smoothMove(newPlayer, transform.position + playeroffset, 100, delegate ()
         {
+            GameManager.PlayerOnEdit = null;
             switch (this.gameObject.tag)
             {
                 case "Long":
@@ -125,6 +161,16 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
                     foreach (Transform t in newPlayer.GetComponentsInChildren<Transform>())
                         if (t.tag == "PlayerSprite")
                             t.gameObject.GetComponent<SpriteRenderer>().sprite = DragSoldier;
+                    break;
+                case "Ax":
+                    foreach (Transform t in newPlayer.GetComponentsInChildren<Transform>())
+                        if (t.tag == "PlayerSprite")
+                            t.gameObject.GetComponent<SpriteRenderer>().sprite = AxSoldier;
+                    break;
+                case "Shield":
+                    foreach (Transform t in newPlayer.GetComponentsInChildren<Transform>())
+                        if (t.tag == "PlayerSprite")
+                            t.gameObject.GetComponent<SpriteRenderer>().sprite = ShieldSoldier;
                     break;
             }
             this.gameObject.tag = "Occupied";
@@ -145,11 +191,6 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
                 GameManager.PlayerOnEdit = null;
                 GameManager.instance.SmallTurn = 0;
                 GameManager.Stage = 1;
-                if (!GameManager.IsTraining)
-                {
-                    GameManager.instance.Timer.gameObject.SetActive(true);
-                    GameManager.instance.timer = StartCoroutine(GameManager.instance.HandleTimer());
-                }
                 Color color = new Color(255, 255, 0, 0.2f);
                 for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
                 {
@@ -160,7 +201,6 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
                     }
                 }
             }
-            GameManager.instance.SmoothMoveOnWay = false;
         }));
 
         //只能降空地
@@ -196,8 +236,7 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
             //{ blood = t.gameObject; break; }
         }
         //储存玩家状态
-        
-            GStage.PlayerBlood.GetComponentInChildren<Text>().text = BloodCount.ToString();
+        GStage.PlayerBlood.GetComponentInChildren<Text>().text = BloodCount.ToString();
         for (int i = 0; i < BoardManager.row; i++)
             for (int j = 0; j < BoardManager.col; j++)
                 if (BoardManager.Grounds[i][j] != null && Vector3.Distance(BoardManager.Grounds[i][j].transform.position, this.transform.position) < BoardManager.distance / 2)
@@ -260,19 +299,29 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
                         if (t.tag == "PlayerSprite")
                             t.gameObject.GetComponent<SpriteRenderer>().sprite = DragSoldier;
                     break;
+                case "Ax":
+                    foreach (Transform t in GameManager.PlayerOnEdit.GetComponentsInChildren<Transform>())
+                        if (t.tag == "PlayerSprite")
+                            t.gameObject.GetComponent<SpriteRenderer>().sprite = AxSoldier;
+                    break;
+                case "Shield":
+                    foreach (Transform t in GameManager.PlayerOnEdit.GetComponentsInChildren<Transform>())
+                        if (t.tag == "PlayerSprite")
+                            t.gameObject.GetComponent<SpriteRenderer>().sprite = ShieldSoldier;
+                    break;
             }
             this.tag = "Occupied";
+            if (tag == "Team2")
+                GameManager.PlayerOnEdit.GetComponentInChildren<SpriteRenderer>().color = new Color(0, 8, 8);
             foreach (Transform t in GetComponentsInChildren<Transform>())
                 if (t.tag == "Weapon")
                     t.gameObject.SetActive(false);
             GameManager.Stage = 2;
-            GameManager.instance.SmoothMoveOnWay = false;
         }));
         //player.transform.position = Vector3.Lerp(player.transform.position, this.transform.position, 0.2f);
         //切换武器状态
 
-        if (tag == "Team2")
-            GameManager.PlayerOnEdit.GetComponentInChildren<SpriteRenderer>().color = new Color(0, 8, 8);
+        
         //更换并储存状态
         GameManager.PlayerOnEdit.tag = tag;
         //StartCoroutine(SmoothMove(blood, transform.position + offset));

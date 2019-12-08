@@ -21,7 +21,6 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
     public static int MovedDead = 0;
     public static List<AimNode> AimRangeList = new List<AimNode>();//抓勾可抓取范围
 
-
     // Update is called once per frame
     void Update()
     {
@@ -45,10 +44,12 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                     switch (GameManager.OccupiedGround[i].PlayerWeapon)
                     {
                         //change:use position of ground instead of army to check range
-                        case "Long": attack = 2; range = 3; CheckRange(GameManager.PlayerOnEdit, BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.position, range, "Players", 2, false); GameManager.instance.AttackMode = 2; break;
+                        case "Long": attack = 3; range = 3; CheckRange(GameManager.PlayerOnEdit, BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.position, range, "Players", 2, false); GameManager.instance.AttackMode = 2; break;
                         case "Short": attack = 4; range = 1; CheckRange(GameManager.PlayerOnEdit, BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.position, range, "Players", 0, false); GameManager.instance.AttackMode = 0; break;
                         case "Drag": attack = 1; range = 3; CheckRange(GameManager.PlayerOnEdit, BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.position, range, "Players", 1, true); GameManager.instance.AttackMode = 1; break;
                         case "Tear": attack = 50; range = 2; CheckRange(GameManager.PlayerOnEdit, BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.position, range, "Players", 0, false); GameManager.instance.AttackMode = 0; break;
+                        case "Ax":attack = 2;range = 1;CheckRange(GameManager.PlayerOnEdit, BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.position, range, "Players", 0, false); AxAttack(attack); break;
+                        case "Shield":AimRangeList=new List<AimNode>();break;
                     }
                     break;
                 }
@@ -68,16 +69,22 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
     }
 
     //攻击
-    public void Attack(GameObject AimBlood, GameObject ThisBlood, Vector3 AimPosition, Vector3 ThisPosition, int Hurt, string AimWeapon)//攻击，参数为
+    public void Attack(GameObject AimBlood, GameObject ThisBlood, Vector3 AimPosition, Vector3 ThisPosition, int Hurt, string AimWeapon,bool changeTurn)//攻击，参数为
     //对方血条，己方血条，己方攻击力，对方攻击力与反击范围
     {
-        Debug.Log("AimWeapon:" + AimWeapon);
         ClearHighlight();
         StartCoroutine(OnHitAction(GameManager.PlayerOnEdit, gameObject));
         //change:use AimBlood instead of Blood
         //攻击
         int bloodamount = int.Parse(AimBlood.GetComponent<Text>().text);
-        bloodamount -= Hurt;
+        int indeadHurt=Hurt;
+        if(AimWeapon=="Shield")
+        {
+            indeadHurt -= 1;
+            if(indeadHurt<0)
+                indeadHurt = 0;
+        }
+        bloodamount -= indeadHurt;
         AimBlood.GetComponent<Text>().text = bloodamount.ToString();
         //在反击范围内被反击
         //change:use position of ground instead of army to check range
@@ -85,10 +92,11 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
         switch (AimWeapon)
         {
             //change:use position of ground instead of army to check range
-            case "Long": aimattack = 2; aimrange = 3; CheckRange(gameObject, AimPosition, aimrange, "Players", 2, false); break;
+            case "Long": aimattack = 3; aimrange = 3; CheckRange(gameObject, AimPosition, aimrange, "Players", 2, false); break;
             case "Short": aimattack = 4; aimrange = 1; CheckRange(gameObject, AimPosition, aimrange, "Players", 0, false); break;
             case "Drag": aimattack = 1; aimrange = 3; CheckRange(gameObject, AimPosition, aimrange, "Players", 1, true); break;
             case "Tear": aimattack = 50; aimrange = 2; CheckRange(gameObject, AimPosition, aimrange, "Players", 0, false); break;
+            case "Ax":aimattack = 2; aimrange = 1; CheckRange(gameObject, AimPosition, aimrange, "Players", 0, false);AxAttack(aimattack);break;
         }
         bool canHitBack = false;
         for (int i = 0; i < AimRangeList.Count; i++)
@@ -111,7 +119,7 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
         Debug.Log("CanHitBack" + canHitBack);
         if (canHitBack)
         {
-            StartCoroutine(OnHitAction(gameObject,GameManager.PlayerOnEdit));
+            StartCoroutine(OnHitAction(gameObject, GameManager.PlayerOnEdit));
             int thisblood = int.Parse(ThisBlood.GetComponent<Text>().text);
             thisblood -= aimattack;
             ThisBlood.GetComponent<Text>().text = thisblood.ToString();
@@ -177,9 +185,11 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
             Die();
 
         }
-        ChangeTurn();
-        GameManager.instance.EnemyChecked = false;
-
+        if (changeTurn)
+        {
+            ChangeTurn();
+            GameManager.instance.EnemyChecked = false;
+        }
 
     }
     //抓勾攻击，与普通攻击大体一样，没有统一函数所有看起来比较冗余
@@ -246,10 +256,9 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                 foreach (Transform t in surround.GetComponentsInChildren<Transform>())
                     if (t.tag == "Weapon")
                         t.gameObject.SetActive(false);
-                Attack(GStage.PlayerBlood, ThisBlood, OrigPosition, GameManager.PlayerOnEdit.transform.position, Hurt, AimWeapon);
+                Attack(GStage.PlayerBlood, ThisBlood, OrigPosition, GameManager.PlayerOnEdit.transform.position, Hurt, AimWeapon,true);
                 if (!gameObject.activeSelf)
                     Destroy(gameObject);
-                GameManager.instance.SmoothMoveOnWay = false;
             }));
             for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
             {
@@ -289,7 +298,7 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
         else
         {
             GameManager.instance.SmoothMoveOnWay = false;
-            Attack(GStage.PlayerBlood, ThisBlood, OrigPosition, GameManager.PlayerOnEdit.transform.position, Hurt, AimWeapon);
+            Attack(GStage.PlayerBlood, ThisBlood, OrigPosition, GameManager.PlayerOnEdit.transform.position, Hurt, AimWeapon,true);
             if (!gameObject.activeSelf)
                 Destroy(gameObject);
         }
@@ -298,7 +307,37 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
 
     public void ArrowAttack(GameObject AimBlood, GameObject ThisBlood, Vector3 AimPosition, Vector3 ThisPosition, int Hurt, string AimWeapon)
     {
-        Attack(AimBlood, ThisBlood, AimPosition, ThisPosition, Hurt, AimWeapon);
+        Attack(AimBlood, ThisBlood, AimPosition, ThisPosition, Hurt, AimWeapon,true);
+    }
+
+    void AxAttack(int attack)
+    {
+        GameObject thisBlood = null;
+        Vector3 ThisPosition=GameManager.PlayerOnEdit.transform.position;
+        for (int i = 0; i < GameManager.OccupiedGround.Count;i++)
+        {
+            if(GameManager.OccupiedGround[i].PlayerOnGround==GameManager.PlayerOnEdit)
+            {
+                thisBlood = GameManager.OccupiedGround[i].PlayerBlood;
+                break;
+            }
+        }
+        for (int i = 0; i < GameManager.OccupiedGround.Count;i++)
+        {
+            for (int j = 0; j < AimRangeList.Count;j++)
+                if(GameManager.OccupiedGround[i].PlayerOnGround==AimRangeList[j].Aim)
+                {
+                    if(!GameManager.RealPlayerTeam.Contains(GameManager.PlayerOnEdit.tag))
+                        AimRangeList[j].Aim.GetComponent<RealPlayer>().Attack(GameManager.OccupiedGround[i].PlayerBlood, thisBlood, BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.transform.position, ThisPosition, attack, "", false);
+                    else if(GameManager.UseAI)
+                        AimRangeList[j].Aim.GetComponent<AI>().Attack(GameManager.OccupiedGround[i].PlayerBlood, thisBlood, BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.transform.position, ThisPosition, attack, "", false);
+                    else
+                    {
+                        AimRangeList[j].Aim.GetComponent<RemoteEnemy>().Attack(GameManager.OccupiedGround[i].PlayerBlood, thisBlood, BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.transform.position, ThisPosition, attack, "", false);
+                    }
+                }
+        }
+        AimRangeList = new List<AimNode>();
     }
     public virtual void Die()
     {
@@ -420,6 +459,38 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                         {
                             line.color = BoardManager.Grounds[GameManager.OccupiedGround[j].i][GameManager.OccupiedGround[j].j].GetComponent<SpriteRenderer>().color;
                             BoardManager.Grounds[GameManager.OccupiedGround[j].i][GameManager.OccupiedGround[j].j].GetComponent<SpriteRenderer>().color = color;
+                            if (GameManager.OccupiedGround[j].PlayerWeapon == "Shield")
+                            {
+                                List<AimNode> newList = new List<AimNode>();
+                                for (int k = 0; k < AimRangeList.Count; k++)
+                                {
+                                    for (int l  = 0; l < GameManager.OccupiedGround.Count;l++)
+                                    {
+                                        if (GameManager.OccupiedGround[l].PlayerOnGround == AimRangeList[k].Aim)
+                                        {
+                                            if (GameManager.OccupiedGround[l].PlayerWeapon == "Shield")
+                                            {
+                                                newList.Add(AimRangeList[k]);
+                                            }
+                                            else
+                                            {
+                                                if (AimRangeList[k].Aim == null)
+                                                {
+                                                    Debug.Log("AimRangeList:Aim is null");
+                                                    continue;
+                                                }
+                                                if (AimRangeList[k].Aim.tag == "Monster")
+                                                {
+                                                    GameManager.instance.ArtifactGround.GetComponent<SpriteRenderer>().color = AimRangeList[k].color;
+                                                }
+                                                BoardManager.Grounds[GameManager.OccupiedGround[l].i][GameManager.OccupiedGround[l].j].GetComponent<SpriteRenderer>().color = AimRangeList[k].color;
+                                            }
+                                            break;
+                                        }
+                                    }
+                                }
+                                AimRangeList = newList;
+                            }
                             break;
                         }
                     }
@@ -454,7 +525,7 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
         if (GameManager.instance.SmallTurn >= totalSmallTurns)
         {
             //Debug.Log("AddTurn");
-            GameManager.MudSetted = false;
+            GameManager.ArtActFinished = false;
             GameManager.instance.SmallTurn = 0;
             MovedDead = 0;
             List<GameManager.GroundStage> oGround = new List<GameManager.GroundStage>();
@@ -582,6 +653,7 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
             aim.transform.position = nowPosition;
             yield return 0;
         }
-        aim.transform.position = OrigPosition;
+        if(aim!=null)
+            aim.transform.position = OrigPosition;
     }
 }

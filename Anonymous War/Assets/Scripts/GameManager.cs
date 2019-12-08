@@ -10,6 +10,8 @@ public class GameManager : MonoBehaviour
     public Sprite LongSoldier;
     public Sprite ShortSoldier;
     public Sprite DragSoldier;
+    public Sprite crystal;
+    public Sprite spring;
     public GameObject OrigSoldier;
     public GameObject Monster;//怪
     public Image Timer;
@@ -36,7 +38,7 @@ public class GameManager : MonoBehaviour
     public int Turn;
     public GameObject ArtifactGround=null;//怪物生成地
     public List<GameObject> randomPlace = new List<GameObject>();//生成怪的范围
-    public static bool MudSetted = false;//本回合是否已扩毒
+    public static bool ArtActFinished = false;//本回合是否已扩毒
     public static bool UseAI;
     public bool CoroutineStarted = false;
     public int MovingTeam = 1;//在移动的队伍
@@ -65,8 +67,14 @@ public class GameManager : MonoBehaviour
         {
             Destroy(gameObject);
         }
-        //胜利提示框
-        Timer.gameObject.SetActive(false);
+        if (!GameManager.IsTraining)
+        {
+            timer = StartCoroutine(GameManager.instance.HandleTimer());
+        }
+        else
+        {
+            Timer.gameObject.SetActive(false);
+        }
         SkipButton = GameObject.Find("Skip");
         Timer.fillAmount = 1;
         TimerText.text = "20";
@@ -75,7 +83,7 @@ public class GameManager : MonoBehaviour
         Turn = 0;
         PlayerOnEdit = null;
         OccupiedGround = new List<GroundStage>();
-        MudSetted = false;
+        ArtActFinished = false;
         SmoothMoveOnWay = false;
         GroundClick.TeamCounter = 0;
         MovingTeam = 1;
@@ -91,7 +99,6 @@ public class GameManager : MonoBehaviour
         //RealPlayerTeam.Add("Team2");
         //UseAI = false;
         //UseAI = true;
-        Debug.Log("Guide" + Guide);
         if (Guide > 0)
         {
             if (Guide == 1)
@@ -160,7 +167,7 @@ public class GameManager : MonoBehaviour
             groundStage.InMug = false;
             groundStage.Faint = false;
             if (Mode >= 2)
-                groundStage.Ability = i % 3;
+                groundStage.Ability = i % 3 + 1;
             else
             {
                 groundStage.Ability = 0;
@@ -199,7 +206,7 @@ public class GameManager : MonoBehaviour
             if (!CoroutineStarted)
                 StartCoroutine(WaitToLand());
         }
-        if (Mode>=1&&Turn == 1 && !MudSetted)
+        if (Mode>=1&&Turn == 1 && !ArtActFinished)
         {
             if(Guide==3)
                 Root.instance.flowchart.SetBooleanVariable("FinnishCommand",true);
@@ -207,7 +214,7 @@ public class GameManager : MonoBehaviour
             FindArtifact();
         }
         //降怪
-        if (Mode >= 1 && Turn == 2 && !MudSetted)
+        if (Mode >= 1 && Turn == 2 && !ArtActFinished)
         {
             if(Guide==3)
                 Root.instance.flowchart.SetBooleanVariable("FinnishCommand",true);
@@ -221,7 +228,7 @@ public class GameManager : MonoBehaviour
     {
         if (RealPlayerTeam.Count < 2 && (!UseAI) && RealPlayerTeam.Contains("Team2"))
         {
-            MudSetted = true;
+            ArtActFinished = true;
             return;
         }
         Color color;
@@ -283,22 +290,21 @@ public class GameManager : MonoBehaviour
                 BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color = color;
             }
         }
-        MudSetted = true;
+        ArtActFinished = true;
     }
     void CreateArtifact()
     {
         if (RealPlayerTeam.Count < 2 && (!UseAI) && RealPlayerTeam.Contains("Team2"))
         {
-            MudSetted = true;
+            ArtActFinished = true;
             return;
         }
-        GameObject artifact;
         //清除提示圈
         for (int i = 0; i < randomPlace.Count; i++)
         {
             Color color = new Color(255, 255, 255);
             randomPlace[i].GetComponent<SpriteRenderer>().color = color;
-            if (randomPlace[i].tag == "Occupied")
+            if (randomPlace[i].tag == "Occupied" )
             {
                 for (int j = 0; j < GameManager.OccupiedGround.Count; j++)
                 {
@@ -315,15 +321,18 @@ public class GameManager : MonoBehaviour
         //生成怪物
         int random = Random.Range(0, randomPlace.Count - 1);
         int count = 0;
-        if (ArtifactGround.tag == "Occupied")
+        if (ArtifactGround.tag == "Occupied"|| ArtifactGround.tag=="Weapon")
         {
-            while (randomPlace[random].tag == "Occupied")
+            while (randomPlace[random].tag == "Occupied"|| randomPlace[random].tag=="Weapon")
             {
                 count++;
                 random = Random.Range(0, randomPlace.Count - 1);
                 Debug.Log(random);
                 if (count > 20)
+                {
+                    Debug.Log("AllOccupied");
                     break;
+                }
             }
             ArtifactGround = randomPlace[random];
         }
@@ -342,6 +351,7 @@ public class GameManager : MonoBehaviour
         foreach (Transform t in ArtifactGround.GetComponentsInChildren<Transform>())
             if (t.tag == "Weapon")
                 Destroy(t.gameObject);
+        GameObject artifact;
         artifact = Instantiate(Monster, position, Quaternion.identity, GameObject.Find("Players").transform);
         artifact.transform.Rotate(-45, 0, 0);
         //monster.GetComponent<MonsterController>().Monster.OnMonsterCreate();
@@ -411,6 +421,12 @@ public class GameManager : MonoBehaviour
             if (RealPlayerTeam.Contains("Team" + (lastTeam + 1).ToString()))
             {
                 notice = "胜利";
+                if(!UseAI && !IsTraining)
+                {
+                    ProtocolBytes protocol = new ProtocolBytes();
+                    protocol.AddString("OutOfGame");
+                    NetMgr.srvConn.Send(protocol);
+                }
                 if (!IsTraining||Guide==2||Guide==3)
                 {
                     ProtocolBytes prot = new ProtocolBytes();
@@ -461,6 +477,8 @@ public class GameManager : MonoBehaviour
             if (t.tag != "Occupied" && t.tag != "Untagged" && t.tag != "Weapon")
             {
                 if (t.tag == "Drag")
+                    continue;
+                if(t.tag=="Ax")
                     continue;
                 randomLandList.Add(t.gameObject);
             }
@@ -540,7 +558,87 @@ public class GameManager : MonoBehaviour
     
     public void TimerEvent(int lastFlameStage)
     {
+        if(SmoothMoveOnWay)
+            return;
+        if (Stage == 1 && !RealPlayerTeam.Contains("Team" + (MovingTeam + 1).ToString()))
+        {
+            TimerText.text = "敌方回合";
+            Timer.fillAmount = 1;
+            return;
+        }
+        else if (Stage == 2 && RealPlayerTeam.Contains("Team" + (MovingTeam + 1).ToString()))
+        {
+            TimerText.text = "敌方回合";
+            Timer.fillAmount = 1;
+            return;
+        }
+        else if(Stage==0&&!RealPlayerTeam.Contains("Team" + (GroundClick.TeamCounter + 1).ToString()))
+        {
+            TimerText.text = "敌方回合";
+            Timer.fillAmount = 1;
+            return;
+        }
+        else if(TimerText.text=="敌方回合")
+        {
+            Timer.fillAmount = 1;
+            TimerText.text = "20";
+        }
         int leftTime = int.Parse(TimerText.text);
+        if(Stage==0)
+        {
+            Timer.fillAmount -= 1f / 20;
+            leftTime--;
+            if (leftTime <= 0)
+            {
+                for (int i = 0; i < OccupiedGround.Count; i++)
+                {
+                    if (RealPlayerTeam.Contains(OccupiedGround[i].PlayerOnGround.tag))
+                    {
+                        PlayerOnEdit = OccupiedGround[i].PlayerOnGround;
+                        break;
+                    }
+                }
+                GameObject GroundToLand = null;
+                List<GameObject> randomLandList = new List<GameObject>();
+                //遍历所有有武器且未被其他棋子占据的地块，并在遍历到的第一个地块处降落,因为地上有武器，所有Tag也不能为Weapon
+                foreach (Transform t in GameObject.Find("Grounds").GetComponentsInChildren<Transform>())
+                {
+                    if (t.name == "Grounds")
+                        continue;
+                    if (t.tag != "Occupied" && t.tag != "Untagged" && t.tag != "Weapon")
+                    {
+                        randomLandList.Add(t.gameObject);
+                    }
+                }
+                int rand = Random.Range(0, randomLandList.Count);
+                GroundToLand = randomLandList[rand];
+                if(!UseAI && !IsTraining)
+                {
+                    ProtocolBytes protocol=new ProtocolBytes();
+                    protocol.AddString("UpdateLand");
+                    protocol.AddFloat(PlayerOnEdit.transform.position.x);
+                    protocol.AddFloat(PlayerOnEdit.transform.position.y);
+                    protocol.AddFloat(PlayerOnEdit.transform.position.z);
+                    protocol.AddFloat(GroundToLand.transform.position.x);
+                    protocol.AddFloat(GroundToLand.transform.position.y);
+                    protocol.AddFloat(GroundToLand.transform.position.z);
+                    NetMgr.srvConn.Send(protocol);
+                }
+                //对接降落函数，可以不用看了
+                foreach (Transform t in GameObject.Find("Grounds").GetComponentsInChildren<Transform>())
+                {
+                    if (t.name == "Grounds")
+                        continue;
+                    if (Vector3.Distance(GroundToLand.transform.position, t.position) < BoardManager.distance / 2)
+                    {
+                        t.gameObject.GetComponent<GroundClick>().PlaceSinglePlayer();
+                        break;
+                    }
+                }
+            }
+            TimerText.text = leftTime.ToString();
+            return;
+        }
         if(lastFlameStage!=Stage)
         {
             if(Stage==1)
@@ -551,14 +649,13 @@ public class GameManager : MonoBehaviour
             }
             Timer.fillAmount = 1;
         }
+        leftTime--;
         if(Stage==1)
             Timer.fillAmount -= 1f / 20;
         else
         {
             Timer.fillAmount -= 1f / 10;
         }
-        if(!SmoothMoveOnWay)
-            leftTime--;
         if(leftTime<=0)
         {
             if(Stage==1)
@@ -593,7 +690,6 @@ public class GameManager : MonoBehaviour
         //change:as I've edited playeronedit in "PlayerController.ChangeTurn,I need one more parameter"
         while (aimPosition != MovingObject.transform.position)
         {
-
             MovingObject.transform.position = Vector3.MoveTowards(MovingObject.transform.position, aimPosition, speed * Time.deltaTime);
             yield return 0;
             if (MovingObject == null)
@@ -602,8 +698,10 @@ public class GameManager : MonoBehaviour
                 break;
             }
         }
-        MovingObject.transform.position = aimPosition;
+        if(MovingObject!=null)
+            MovingObject.transform.position = aimPosition;
         finnishAction();
+        SmoothMoveOnWay = false;
         //GameManager.PlayerOnEdit.transform.position = transform.position;
     }
     public void startCoroutine(IEnumerator ienu)

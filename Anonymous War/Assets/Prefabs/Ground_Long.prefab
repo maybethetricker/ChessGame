@@ -97,10 +97,8 @@ MonoBehaviour:
   LongSoldier: {fileID: 21300000, guid: 759e96f4baaf6c84184c3c7b649b1388, type: 3}
   ShortSoldier: {fileID: 21300000, guid: cd257e7ed8a484f409108f1633e35806, type: 3}
   DragSoldier: {fileID: 21300000, guid: 482bb928544aa1c408edd9eaf9ef9ece, type: 3}
-  TearSoldier: {fileID: 129337885249873763, guid: fc132bce0c1be7247a4e80cf3993b695,
-    type: 3}
-  EmptySoldier: {fileID: 513919901963878563, guid: d1205dca1ee45ff4688b841d51b219c4,
-    type: 3}
+  AxSoldier: {fileID: 21300000, guid: 21f5ff54a627b124baafdd85b31cf7bd, type: 3}
+  ShieldSoldier: {fileID: 21300000, guid: add373f1ff1354a4b8f3a47613d9aefa, type: 3}
 --- !u!60 &-6627303998874453124
 PolygonCollider2D:
   m_ObjectHideFlags: 0

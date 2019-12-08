@@ -7,7 +7,9 @@ using UnityEngine.SceneManagement;
 public class ArtifactController : PlayerController
 {
     public MotionArtifact Artifact;
+    
     public static ArtifactController instance;
+    public bool aiAbleToUse;
     /// <summary>
     /// Start is called on the frame when a script is enabled just before
     /// any of the Update methods is called the first time.
@@ -22,6 +24,7 @@ public class ArtifactController : PlayerController
         }
         ChooseArtifact();
         Artifact.artPosition = gameObject.transform.position;
+        aiAbleToUse = true;
         Artifact.OnArtCreate();
     }
     /// <summary>
@@ -31,7 +34,7 @@ public class ArtifactController : PlayerController
     {
         CheckAttack();
         //扩毒
-        if (GameManager.instance.Turn > 2 && !GameManager.MudSetted)
+        if (GameManager.instance.Turn > 2 && !GameManager.ArtActFinished)
         {
             Artifact.ArtPower();
             //SetMug((GameManager.Turn) / 2);
@@ -39,7 +42,23 @@ public class ArtifactController : PlayerController
     }
     void ChooseArtifact()
     {
-        Artifact = new AngerCrystal();
+        Dictionary<MotionArtifact,Sprite> spriteDic = new Dictionary<MotionArtifact,Sprite>();
+        List<MotionArtifact> randomList = new List<MotionArtifact>();
+        MotionArtifact artifact = new AngerCrystal();
+        MotionArtifact currentPlus = null;//当前最新解锁的物品出现率加倍
+        spriteDic.Add(artifact,GameManager.instance.crystal);
+        randomList.Add(artifact);
+        if(GameManager.Mode>=2)
+        {
+            MotionArtifact artifact1 = new HopeSpring();
+            spriteDic.Add(artifact1,GameManager.instance.spring);
+            randomList.Add(artifact1);
+        }
+        currentPlus = randomList[randomList.Count-1];
+        randomList.Add(currentPlus);
+        int rand = Random.Range(0, randomList.Count);
+        Artifact = randomList[rand];
+        gameObject.GetComponent<SpriteRenderer>().sprite = spriteDic[Artifact];
     }
 
 

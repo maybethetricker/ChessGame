@@ -67,8 +67,16 @@ public class SkipTurn : MonoBehaviour
         //跳过攻击，删除高亮并更替小回合
         if (GameManager.Stage == 2)
         {
-            GameManager.PlayerOnEdit.GetComponent<RealPlayer>().ClearHighlight();
-            GameManager.PlayerOnEdit.GetComponent<RealPlayer>().ChangeTurn();
+            if (GameManager.RealPlayerTeam.Contains(GameManager.PlayerOnEdit.tag))
+            {
+                GameManager.PlayerOnEdit.GetComponent<RealPlayer>().ClearHighlight();
+                GameManager.PlayerOnEdit.GetComponent<RealPlayer>().ChangeTurn();
+            }
+            else
+            {
+                GameManager.PlayerOnEdit.GetComponent<RemoteEnemy>().ClearHighlight();
+                GameManager.PlayerOnEdit.GetComponent<RemoteEnemy>().ChangeTurn();
+            }
             GameManager.instance.EnemyChecked = false;
 
         }

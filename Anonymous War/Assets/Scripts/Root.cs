@@ -60,6 +60,7 @@ public class Root : MonoBehaviour
         NetMgr.srvConn.msgDist.AddListener("Logout", OnLogoutBack);
         NetMgr.srvConn.msgDist.AddListener("WinGame", WinGame);
         NetMgr.srvConn.msgDist.AddListener("GetScore", GetScore);
+        NetMgr.srvConn.msgDist.AddListener("HopeSpringMove", HopeSpringMove);
     }
 
     // Update is called once per frame
@@ -73,7 +74,10 @@ public class Root : MonoBehaviour
         ProtocolBytes proto = (ProtocolBytes)protocol;
         int start = 0;
         string protoName = proto.GetString(start, ref start);
-        Vector3 GroundPosition;
+        Vector3 GroundPosition, playerPosition;
+        playerPosition.x = proto.GetFloat(start, ref start);
+        playerPosition.y = proto.GetFloat(start, ref start);
+        playerPosition.z = proto.GetFloat(start, ref start);
         GroundPosition.x = proto.GetFloat(start, ref start);
         GroundPosition.y = proto.GetFloat(start, ref start);
         GroundPosition.z = proto.GetFloat(start, ref start);
@@ -92,6 +96,16 @@ public class Root : MonoBehaviour
                 break;
             }
         }
+        for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
+        {
+            if(GameManager.OccupiedGround[i].i!=-1)
+                continue;
+            Debug.Log(Mathf.Abs(GameManager.OccupiedGround[i].PlayerOnGround.transform.position.y - playerPosition.y));
+            if(Mathf.Abs(GameManager.OccupiedGround[i].PlayerOnGround.transform.position.y-playerPosition.y)<1f)
+                GameManager.PlayerOnEdit = GameManager.OccupiedGround[i].PlayerOnGround;
+        }
+        if(GameManager.PlayerOnEdit==null)
+            Debug.Log("NullPlayer");
         //对接降落函数，可以不用看了
         foreach (Transform t in GameObject.Find("Grounds").GetComponentsInChildren<Transform>())
         {
@@ -104,6 +118,7 @@ public class Root : MonoBehaviour
             }
         }
     }
+
     void NetMove(ProtocolBase protocol)
     {
         ProtocolBytes proto = (ProtocolBytes)protocol;
@@ -198,11 +213,11 @@ public class Root : MonoBehaviour
             {
                 switch (GameManager.OccupiedGround[i].PlayerWeapon)
                 {
-                    case "Long": attack = 2; break;
+                    case "Long": attack = 3; break;
                     case "Short": attack = 4; break;
                     case "Drag": attack = 1; break;
-                    case "Tear": attack = 50; break;
                 }
+
                 thisBlood = GameManager.OccupiedGround[i].PlayerBlood;
             }
         }
@@ -219,7 +234,7 @@ public class Root : MonoBehaviour
                 {
                     if (attackMode == 0)
                     {
-                        t.gameObject.GetComponent<RealPlayer>().Attack(Blood, thisBlood, PlayerToAttack.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon);
+                        t.gameObject.GetComponent<RealPlayer>().Attack(Blood, thisBlood, PlayerToAttack.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon,true);
                         break;
                     }
                     else if (attackMode == 1)
@@ -288,7 +303,7 @@ public class Root : MonoBehaviour
                 BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color = color;
             }
         }
-        GameManager.MudSetted = true;
+        GameManager.ArtActFinished = true;
 
     }
     void NetCreateArtifact(ProtocolBase protocol)
@@ -467,7 +482,6 @@ public class Root : MonoBehaviour
 
     void NetSetBoard(ProtocolBase protocol)
     {
-        Debug.Log("ReceiveSETBOARD");
         ProtocolBytes proto = (ProtocolBytes)protocol;
         int start = 0;
         string protoName = proto.GetString(start, ref start);
@@ -523,8 +537,7 @@ public class Root : MonoBehaviour
         prot.AddString("AddScore");
         prot.AddInt(50);
         NetMgr.srvConn.Send(prot);
-        string winnerNotice = "";
-        winnerNotice = "胜利";
+        string winnerNotice = "胜利";
         ShowNotice(winnerNotice, "返回", delegate ()
         {
             SceneManager.LoadScene("MainPage");
@@ -536,6 +549,8 @@ public class Root : MonoBehaviour
         int mode = 0;
         if(score>=150)
             mode = 1;
+        if(score>=300)
+            mode = 2;
         return mode;
     }
 
@@ -547,11 +562,46 @@ public class Root : MonoBehaviour
         try
         {
             GameObject.Find("Score").GetComponent<Text>().text = proto.GetInt(start, ref start).ToString();
+            GameObject.Find("MainPageUI").GetComponent<MainPageUI>().OpenGuidePlot();
         }
         catch
         {
             Debug.Log("SetScoreError");
+            ProtocolBytes prot = new ProtocolBytes();
+            prot.AddString("GetScore");
+            NetMgr.srvConn.Send(prot);
         }
+    }
+    void HopeSpringMove(ProtocolBase protocol)
+    {
+        ProtocolBytes proto = (ProtocolBytes)protocol;
+        int start = 0;
+        string protoName = proto.GetString(start, ref start);
+        Vector3 aimPosition;
+        aimPosition.x = proto.GetFloat(start, ref start);
+        aimPosition.y = proto.GetFloat(start, ref start);
+        aimPosition.z = proto.GetFloat(start, ref start);
+        GameManager.instance.ArtifactGround.tag = "Untagged";
+        foreach (Transform t in GameObject.Find("Grounds").GetComponentsInChildren<Transform>())
+        {
+            if (t.name == "Grounds")
+                continue;
+            if (Vector3.Distance(t.position, aimPosition) < BoardManager.distance / 2)
+            {
+                if (t.tag == "Weapon")
+                    continue;
+                GameManager.instance.ArtifactGround = t.gameObject;
+                break;
+            }
+        }
+        GameManager.instance.ArtifactGround.tag = "Occupied";
+        ArtifactController.instance.ClearHighlight();
+        StartCoroutine(GameManager.instance.smoothMove(ArtifactController.instance.gameObject, transform.position + new Vector3(0, 0, -0.1f), 30, delegate ()
+        {
+            ArtifactController.instance.Artifact.OnArtCreate();
+            ArtifactController.instance.ChangeTurn();
+            GameManager.instance.EnemyChecked = false;
+        }));
     }
     public bool MouseClickLimit(GameObject clickedObject,GameObject except,ref bool useLimit,VoidDelegate FinishedAction)
     {

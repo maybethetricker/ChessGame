@@ -8,9 +8,6 @@ using Fungus;
 public class MainPageUI : MonoBehaviour
 {
     public Button StartGame;
-    public Button Help;
-    public GameObject HelpPage;
-    public Button CloseHelp;
     public Button StartWithAI;
     public Text ScoreText;
     // Start is called before the first frame update
@@ -19,7 +16,7 @@ public class MainPageUI : MonoBehaviour
         Root.instance.SkipPlot.gameObject.SetActive(true);
         ProtocolBytes prot = new ProtocolBytes();
         prot.AddString("SetScore");
-        prot.AddInt(0);
+        prot.AddInt(250);
         //NetMgr.srvConn.Send(prot);
         ScoreText.text = "-1";
         ProtocolBytes protocol = new ProtocolBytes();
@@ -27,10 +24,7 @@ public class MainPageUI : MonoBehaviour
         NetMgr.srvConn.Send(protocol);
         StartGame.onClick.RemoveAllListeners();
         StartGame.onClick.AddListener(StartMatch);
-        Help.onClick.AddListener(OpenHelp);
-        CloseHelp.onClick.AddListener(closeHelp);
-        HelpPage.SetActive(false);
-        CloseHelp.gameObject.SetActive(false);
+
         StartWithAI.onClick.AddListener(StartFightWithAI);
         Root.instance.flowchart.SetBooleanVariable("Started", false);
         Root.instance.flowchart.SetBooleanVariable("Finnished", false);
@@ -39,27 +33,6 @@ public class MainPageUI : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (int.Parse(ScoreText.text) == 0 && !Root.instance.flowchart.GetBooleanVariable("Started"))
-        {
-            Root.instance.flowchart.SendFungusMessage("Beginer1");
-            Root.instance.flowchart.SetBooleanVariable("Started", true);
-        }
-        if(int.Parse(ScoreText.text) == 50 && !Root.instance.flowchart.GetBooleanVariable("Started"))
-        {
-            Root.instance.flowchart.SendFungusMessage("Beginer2");
-            Root.instance.flowchart.SetBooleanVariable("Started", true);
-        }
-        if(int.Parse(ScoreText.text) == 100 && !Root.instance.flowchart.GetBooleanVariable("Started"))
-        {
-            Root.instance.flowchart.SendFungusMessage("Beginer3");
-            Root.instance.flowchart.SetBooleanVariable("Started", true);
-        }
-        if(int.Parse(ScoreText.text) == 150 && !Root.instance.flowchart.GetBooleanVariable("Started")
-        &&Root.instance.OncePlotOpen)
-        {
-            Root.instance.flowchart.SendFungusMessage("Beginer4");
-            Root.instance.flowchart.SetBooleanVariable("Started", true);
-        }
         if (Root.instance.flowchart.GetBooleanVariable("Finnished"))
         {
             //open guide
@@ -85,6 +58,41 @@ public class MainPageUI : MonoBehaviour
 
     }
 
+    public void OpenGuidePlot()
+    {
+        if (int.Parse(ScoreText.text) == 0 && !Root.instance.flowchart.GetBooleanVariable("Started"))
+        {
+            Root.instance.flowchart.SendFungusMessage("Beginer1");
+            Root.instance.flowchart.SetBooleanVariable("Started", true);
+        }
+        if(int.Parse(ScoreText.text) == 50 && !Root.instance.flowchart.GetBooleanVariable("Started"))
+        {
+            Root.instance.flowchart.SendFungusMessage("Beginer2");
+            Root.instance.flowchart.SetBooleanVariable("Started", true);
+        }
+        if(int.Parse(ScoreText.text) == 100 && !Root.instance.flowchart.GetBooleanVariable("Started"))
+        {
+            Root.instance.flowchart.SendFungusMessage("Beginer3");
+            Root.instance.flowchart.SetBooleanVariable("Started", true);
+        }
+        if(int.Parse(ScoreText.text) == 150 && !Root.instance.flowchart.GetBooleanVariable("Started")
+        &&Root.instance.OncePlotOpen)
+        {
+            Root.instance.flowchart.SendFungusMessage("Beginer4");
+            Root.instance.flowchart.SetBooleanVariable("Started", true);
+            Root.instance.OncePlotOpen = false;
+        }
+        if(int.Parse(ScoreText.text) == 250)
+            Root.instance.OncePlotOpen = true;
+        if(int.Parse(ScoreText.text) == 300 && !Root.instance.flowchart.GetBooleanVariable("Started")
+        &&Root.instance.OncePlotOpen)
+        {
+            Root.instance.flowchart.SendFungusMessage("Beginer5");
+            Root.instance.flowchart.SetBooleanVariable("Started", true);
+            Root.instance.OncePlotOpen = false;
+        }
+    }
+
     void StartMatch()
     {
         if(int.Parse(ScoreText.text)<0)
@@ -107,16 +115,6 @@ public class MainPageUI : MonoBehaviour
         NetMgr.srvConn.Send(protocol);
     }
 
-    void OpenHelp()
-    {
-        HelpPage.SetActive(true);
-        CloseHelp.gameObject.SetActive(true);
-    }
-    void closeHelp()
-    {
-        HelpPage.SetActive(false);
-        CloseHelp.gameObject.SetActive(false);
-    }
     void StartFightWithAI()
     {
         if(int.Parse(ScoreText.text)<0)

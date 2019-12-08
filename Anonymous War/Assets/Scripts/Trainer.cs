@@ -178,10 +178,10 @@ public class Trainer : PlayerController
                     if (GameManager.instance.AttackMode == 0)
                     {
                         if (t.tag != GameManager.PlayerOnEdit.tag)
-                            t.gameObject.GetComponent<RealPlayer>().Attack(Blood, thisBlood, PlayerToAttack.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon);
+                            t.gameObject.GetComponent<RealPlayer>().Attack(Blood, thisBlood, PlayerToAttack.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon,true);
                         else
                         {
-                            t.gameObject.GetComponent<AI>().Attack(Blood, thisBlood, PlayerToAttack.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon);
+                            t.gameObject.GetComponent<AI>().Attack(Blood, thisBlood, PlayerToAttack.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon,true);
                         }
                         break;
                     }
@@ -251,7 +251,7 @@ public class Trainer : PlayerController
             switch (GameManager.instance.AttackMode)
             {
                 case 0:
-                    Attack(Blood, thisBlood, gameObject.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon);
+                    Attack(Blood, thisBlood, gameObject.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon,true);
                     break;
                 case 1:
                     DragAttack(Blood, thisBlood, attack, aimWeapon);
@@ -666,10 +666,10 @@ public class Trainer : PlayerController
                     if (GameManager.instance.AttackMode == 0)
                     {
                         if (t.tag != GameManager.PlayerOnEdit.tag)
-                            t.gameObject.GetComponent<RealPlayer>().Attack(Blood, thisBlood, PlayerToAttack.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon);
+                            t.gameObject.GetComponent<RealPlayer>().Attack(Blood, thisBlood, PlayerToAttack.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon,true);
                         else
                         {
-                            t.gameObject.GetComponent<AI>().Attack(Blood, thisBlood, PlayerToAttack.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon);
+                            t.gameObject.GetComponent<AI>().Attack(Blood, thisBlood, PlayerToAttack.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon,true);
                         }
                         break;
                     }

@@ -45,7 +45,8 @@ public class MotionArtifact
             aim.transform.position = nowPosition;
             yield return 0;
         }
-        aim.transform.position = OrigPosition;
+        if(aim!=null)
+            aim.transform.position = OrigPosition;
     }
 
     public List<GameObject> FindAimsSector(Vector3 Center, Vector3 Sectorcenter, int Range, int Breadth)

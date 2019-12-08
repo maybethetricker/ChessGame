@@ -115,7 +115,7 @@ public class RealPlayer : PlayerController
             switch (GameManager.instance.AttackMode)
             {
                 case 0:
-                    Attack(Blood, thisBlood, gameObject.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon);
+                    Attack(Blood, thisBlood, gameObject.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon,true);
                     break;
                 case 1:
                     DragAttack(Blood, thisBlood, attack, aimWeapon);

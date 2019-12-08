@@ -9,6 +9,8 @@ public class BoardManager : MonoBehaviour
     public GameObject ShortGround;
     public GameObject DragGround;
     public GameObject NothingGround;
+    public GameObject AxGround;
+    public GameObject ShieldGround;
     //用于生成地图
     List<GameObject> setBoardRandomGround = new List<GameObject>();
     public static float distance;//格子间距离
@@ -23,11 +25,20 @@ public class BoardManager : MonoBehaviour
         setBoardRandomGround.Add(ShortGround);
         setBoardRandomGround.Add(DragGround);
         setBoardRandomGround.Add(NothingGround);
-        if(GameManager.UseAI||GameManager.RealPlayerTeam.Contains("Team1"))
-            SetBoard();
+        setBoardRandomGround.Add(AxGround);
+        setBoardRandomGround.Add(ShieldGround);
+        if (GameManager.UseAI || GameManager.RealPlayerTeam.Contains("Team1"))
+        {
+            if(GameManager.Mode<2)
+                SetBoard1(4,13,15);
+            else
+            {
+                SetBoard1(6,17,19);
+            }
+        }
     }
 
-    public virtual void SetBoard()//生成地图
+    public virtual void SetBoard1(int weaponKind,int weaponNumMax,int weaponNumMin)//生成地图
     {
         row = 7;
         col = 7;
@@ -51,8 +62,14 @@ public class BoardManager : MonoBehaviour
         else
         {
             int k = 0;
+            List<int> eachWeaponNum = new List<int>();//Guarentee that each kind of weapon has more than 2
+            for (int i = 0; i < weaponKind; i++)
+            {
+                eachWeaponNum.Add(2);
+            }
             int dragCount = 0;
-            while (k < 15)
+            int WeaponNum = Random.Range(weaponNumMin, weaponNumMax + 1) - 2 * weaponKind;
+            while (k < WeaponNum)
             {
                 int i = Random.Range(0, 7);
                 int j = Random.Range(0, 7);
@@ -67,13 +84,44 @@ public class BoardManager : MonoBehaviour
                     case 6: if (i > 3) continue; break;
                 }
 
-                int rand = Random.Range(0, 3);
-                if (dragCount > 3 && rand == 2)
-                    rand = Random.Range(0, 2);
+                int rand = Random.Range(0,weaponKind);
+                while(rand==3)
+                    rand=Random.Range(0, weaponKind);
+                if (eachWeaponNum[rand] > 0)
+                {
+                    eachWeaponNum[rand] = eachWeaponNum[rand] - 1;
+                    WeaponNum++;
+                }
+                while (dragCount > 3 && rand == 2)
+                    rand = Random.Range(0, weaponKind);
                 if (rand == 2)
                     dragCount++;
                 randomlist[i][j] = rand;
                 k++;
+            }
+            for (int i = 0; i < weaponKind; i++)
+            {
+                if(i==3)
+                    continue;
+                while(eachWeaponNum[i]>0)
+                {
+                    int randx = Random.Range(0, 7);
+                    int randy = Random.Range(0, 7);
+                    if(randomlist[randx][randy]!=3)
+                        continue;
+                    switch (randy)
+                    {
+                        case 0: if (randx < 3 || randx > 6) continue; break;
+                        case 1: if (randx < 2 || randx > 6) continue; break;
+                        case 2: if (randx == 0 || randx > 6) continue; break;
+                        case 3: if (randx > 6) continue; break;
+                        case 4: if (randx > 5) continue; break;
+                        case 5: if (randx > 4) continue; break;
+                        case 6: if (randx > 3) continue; break;
+                    }
+                    randomlist[randx][randy] = i;
+                    eachWeaponNum[i]--;
+                }
             }
             if (!GameManager.UseAI)
             {
@@ -92,6 +140,10 @@ public class BoardManager : MonoBehaviour
             //固定地图
         }
         InstantiateBoard(randomlist);
+    }
+    void SetBoard2()
+    {
+        
     }
     IEnumerator WaitToSent(ProtocolBytes protocol)
     {

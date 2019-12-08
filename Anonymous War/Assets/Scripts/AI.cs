@@ -84,7 +84,7 @@ public class AI : PlayerController
             switch (GameManager.instance.AttackMode)
             {
                 case 0:
-                    Attack(Blood, thisBlood, gameObject.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon);
+                    Attack(Blood, thisBlood, gameObject.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon,true);
                     break;
                 case 1:
                     DragAttack(Blood, thisBlood, attack, aimWeapon);
@@ -248,6 +248,12 @@ public class AI : PlayerController
                                     thisScore = 10 + enemyMaxScore;
                                     break;
                                 case "Drag":
+                                    thisScore = 1;
+                                    break;
+                                case "Shield":
+                                    thisScore = 2;
+                                    break;
+                                case "Ax":
                                     thisScore = 1;
                                     break;
                             }
@@ -420,21 +426,10 @@ public class AI : PlayerController
                     PlayerToAttack = score[GameManager.OccupiedGround[i].PlayerBlood].MaxScoreEnemy;
                     break;
                 }
-            /* 
             if (PlayerToAttack == null)
             {
-                foreach (Transform t in GameObject.Find("Players").GetComponentsInChildren<Transform>())
-                {
-                    if (t.name == "Players")
-                        continue;
-                    if (t.gameObject.tag == "Monster")
-                    {
-                        PlayerToAttack = t.gameObject;
-                        break;
-                    }
-                }
-
-            }*/
+                PlayerToAttack = AimRangeList[0].Aim;
+            }
         }
         bool canAttack = false;
         for (int i = 0; i < AimRangeList.Count; i++)
@@ -454,7 +449,14 @@ public class AI : PlayerController
         //PlayerToAttack.transform.localScale *= 1.1f;
         if (PlayerToAttack.tag == "Monster")
         {
-            ArtifactController.instance.OnMouseDown();
+            if(ArtifactController.instance.aiAbleToUse)
+                ArtifactController.instance.OnMouseDown();
+            else
+            {
+                GameManager.PlayerOnEdit.GetComponent<RealPlayer>().ClearHighlight();
+                GameManager.PlayerOnEdit.GetComponent<RealPlayer>().ChangeTurn();
+                GameManager.instance.EnemyChecked = false;
+            }
         }
         else
         {
@@ -492,10 +494,10 @@ public class AI : PlayerController
                     if (GameManager.instance.AttackMode == 0)
                     {
                         if (t.tag != GameManager.PlayerOnEdit.tag)
-                            t.gameObject.GetComponent<RealPlayer>().Attack(Blood, thisBlood, PlayerToAttack.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon);
+                            t.gameObject.GetComponent<RealPlayer>().Attack(Blood, thisBlood, PlayerToAttack.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon,true);
                         else
                         {
-                            t.gameObject.GetComponent<AI>().Attack(Blood, thisBlood, PlayerToAttack.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon);
+                            t.gameObject.GetComponent<AI>().Attack(Blood, thisBlood, PlayerToAttack.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon,true);
                         }
                         break;
                     }

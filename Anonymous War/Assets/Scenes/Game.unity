@@ -1095,6 +1095,8 @@ MonoBehaviour:
   LongSoldier: {fileID: 21300000, guid: 759e96f4baaf6c84184c3c7b649b1388, type: 3}
   ShortSoldier: {fileID: 21300000, guid: cd257e7ed8a484f409108f1633e35806, type: 3}
   DragSoldier: {fileID: 21300000, guid: 482bb928544aa1c408edd9eaf9ef9ece, type: 3}
+  crystal: {fileID: 21300000, guid: a530b9b2364a79244b1a0b920ab4a90d, type: 3}
+  spring: {fileID: 21300000, guid: 4509b0cc920660a46a5ee5816dc6070c, type: 3}
   OrigSoldier: {fileID: 8887891261889884195, guid: f092f229a39c2164a9c817a9c557b010,
     type: 3}
   Monster: {fileID: 7174348744320852066, guid: 6aac8f5c9ac2e0a469436af8d22add9c, type: 3}
@@ -1110,6 +1112,7 @@ MonoBehaviour:
   AttackMode: 0
   TeamDiedSoldiers: 0000000000000000
   SkipButton: {fileID: 0}
+  SmoothMoveOnWay: 0
 --- !u!4 &1164979708
 Transform:
   m_ObjectHideFlags: 0
@@ -1597,6 +1600,10 @@ MonoBehaviour:
   DragGround: {fileID: 580524422330048604, guid: cab3fa02d191cd64abfd380818403153,
     type: 3}
   NothingGround: {fileID: 7780763843657364797, guid: 397a48ab0f6aa4146bd9271783264806,
+    type: 3}
+  AxGround: {fileID: 5985277629830137813, guid: c1d5954ad4058fe4380a92e8c6f25079,
+    type: 3}
+  ShieldGround: {fileID: 8290989736083176746, guid: 02ce866f158dbd84091a0bd52447f811,
     type: 3}
 --- !u!4 &1934574605
 Transform:
