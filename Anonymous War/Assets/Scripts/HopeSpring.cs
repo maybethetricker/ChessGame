@@ -9,18 +9,20 @@ public class HopeSpring : MotionArtifact
     public override void OnArtCreate()
     {
         ArtifactController.instance.aiAbleToUse = false;
-        GameManager.ArtActFinished = true;
-        Color color = new Color(0, 10, 0, 0.2f);
+        GameManager.instance.ArtActFinished = true;
+        Color color = GameManager.instance.ArtifactAbleRangeHighlight;
         if(routine==2)
-            color = new Color(0, 10, 0, 0.6f);
+            color = GameManager.instance.HopeSpringDesperateHighlight;
         foreach (Transform t in GameObject.Find("Grounds").GetComponentsInChildren<Transform>())
         {
             if (t.name == "Grounds")
                 continue;
-            if (Vector3.Distance(artPosition, t.position) < BoardManager.distance / 2 + BoardManager.distance 
-            || (GameManager.PlayerOnEdit!=null &&Vector3.Distance(GameManager.PlayerOnEdit.transform.position, t.position) < BoardManager.distance / 2 + BoardManager.distance))
+            if (Vector3.Distance(artPosition, t.position) < BoardManager.distance * 1.5f
+            && GameManager.PlayerOnEdit!=null)
             {
-                t.gameObject.GetComponent<SpriteRenderer>().color = new Color(255,255,255);
+                Debug.Log("inChangeToWhite");
+                Debug.Log(GameManager.Stage);
+                t.gameObject.GetComponent<SpriteRenderer>().color = GameManager.instance.OrigGroundColor;
                 if(t.tag=="Occupied")
                 {
                     for (int j = 0; j < GameManager.OccupiedGround.Count;j++)
@@ -28,7 +30,7 @@ public class HopeSpring : MotionArtifact
                         if(Vector3.Distance(GameManager.OccupiedGround[j].PlayerOnGround.transform.position,t.position)<BoardManager.distance*0.5)
                         {
                             GameManager.GroundStage groundStage = GameManager.OccupiedGround[j];
-                            groundStage.OrigColor = new Color(255,255,255);
+                            groundStage.OrigColor = GameManager.instance.OrigGroundColor;
                             GameManager.OccupiedGround.RemoveAt(j);
                             GameManager.OccupiedGround.Add(groundStage);
                             break;
@@ -69,7 +71,6 @@ public class HopeSpring : MotionArtifact
     {
         ArtifactController.instance.ClearHighlight();
         PlayerController.AimRangeList = new List<PlayerController.AimNode>();
-        Color color = new Color(0, 255, 255, 0.2f);
         foreach(Transform t in GameObject.Find("Grounds").GetComponentsInChildren<Transform>())
         {
             if (t.gameObject.name == "Grounds")
@@ -83,7 +84,8 @@ public class HopeSpring : MotionArtifact
             PlayerController.AimNode node = new PlayerController.AimNode();
             node.Aim = t.gameObject;
             node.color = t.gameObject.GetComponent<SpriteRenderer>().color;
-            t.gameObject.GetComponent<SpriteRenderer>().color = color;
+            t.gameObject.GetComponent<SpriteRenderer>().color = GameManager.instance.AttackAimHighlight;
+            node.JudgeHelper = node.Aim;
             PlayerController.AimRangeList.Add(node);
         }
     }
@@ -99,14 +101,12 @@ public class HopeSpring : MotionArtifact
         {
             HopeOrDesperate(false);
         }
-        GameManager.ArtActFinished = true;
+        GameManager.instance.ArtActFinished = true;
     }
 
     void HopeOrDesperate(bool desperate)
     {
         Debug.Log("HopeOrDesperate");
-        Color willDesperateColor = new Color(0, 10, 0, 0.6f);
-        Color normalColor = new Color(0, 10, 0, 0.2f);
         if(routine==2)
         foreach (Transform t in GameObject.Find("Grounds").GetComponentsInChildren<Transform>())
         {
@@ -118,7 +118,7 @@ public class HopeSpring : MotionArtifact
                     continue;
                 if (t.tag == "Weapon")
                     continue;
-                t.gameObject.GetComponent<SpriteRenderer>().color = willDesperateColor;
+                t.gameObject.GetComponent<SpriteRenderer>().color = GameManager.instance.HopeSpringDesperateHighlight;
                 if(t.tag=="Occupied")
                 {
                     for (int j = 0; j < GameManager.OccupiedGround.Count;j++)
@@ -126,7 +126,7 @@ public class HopeSpring : MotionArtifact
                         if(Vector3.Distance(GameManager.OccupiedGround[j].PlayerOnGround.transform.position,t.position)<BoardManager.distance*0.5)
                         {
                             GameManager.GroundStage groundStage = GameManager.OccupiedGround[j];
-                            groundStage.OrigColor = willDesperateColor;
+                            groundStage.OrigColor = GameManager.instance.HopeSpringDesperateHighlight;
                             GameManager.OccupiedGround.RemoveAt(j);
                             GameManager.OccupiedGround.Add(groundStage);
                             break;
@@ -148,7 +148,7 @@ public class HopeSpring : MotionArtifact
                         continue;
                     if (t.tag == "Weapon")
                         continue;
-                    t.gameObject.GetComponent<SpriteRenderer>().color = normalColor;
+                    t.gameObject.GetComponent<SpriteRenderer>().color = GameManager.instance.ArtifactAbleRangeHighlight;
                     if (t.tag == "Occupied")
                     {
                         for (int j = 0; j < GameManager.OccupiedGround.Count; j++)
@@ -156,7 +156,7 @@ public class HopeSpring : MotionArtifact
                             if (Vector3.Distance(GameManager.OccupiedGround[j].PlayerOnGround.transform.position, t.position) < BoardManager.distance * 0.5)
                             {
                                 GameManager.GroundStage groundStage = GameManager.OccupiedGround[j];
-                                groundStage.OrigColor = normalColor;
+                                groundStage.OrigColor = GameManager.instance.ArtifactAbleRangeHighlight;
                                 GameManager.OccupiedGround.RemoveAt(j);
                                 GameManager.OccupiedGround.Add(groundStage);
                                 break;
@@ -178,6 +178,25 @@ public class HopeSpring : MotionArtifact
             {
                 int bloodNum = int.Parse(GameManager.OccupiedGround[i].PlayerBlood.GetComponent<Text>().text);
                 bloodNum+=bloodChange;
+                if (bloodNum <= 0)
+                {
+                    //被攻击者死亡，与之上相似
+                    if (GameManager.OccupiedGround[i].Moved)
+                        PlayerController.MovedDead++;
+                    GameManager.OccupiedGround[i].PlayerBlood.SetActive(false);
+                    GameManager.instance.DeleteDiedObject(GameManager.OccupiedGround[i].PlayerBlood);
+                    GameObject diedObject = GameManager.OccupiedGround[i].PlayerOnGround;
+                    BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].tag = "Untagged";
+                    //BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color = GameManager.OccupiedGround[i].OrigColor;
+                    GameManager.OccupiedGround.RemoveAt(i);
+                    if (diedObject.tag == "Team1")
+                        GameManager.instance.TeamDiedSoldiers[0]++;
+                    if (diedObject.tag == "Team2")
+                        GameManager.instance.TeamDiedSoldiers[1]++;
+                    diedObject.SetActive(false);
+                    GameManager.instance.DeleteDiedObject(diedObject);
+                    continue;
+                }
                 GameManager.OccupiedGround[i].PlayerBlood.GetComponent<Text>().text = bloodNum.ToString();
                 GameManager.instance.startCoroutine(OnHitAction(artPosition, GameManager.OccupiedGround[i].PlayerOnGround));
             }

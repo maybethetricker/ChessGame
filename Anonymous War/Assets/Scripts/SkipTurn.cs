@@ -40,6 +40,12 @@ public class SkipTurn : MonoBehaviour
     }
     public void Skip()//跳过移动或攻击阶段
     {
+        if(GameManager.RealPlayerTeam.Contains(GameManager.PlayerOnEdit.tag))
+            GameManager.PlayerOnEdit.GetComponent<RealPlayer>().ClearHighlight();
+        else
+        {
+            GameManager.PlayerOnEdit.GetComponent<RemoteEnemy>().ClearHighlight();
+        }
         //跳过移动，修改状态为已移动并删除高亮
         if (GameManager.Stage == 1 && GameManager.PlayerOnEdit.tag == "Team" + (GameManager.instance.MovingTeam + 1).ToString())
         {

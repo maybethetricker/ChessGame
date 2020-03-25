@@ -131,7 +131,7 @@ public class AI : PlayerController
                 else
                 {
                     maxScore = -10;
-                    CheckRange(GameManager.OccupiedGround[i].PlayerOnGround, BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.position, 1, "Grounds", 0, false);
+                    CheckRange(GameManager.OccupiedGround[i].PlayerOnGround, BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.position, 1, "Grounds", 0, false,false);
                     Color color = BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color;
                     AimNode node = new AimNode();
                     node.Aim = BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j];
@@ -432,14 +432,16 @@ public class AI : PlayerController
             }
         }
         bool canAttack = false;
+        Debug.Log(AimRangeList.Count);
         for (int i = 0; i < AimRangeList.Count; i++)
         {
-            if (AimRangeList[i].Aim == PlayerToAttack)
+            if (PlayerToAttack.tag == "Monster" || AimRangeList[i].Aim == PlayerToAttack)
             {
                 canAttack = true;
                 break;
             }
         }
+        Debug.Log("canAttack" + canAttack);
         if(!canAttack)
         {
             PlayerToAttack = AimRangeList[0].Aim;
@@ -453,8 +455,8 @@ public class AI : PlayerController
                 ArtifactController.instance.OnMouseDown();
             else
             {
-                GameManager.PlayerOnEdit.GetComponent<RealPlayer>().ClearHighlight();
-                GameManager.PlayerOnEdit.GetComponent<RealPlayer>().ChangeTurn();
+                GameManager.PlayerOnEdit.GetComponent<AI>().ClearHighlight();
+                GameManager.PlayerOnEdit.GetComponent<AI>().ChangeTurn();
                 GameManager.instance.EnemyChecked = false;
             }
         }

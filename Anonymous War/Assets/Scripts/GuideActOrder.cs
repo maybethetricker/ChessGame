@@ -51,6 +51,11 @@ public class GuideActOrder : MonoBehaviour
             &&GameManager.RealPlayerTeam.Contains(GameManager.PlayerOnEdit.tag)
             && Vector3.Distance(GameManager.instance.ArtifactGround.transform.position, GameManager.PlayerOnEdit.transform.position) < 1.5 * BoardManager.distance)
             {
+                for (int i = 0; i < GameManager.OccupiedGround.Count;i++)
+                {
+                    if(GameManager.OccupiedGround[i].PlayerWeapon=="Shield"&&GameManager.OccupiedGround[i].PlayerOnGround==GameManager.PlayerOnEdit)
+                        return;
+                }
                 Root.instance.flowchart.SetBooleanVariable("FinnishCommand", true);
             }
         }
@@ -63,7 +68,7 @@ public class GuideActOrder : MonoBehaviour
                 Vector3 artPosition = GameManager.instance.ArtifactGround.transform.position;
                 if (Vector3.Angle(GameManager.PlayerOnEdit.transform.position - artPosition, artPosition - t.position) < 1)
                 {
-                    t.GetComponent<SpriteRenderer>().color = new Color(20, 0, 0, 0.2f);
+                    t.GetComponent<SpriteRenderer>().color = GameManager.instance.GuideHighlight;
                 }
             }
             Root.instance.flowchart.SetIntegerVariable("GuideStep", -4);
@@ -97,22 +102,21 @@ public class GuideActOrder : MonoBehaviour
     void Guide1()
     {
         int Step = Root.instance.flowchart.GetIntegerVariable("GuideStep");
-        Color highLightColor = new Color(0, 20, 0, 0.8f);
         //Debug.Log(Step);
-        if(Step==1)
+        if (Step == 1)
         {
             Root.instance.LimitClickException = null;
             Root.instance.UseLimitClick = true;
         }
-        if(Step==2)
+        if (Step == 2)
         {
             Root.instance.flowchart.SetIntegerVariable("GuideStep", -2);
-            BoardManager.Grounds[5][3].GetComponent<SpriteRenderer>().color = highLightColor;
+            BoardManager.Grounds[5][3].GetComponent<SpriteRenderer>().color = GameManager.instance.GuideHighlight;
             Root.instance.LimitClickException = BoardManager.Grounds[5][3];
-            Root.instance.LimitClickFinished = delegate () { BoardManager.Grounds[5][3].GetComponent<SpriteRenderer>().color = new Color(255, 255, 255);};
+            Root.instance.LimitClickFinished = delegate () { BoardManager.Grounds[5][3].GetComponent<SpriteRenderer>().color = GameManager.instance.OrigGroundColor; };
             Root.instance.UseLimitClick = true;
         }
-        if(Step==3)
+        if (Step == 3)
         {
             Root.instance.flowchart.SetIntegerVariable("GuideStep", -3);
             for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
@@ -126,19 +130,19 @@ public class GuideActOrder : MonoBehaviour
             Root.instance.LimitClickFinished = delegate () { };
             Root.instance.UseLimitClick = true;
         }
-        if(Step==4)
+        if (Step == 4)
         {
             Root.instance.flowchart.SetIntegerVariable("GuideStep", -4);
-            GameObject skip= GameObject.Find("Skip");
+            GameObject skip = GameObject.Find("Skip");
             Root.instance.LimitClickException = skip;
-            skip.GetComponent<Image>().color = highLightColor;
+            skip.GetComponent<Image>().color = GameManager.instance.GuideHighlight;
             Root.instance.LimitClickFinished = delegate ()
             {
-                skip.GetComponent<Image>().color = new Color(255, 255, 255);
+                skip.GetComponent<Image>().color = GameManager.instance.OrigButtonColor;
             };
             Root.instance.UseLimitClick = true;
         }
-        if(Step==5)
+        if (Step == 5)
         {
             Root.instance.flowchart.SetIntegerVariable("GuideStep", -5);
             for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
@@ -158,7 +162,7 @@ public class GuideActOrder : MonoBehaviour
                 if (Vector3.Distance(t.position, BoardManager.Grounds[5][3].transform.position) < 0.5 * BoardManager.distance)
                     continue;
                 if (Vector3.Distance(t.position, BoardManager.Grounds[5][3].transform.position) < 1.5 * BoardManager.distance)
-                    t.gameObject.GetComponent<SpriteRenderer>().color = highLightColor;
+                    t.gameObject.GetComponent<SpriteRenderer>().color = GameManager.instance.GuideHighlight;
             }
             Root.instance.LimitClickFinished = delegate ()
             {
@@ -166,17 +170,17 @@ public class GuideActOrder : MonoBehaviour
                 {
                     if (t.name == "Grounds")
                         continue;
-                    if(Vector3.Distance(t.position,BoardManager.Grounds[4][4].transform.position)<0.1f)
+                    if (Vector3.Distance(t.position, BoardManager.Grounds[4][4].transform.position) < 0.1f)
                         continue;
                     if (Vector3.Distance(t.position, BoardManager.Grounds[5][3].transform.position) < 0.5 * BoardManager.distance)
                         continue;
                     if (Vector3.Distance(t.position, BoardManager.Grounds[5][3].transform.position) < 1.5 * BoardManager.distance)
-                        t.gameObject.GetComponent<SpriteRenderer>().color = new Color(255,255,255);
+                        t.gameObject.GetComponent<SpriteRenderer>().color = GameManager.instance.OrigGroundColor;
                 }
             };
             Root.instance.UseLimitClick = true;
         }
-        if(Step==9)
+        if (Step == 9)
         {
             Root.instance.flowchart.SetIntegerVariable("GuideStep", -9);
             for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
@@ -190,17 +194,18 @@ public class GuideActOrder : MonoBehaviour
             Root.instance.LimitClickFinished = delegate () { };
             Root.instance.UseLimitClick = true;
         }
-        if(Step==10)
+        if (Step == 10)
         {
             Root.instance.flowchart.SetIntegerVariable("GuideStep", -10);
             Root.instance.LimitClickException = BoardManager.Grounds[4][3];
-            BoardManager.Grounds[4][3].GetComponent<SpriteRenderer>().color = highLightColor;
-            Root.instance.LimitClickFinished = delegate () { 
-                BoardManager.Grounds[4][3].GetComponent<SpriteRenderer>().color = new Color(255,255,255);
+            BoardManager.Grounds[4][3].GetComponent<SpriteRenderer>().color = GameManager.instance.GuideHighlight;
+            Root.instance.LimitClickFinished = delegate ()
+            {
+                BoardManager.Grounds[4][3].GetComponent<SpriteRenderer>().color = GameManager.instance.OrigGroundColor;
             };
             Root.instance.UseLimitClick = true;
         }
-        if(Step==11)
+        if (Step == 11)
         {
             Root.instance.flowchart.SetIntegerVariable("GuideStep", -11);
             for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
@@ -233,7 +238,7 @@ public class GuideActOrder : MonoBehaviour
                 if (Mathf.Abs(j2 - j1) <= Range
                     && ((j1 >= j2 && (i1 >= i2 - Range && i1 <= i2 + Range + j2 - j1))
                     || (j1 < j2 && (i1 >= i2 - Range + j2 - j1 && i1 <= i2 + Range))))
-                    t.gameObject.GetComponent<SpriteRenderer>().color = highLightColor;
+                    t.gameObject.GetComponent<SpriteRenderer>().color = GameManager.instance.GuideHighlight;
             }
             Root.instance.LimitClickFinished = delegate ()
             {
@@ -259,12 +264,12 @@ public class GuideActOrder : MonoBehaviour
                     if (Mathf.Abs(j2 - j1) <= Range
                         && ((j1 >= j2 && (i1 >= i2 - Range && i1 <= i2 + Range + j2 - j1))
                         || (j1 < j2 && (i1 >= i2 - Range + j2 - j1 && i1 <= i2 + Range))))
-                        t.gameObject.GetComponent<SpriteRenderer>().color = new Color(255,255,255);
+                        t.gameObject.GetComponent<SpriteRenderer>().color = GameManager.instance.OrigGroundColor;
                 }
             };
             Root.instance.UseLimitClick = true;
         }
-        if(Step==15)
+        if (Step == 15)
         {
             Root.instance.flowchart.SetIntegerVariable("GuideStep", -15);
             for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
@@ -278,17 +283,18 @@ public class GuideActOrder : MonoBehaviour
             Root.instance.LimitClickFinished = delegate () { };
             Root.instance.UseLimitClick = true;
         }
-        if(Step==16)
+        if (Step == 16)
         {
             Root.instance.flowchart.SetIntegerVariable("GuideStep", -16);
             Root.instance.LimitClickException = BoardManager.Grounds[4][2];
-            BoardManager.Grounds[4][2].GetComponent<SpriteRenderer>().color = highLightColor;
-            Root.instance.LimitClickFinished = delegate () { 
-                BoardManager.Grounds[5][3].GetComponent<SpriteRenderer>().color = new Color(255,255,255);
+            BoardManager.Grounds[4][2].GetComponent<SpriteRenderer>().color = GameManager.instance.GuideHighlight;
+            Root.instance.LimitClickFinished = delegate ()
+            {
+                BoardManager.Grounds[5][3].GetComponent<SpriteRenderer>().color = GameManager.instance.OrigGroundColor;
             };
             Root.instance.UseLimitClick = true;
         }
-        if(Step==17)
+        if (Step == 17)
         {
             Root.instance.flowchart.SetIntegerVariable("GuideStep", -17);
             for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
@@ -331,7 +337,7 @@ public class GuideActOrder : MonoBehaviour
                         inLine = true;
                     }
                 }
-                if(!inLine)
+                if (!inLine)
                     continue;
                 int i1 = 4, j1 = 2, i2 = 0, j2 = 0, Range = 3;
                 for (int j = 0; j < BoardManager.row; j++)
@@ -347,7 +353,7 @@ public class GuideActOrder : MonoBehaviour
                 if (Mathf.Abs(j2 - j1) <= Range
                     && ((j1 >= j2 && (i1 >= i2 - Range && i1 <= i2 + Range + j2 - j1))
                     || (j1 < j2 && (i1 >= i2 - Range + j2 - j1 && i1 <= i2 + Range))))
-                    t.gameObject.GetComponent<SpriteRenderer>().color = highLightColor;
+                    t.gameObject.GetComponent<SpriteRenderer>().color = GameManager.instance.GuideHighlight;
             }
             Root.instance.LimitClickFinished = delegate ()
             {
@@ -399,12 +405,85 @@ public class GuideActOrder : MonoBehaviour
                     if (Mathf.Abs(j2 - j1) <= Range
                         && ((j1 >= j2 && (i1 >= i2 - Range && i1 <= i2 + Range + j2 - j1))
                         || (j1 < j2 && (i1 >= i2 - Range + j2 - j1 && i1 <= i2 + Range))))
-                        t.gameObject.GetComponent<SpriteRenderer>().color = new Color(255,255,255);
+                        t.gameObject.GetComponent<SpriteRenderer>().color = GameManager.instance.OrigGroundColor;
                 }
             };
             Root.instance.UseLimitClick = true;
         }
-        if (Step == 18)
+        if(Step==18)
+        {
+            foreach (Transform t in GameObject.Find("EnemyWeaponCard").GetComponentInChildren<Transform>())
+            {
+                if (t.tag=="Long")
+                    t.gameObject.SetActive(false);
+            }
+            BoardManager.Grounds[5][3].tag="Long";
+            foreach(Transform t in BoardManager.Grounds[5][3].GetComponentInChildren<Transform>())
+            {
+                if(t.tag=="Weapon")
+                {
+                    foreach(Transform t2 in BoardManager.instance.LongGround.GetComponentInChildren<Transform>())
+                    {
+                        if(t2.tag=="Weapon")
+                        {
+                            t.GetComponent<SpriteRenderer>().sprite = t2.GetComponent<SpriteRenderer>().sprite;
+                            t.gameObject.SetActive(true);
+                        }
+                    }
+                }
+            }
+        }
+        if (Step == 20)
+        {
+            Root.instance.flowchart.SetIntegerVariable("GuideStep", -20);
+            foreach (Transform t in GameObject.Find("PlayerWeaponCard").GetComponentInChildren<Transform>())
+            {
+                if (t.tag == "Shield")
+                {
+                    Root.instance.LimitClickException = t.gameObject;
+                    t.gameObject.GetComponent<SpriteRenderer>().color = GameManager.instance.GuideHighlight;
+                }
+            }
+            Root.instance.LimitClickFinished = delegate ()
+            {
+                Root.instance.LimitClickException.GetComponent<SpriteRenderer>().color=GameManager.instance.OrigGroundColor;
+            };
+            Root.instance.UseLimitClick = true;
+        }
+        if (Step == 21)
+        {
+            Root.instance.flowchart.SetIntegerVariable("GuideStep", -21);
+            Root.instance.UseLimitClick = true;
+            Root.instance.LimitClickException = BoardManager.Grounds[4][2];
+            BoardManager.Grounds[4][2].GetComponent<SpriteRenderer>().color = GameManager.instance.GuideHighlight;
+        }
+        if (Step == 22)
+        {
+            Root.instance.flowchart.SetIntegerVariable("GuideStep", -22);
+            for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
+            {
+                if (GameManager.RealPlayerTeam.Contains(GameManager.OccupiedGround[i].PlayerOnGround.tag))
+                {
+                    Root.instance.LimitClickException = GameManager.OccupiedGround[i].PlayerOnGround;
+                    break;
+                }
+            }
+            Root.instance.LimitClickFinished = delegate () { };
+            Root.instance.UseLimitClick = true;
+        }
+        if(Step==24)
+        {
+            Root.instance.flowchart.SetIntegerVariable("GuideStep", -22);
+            Root.instance.LimitClickException = BoardManager.Grounds[4][2];
+            BoardManager.Grounds[4][2].GetComponent<SpriteRenderer>().color = GameManager.instance.GuideHighlight;
+            Root.instance.LimitClickFinished = delegate ()
+            {
+                BoardManager.Grounds[4][2].GetComponent<SpriteRenderer>().color = GameManager.instance.OrigGroundColor;
+            };
+            Root.instance.UseLimitClick = true;
+        }
+        
+        if (Step == 25)
         {
             ProtocolBytes prot = new ProtocolBytes();
             prot.AddString("AddScore");
@@ -414,32 +493,5 @@ public class GuideActOrder : MonoBehaviour
             SceneManager.LoadScene("MainPage");
         }
     }
-    IEnumerator ClickOnUI(Button button,UnityEngine.Events.UnityAction FinishedAction)
-    {
-        while (true)
-        {
-            Debug.Log("Looping");
-            if (Input.GetMouseButtonDown(0))
-            {
-                Debug.Log("mouse,screen,world");
-                Debug.Log(Input.mousePosition+" "+Camera.main.WorldToScreenPoint(Input.mousePosition)+" "+ Camera.main.ScreenToWorldPoint(Input.mousePosition));
-                Debug.Log("this");
-                Debug.Log(button.transform.position+" "+Camera.main.WorldToScreenPoint(button.transform.position)+" "+ Camera.main.ScreenToWorldPoint(button.transform.position));
-                if (Vector3.Distance(Camera.main.WorldToScreenPoint(Input.mousePosition), (button.transform.position))
-                < BoardManager.distance / 2)
-                {
-                    Debug.Log("in");
-                    gameObject.GetComponent<SpriteRenderer>().color = new Color(255, 255, 255);
-                    Root.instance.flowchart.SetBooleanVariable("FinnshCommand", true);
-                    FinishedAction();
-                    break;
-                }
-                else
-                {
-                    Root.instance.flowchart.SetBooleanVariable("RepeatCommand", true);
-                }
-            }
-            yield return 0;
-        }
-    }
+
 }

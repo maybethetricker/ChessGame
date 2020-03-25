@@ -40,7 +40,7 @@ public class RealPlayer : PlayerController
             foreach (GameManager.GroundStage gstage in GameManager.OccupiedGround)
                 if (gstage.PlayerOnGround == GameManager.PlayerOnEdit)
                 {
-                    CheckRange(gstage.PlayerOnGround, BoardManager.Grounds[gstage.i][gstage.j].transform.position, 1, "Grounds", 0, false);
+                    CheckRange(gstage.PlayerOnGround, BoardManager.Grounds[gstage.i][gstage.j].transform.position, 1, "Grounds", 0, false,false);
                     break;
                 }
 
@@ -65,7 +65,7 @@ public class RealPlayer : PlayerController
             foreach (GameManager.GroundStage gstage in GameManager.OccupiedGround)
                 if (gstage.PlayerOnGround == GameManager.PlayerOnEdit)
                 {
-                    CheckRange(gstage.PlayerOnGround, BoardManager.Grounds[gstage.i][gstage.j].transform.position, 1, "Grounds", 0, false);
+                    CheckRange(gstage.PlayerOnGround, BoardManager.Grounds[gstage.i][gstage.j].transform.position, 1, "Grounds", 0, false,false);
                     break;
                 }
         }

@@ -62,6 +62,9 @@ TagManager:
   - name: player
     uniqueID: 3851731551
     locked: 0
+  - name: Fog
+    uniqueID: 542570723
+    locked: 0
   - name: UI
     uniqueID: 4214525315
     locked: 0

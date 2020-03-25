@@ -54,7 +54,7 @@ public class Trainer : PlayerController
             Root.instance.flowchart.SetIntegerVariable("GuideStep",-7);
             TrainnerAttack(aim);
         }
-        if(Step==12)
+        if(Step==12 || Step==19)
         {
             TrainerNextStep = 13;
             Root.instance.flowchart.SetIntegerVariable("GuideStep",-12);
@@ -74,6 +74,12 @@ public class Trainer : PlayerController
             TrainerNextStep = 14;
             Root.instance.flowchart.SetIntegerVariable("GuideStep",-13);
             TrainnerAttack(aim);
+        }
+        if(Step==23)
+        {
+            TrainerNextStep = 13;
+            Root.instance.flowchart.SetIntegerVariable("GuideStep",-12);
+            TrainnerMove(BoardManager.Grounds[4][5]);
         }
     }
     void AIGuide2()
@@ -299,7 +305,7 @@ public class Trainer : PlayerController
                 else
                 {
                     maxScore = -10;
-                    CheckRange(GameManager.OccupiedGround[i].PlayerOnGround, BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.position, 1, "Grounds", 0, false);
+                    CheckRange(GameManager.OccupiedGround[i].PlayerOnGround, BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.position, 1, "Grounds", 0, false,false);
                     Color color = BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color;
                     AimNode node = new AimNode();
                     node.Aim = BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j];

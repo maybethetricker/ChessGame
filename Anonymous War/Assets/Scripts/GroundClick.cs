@@ -8,17 +8,13 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
 
 {
     //几种玩家状态，临时替代一种game object多状态
-    public Sprite LongSoldier;
-    public Sprite ShortSoldier;
-    public Sprite DragSoldier;
-    public Sprite AxSoldier;
-    public Sprite ShieldSoldier;
     int BloodCount=33;
     public static int TeamCounter = 0;//用于队伍轮转
     // Start is called before the first frame update
     void Start()
     {
         BloodCount = 33;
+        GameManager.instance.AddWeaponOrigColor = gameObject.GetComponent<SpriteRenderer>().color;
     }
 
     // Update is called once per frame
@@ -29,6 +25,36 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
         //PlacePlayer();
         //按所在地块移动
 
+
+    }
+    /// <summary>
+    /// Called when the mouse enters the GUIElement or Collider.
+    /// </summary>
+    void OnMouseEnter()
+    {
+        if(GameManager.instance.SmoothMoveOnWay)
+            return;
+        if(gameObject.tag=="Occupied")
+            return;
+        if(GameManager.instance!=null&&GameManager.instance.PointerIsready==true)
+        {
+            GameManager.instance.AddWeaponAim = gameObject.transform.position;
+            GameManager.instance.AddWeaponOrigColor = gameObject.GetComponent<SpriteRenderer>().color;
+            gameObject.GetComponent<SpriteRenderer>().color = GameManager.instance.GuideHighlight;
+        }
+    }
+    /// <summary>
+    /// Called when the mouse is not any longer over the GUIElement or Collider.
+    /// </summary>
+    void OnMouseExit()
+    {
+        if(GameManager.instance.SmoothMoveOnWay)
+            return;
+        if (GameManager.instance != null && Vector3.Distance(GameManager.instance.AddWeaponAim, gameObject.transform.transform.position) < 1&&GameManager.Stage==1)
+        {
+            GameManager.instance.AddWeaponAim = new Vector3(0, 0, 0);
+            gameObject.GetComponent<SpriteRenderer>().color = GameManager.instance.AddWeaponOrigColor;
+        }
 
     }
     /// <summary>
@@ -115,6 +141,9 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
                 protocol.AddFloat(gameObject.transform.position.z);
                 NetMgr.srvConn.Send(protocol);
             }
+            foreach (Transform t in GetComponentsInChildren<Transform>())
+                if (t.tag == "Weapon")
+                    t.gameObject.SetActive(false);
             GameManager.instance.ArtifactGround.tag = "Untagged";
             GameManager.instance.ArtifactGround = gameObject;
             gameObject.tag = "Occupied";
@@ -154,23 +183,23 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
                         if (t.tag == "PlayerSprite")
                         {
                             Debug.Log("inChangeToLong");
-                            t.gameObject.GetComponent<SpriteRenderer>().sprite = LongSoldier;
+                            t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.LongSoldier;
                         }
                     break;
                 case "Drag":
                     foreach (Transform t in newPlayer.GetComponentsInChildren<Transform>())
                         if (t.tag == "PlayerSprite")
-                            t.gameObject.GetComponent<SpriteRenderer>().sprite = DragSoldier;
+                            t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.DragSoldier;
                     break;
                 case "Ax":
                     foreach (Transform t in newPlayer.GetComponentsInChildren<Transform>())
                         if (t.tag == "PlayerSprite")
-                            t.gameObject.GetComponent<SpriteRenderer>().sprite = AxSoldier;
+                            t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.AxSoldier;
                     break;
                 case "Shield":
                     foreach (Transform t in newPlayer.GetComponentsInChildren<Transform>())
                         if (t.tag == "PlayerSprite")
-                            t.gameObject.GetComponent<SpriteRenderer>().sprite = ShieldSoldier;
+                            t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.ShieldSoldier;
                     break;
             }
             this.gameObject.tag = "Occupied";
@@ -191,13 +220,12 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
                 GameManager.PlayerOnEdit = null;
                 GameManager.instance.SmallTurn = 0;
                 GameManager.Stage = 1;
-                Color color = new Color(255, 255, 0, 0.2f);
                 for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
                 {
                     string team = "Team" + (GameManager.instance.MovingTeam + 1).ToString();
                     if (GameManager.OccupiedGround[i].Moved == false && GameManager.OccupiedGround[i].PlayerOnGround.tag == team)
                     {
-                        BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color = color;
+                        BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color = GameManager.instance.MovablePlayerHighlight;
                     }
                 }
             }
@@ -276,7 +304,11 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
                 break;
             }
         }
+        if(GameManager.PlayerOnEdit==null)
+            Debug.Log("null1");
         string tag = GameManager.PlayerOnEdit.tag;
+        if(GameManager.PlayerOnEdit==null)
+            Debug.Log("null2");
         Vector3 playeroffset = new Vector3(0, 0, -0.1f);
         //player.transform.position = transform.position;
         //匀速移动
@@ -287,32 +319,39 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
                 case "Long":
                     foreach (Transform t in GameManager.PlayerOnEdit.GetComponentsInChildren<Transform>())
                         if (t.tag == "PlayerSprite")
-                            t.gameObject.GetComponent<SpriteRenderer>().sprite = LongSoldier;
+                            t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.LongSoldier;
                     break;
                 case "Short":
                     foreach (Transform t in GameManager.PlayerOnEdit.GetComponentsInChildren<Transform>())
                         if (t.tag == "PlayerSprite")
-                            t.gameObject.GetComponent<SpriteRenderer>().sprite = ShortSoldier;
+                            t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.ShortSoldier;
                     break;
                 case "Drag":
                     foreach (Transform t in GameManager.PlayerOnEdit.GetComponentsInChildren<Transform>())
                         if (t.tag == "PlayerSprite")
-                            t.gameObject.GetComponent<SpriteRenderer>().sprite = DragSoldier;
+                            t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.DragSoldier;
                     break;
                 case "Ax":
                     foreach (Transform t in GameManager.PlayerOnEdit.GetComponentsInChildren<Transform>())
                         if (t.tag == "PlayerSprite")
-                            t.gameObject.GetComponent<SpriteRenderer>().sprite = AxSoldier;
+                            t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.AxSoldier;
                     break;
                 case "Shield":
                     foreach (Transform t in GameManager.PlayerOnEdit.GetComponentsInChildren<Transform>())
                         if (t.tag == "PlayerSprite")
-                            t.gameObject.GetComponent<SpriteRenderer>().sprite = ShieldSoldier;
+                            t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.ShieldSoldier;
                     break;
             }
             this.tag = "Occupied";
-            if (tag == "Team2")
-                GameManager.PlayerOnEdit.GetComponentInChildren<SpriteRenderer>().color = new Color(0, 8, 8);
+            if (GameManager.PlayerOnEdit != null)
+            {
+                if (tag == "Team2")
+                    GameManager.PlayerOnEdit.GetComponentInChildren<SpriteRenderer>().color = GameManager.instance.Team2Color;
+            }
+            else
+            {
+                Debug.Log("nullGameObject");
+            }
             foreach (Transform t in GetComponentsInChildren<Transform>())
                 if (t.tag == "Weapon")
                     t.gameObject.SetActive(false);

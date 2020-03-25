@@ -36,6 +36,7 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
         if (GameManager.Stage == 2 && !GameManager.instance.EnemyChecked)
         {
             GameManager.instance.EnemyChecked = true;
+            GameManager.instance.ArtPerActActFinished = false;
             for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
             {
                 if (GameManager.OccupiedGround[i].PlayerOnGround == GameManager.PlayerOnEdit)
@@ -44,12 +45,12 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                     switch (GameManager.OccupiedGround[i].PlayerWeapon)
                     {
                         //change:use position of ground instead of army to check range
-                        case "Long": attack = 3; range = 3; CheckRange(GameManager.PlayerOnEdit, BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.position, range, "Players", 2, false); GameManager.instance.AttackMode = 2; break;
-                        case "Short": attack = 4; range = 1; CheckRange(GameManager.PlayerOnEdit, BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.position, range, "Players", 0, false); GameManager.instance.AttackMode = 0; break;
-                        case "Drag": attack = 1; range = 3; CheckRange(GameManager.PlayerOnEdit, BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.position, range, "Players", 1, true); GameManager.instance.AttackMode = 1; break;
-                        case "Tear": attack = 50; range = 2; CheckRange(GameManager.PlayerOnEdit, BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.position, range, "Players", 0, false); GameManager.instance.AttackMode = 0; break;
-                        case "Ax":attack = 2;range = 1;CheckRange(GameManager.PlayerOnEdit, BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.position, range, "Players", 0, false); AxAttack(attack); break;
-                        case "Shield":AimRangeList=new List<AimNode>();break;
+                        case "Long": attack = 3; range = 3; CheckRange(GameManager.PlayerOnEdit, BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.position, range, "Players", 2, false,false); GameManager.instance.AttackMode = 2; break;
+                        case "Short": attack = 4; range = 1; CheckRange(GameManager.PlayerOnEdit, BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.position, range, "Players", 0, false,false); GameManager.instance.AttackMode = 0; break;
+                        case "Drag": attack = 1; range = 3; CheckRange(GameManager.PlayerOnEdit, BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.position, range, "Players", 1, true,false); GameManager.instance.AttackMode = 1; break;
+                        case "Tear": attack = 50; range = 2; CheckRange(GameManager.PlayerOnEdit, BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.position, range, "Players", 0, false,false); GameManager.instance.AttackMode = 0; break;
+                        case "Ax":attack = 2;range = 1;CheckRange(GameManager.PlayerOnEdit, BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.position, range, "Players", 0, false,true); AxAttack(attack,false); break;
+                        case "Shield":ClearHighlight();AimRangeList=new List<AimNode>();break;
                     }
                     break;
                 }
@@ -92,19 +93,18 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
         switch (AimWeapon)
         {
             //change:use position of ground instead of army to check range
-            case "Long": aimattack = 3; aimrange = 3; CheckRange(gameObject, AimPosition, aimrange, "Players", 2, false); break;
-            case "Short": aimattack = 4; aimrange = 1; CheckRange(gameObject, AimPosition, aimrange, "Players", 0, false); break;
-            case "Drag": aimattack = 1; aimrange = 3; CheckRange(gameObject, AimPosition, aimrange, "Players", 1, true); break;
-            case "Tear": aimattack = 50; aimrange = 2; CheckRange(gameObject, AimPosition, aimrange, "Players", 0, false); break;
-            case "Ax":aimattack = 2; aimrange = 1; CheckRange(gameObject, AimPosition, aimrange, "Players", 0, false);AxAttack(aimattack);break;
+            case "Long": aimattack = 3; aimrange = 3; CheckRange(gameObject, AimPosition, aimrange, "Players", 2, false,false); break;
+            case "Short": aimattack = 4; aimrange = 1; CheckRange(gameObject, AimPosition, aimrange, "Players", 0, false,false); break;
+            case "Drag": aimattack = 1; aimrange = 3; CheckRange(gameObject, AimPosition, aimrange, "Players", 1, true,false); break;
+            case "Tear": aimattack = 50; aimrange = 2; CheckRange(gameObject, AimPosition, aimrange, "Players", 0, false, false); break;
+            case "Ax":aimattack = 2; aimrange = 1; CheckRange(gameObject, AimPosition, aimrange, "Players", 0, false,true);break;
         }
         bool canHitBack = false;
         for (int i = 0; i < AimRangeList.Count; i++)
         {
-            if (AimRangeList[i].Aim.transform.position == ThisPosition)
+            if (Vector3.Distance(AimRangeList[i].Aim.transform.position,ThisPosition)<1)
                 canHitBack = true;
         }
-        Debug.Log("CanHitBackFormer"+canHitBack);
         for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
         {
             //死亡/眩晕不反击
@@ -115,8 +115,12 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
             if (bloodamount <= 0)
                 canHitBack = false;
         }
+        if(canHitBack && AimWeapon=="Ax")
+        {
+            AxAttack(aimattack,true);
+            canHitBack = false;
+        }
         ClearHighlight();
-        Debug.Log("CanHitBack" + canHitBack);
         if (canHitBack)
         {
             StartCoroutine(OnHitAction(gameObject, GameManager.PlayerOnEdit));
@@ -251,6 +255,16 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                             if (t.tag == "PlayerSprite")
                                 t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.DragSoldier;
                         break;
+                    case "Ax":
+                        foreach (Transform t in gameObject.GetComponentsInChildren<Transform>())
+                            if (t.tag == "PlayerSprite")
+                                t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.AxSoldier;
+                        break;
+                    case "Shield":
+                        foreach (Transform t in gameObject.GetComponentsInChildren<Transform>())
+                            if (t.tag == "PlayerSprite")
+                                t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.ShieldSoldier;
+                        break;
                 }
                 surround.tag = "Occupied";
                 foreach (Transform t in surround.GetComponentsInChildren<Transform>())
@@ -266,7 +280,8 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                 {
                     GStage = GameManager.OccupiedGround[i];
                     BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].tag = "Untagged";
-                    if(GStage.Moved==false&&GStage.InMug==false&&surround.GetComponent<SpriteRenderer>().color==new Color(0,10,0,0.2f))
+                    if(GStage.Moved==false&&GStage.InMug==false&&surround.GetComponent<SpriteRenderer>().color==GameManager.instance.ArtifactAbleRangeHighlight
+                    &&ArtifactController.instance.ArtifactType==1)
                     {
                         GStage.Moved = true;
                         GStage.InMug = true;
@@ -279,7 +294,7 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
             }
             
             if (tag == "Team2")
-                gameObject.GetComponentInChildren<SpriteRenderer>().color = new Color(0, 8, 8);
+                gameObject.GetComponentInChildren<SpriteRenderer>().color = GameManager.instance.Team2Color;
             //AimBlood.transform.position = this.transform.position + offset;
             for (int i = 0; i < BoardManager.row; i++)
                 for (int j = 0; j < BoardManager.col; j++)
@@ -310,7 +325,7 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
         Attack(AimBlood, ThisBlood, AimPosition, ThisPosition, Hurt, AimWeapon,true);
     }
 
-    void AxAttack(int attack)
+    void AxAttack(int attack,bool InHitBack)
     {
         GameObject thisBlood = null;
         Vector3 ThisPosition=GameManager.PlayerOnEdit.transform.position;
@@ -324,24 +339,33 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
         }
         for (int i = 0; i < GameManager.OccupiedGround.Count;i++)
         {
-            for (int j = 0; j < AimRangeList.Count;j++)
-                if(GameManager.OccupiedGround[i].PlayerOnGround==AimRangeList[j].Aim)
+            for (int j = 0; j < AimRangeList.Count; j++)
+            {
+                string aimWeapon="";
+                if(GameManager.OccupiedGround[i].PlayerWeapon=="Shield")
+                    aimWeapon = "Shield";
+                if (GameManager.OccupiedGround[i].PlayerOnGround == AimRangeList[j].Aim)
                 {
-                    if(!GameManager.RealPlayerTeam.Contains(GameManager.PlayerOnEdit.tag))
-                        AimRangeList[j].Aim.GetComponent<RealPlayer>().Attack(GameManager.OccupiedGround[i].PlayerBlood, thisBlood, BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.transform.position, ThisPosition, attack, "", false);
-                    else if(GameManager.UseAI)
-                        AimRangeList[j].Aim.GetComponent<AI>().Attack(GameManager.OccupiedGround[i].PlayerBlood, thisBlood, BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.transform.position, ThisPosition, attack, "", false);
+                    List<AimNode> origList = AimRangeList;
+                    if ((!GameManager.RealPlayerTeam.Contains(GameManager.PlayerOnEdit.tag) && !InHitBack)
+                    || (GameManager.RealPlayerTeam.Contains(GameManager.PlayerOnEdit.tag) && InHitBack))
+                        AimRangeList[j].Aim.GetComponent<RealPlayer>().Attack(GameManager.OccupiedGround[i].PlayerBlood, thisBlood, BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.transform.position, ThisPosition, attack, aimWeapon, false);
+                    else if (GameManager.UseAI)
+                        AimRangeList[j].Aim.GetComponent<AI>().Attack(GameManager.OccupiedGround[i].PlayerBlood, thisBlood, BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.transform.position, ThisPosition, attack, aimWeapon, false);
                     else
                     {
-                        AimRangeList[j].Aim.GetComponent<RemoteEnemy>().Attack(GameManager.OccupiedGround[i].PlayerBlood, thisBlood, BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.transform.position, ThisPosition, attack, "", false);
+                        AimRangeList[j].Aim.GetComponent<RemoteEnemy>().Attack(GameManager.OccupiedGround[i].PlayerBlood, thisBlood, BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.transform.position, ThisPosition, attack, aimWeapon, false);
                     }
+                    AimRangeList = origList;
                 }
+            }
         }
         AimRangeList = new List<AimNode>();
     }
     public virtual void Die()
     {
         gameObject.SetActive(false);
+        Destroy(gameObject);
     }
     void ThisDie()
     {
@@ -351,9 +375,10 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
     }
     //确定移动攻击范围
     //确定抓勾范围，加上了一条必须在直线上
-    public void CheckRange(GameObject Center, Vector3 CenterPosition, int Range, string Groups, int Mode, bool CanAttackFriendly)//Mode0：只以距离中心的距离为判断标准
+    public void CheckRange(GameObject Center, Vector3 CenterPosition, int Range, string Groups, int Mode, bool CanAttackFriendly, bool ignoreTaunt)//Mode0：只以距离中心的距离为判断标准
     //Mode1：只允许直线攻击，Mode2远程攻击，但是近身一格不在攻击范围内
     {
+        bool inTaunt = false;
         ClearHighlight();
         List<GameObject> Surround = new List<GameObject>();
         //是否在直线上
@@ -397,13 +422,14 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                 bool inLine = false;
                 AimNode line = new AimNode();
                 line.Aim = t.gameObject;
-                Color color = new Color(0, 255, 255, 0.2f);
                 if (t.gameObject.tag == "Monster")
                 {
+                    if(inTaunt || ignoreTaunt)
+                        continue;
                     if(Vector3.Distance(CenterPosition,t.position)>BoardManager.distance *1.5)
                         continue;
                     line.color = GameManager.instance.ArtifactGround.GetComponent<SpriteRenderer>().color;
-                    GameManager.instance.ArtifactGround.GetComponent<SpriteRenderer>().color = color;
+                    GameManager.instance.ArtifactGround.GetComponent<SpriteRenderer>().color = GameManager.instance.AttackAimHighlight;
                     line.JudgeHelper = null;
                     AimRangeList.Add(line);
                     continue;
@@ -449,21 +475,33 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                 if (Groups == "Grounds")
                 {
                     line.color = t.gameObject.GetComponent<SpriteRenderer>().color;
-                    t.gameObject.GetComponent<SpriteRenderer>().color = color;
+                    t.gameObject.GetComponent<SpriteRenderer>().color = GameManager.instance.AttackAimHighlight;
                 }
                 else
                 {
+                    bool canAttack=true;
                     for (int j = 0; j < GameManager.OccupiedGround.Count; j++)
                     {
                         if (GameManager.OccupiedGround[j].PlayerOnGround == t.gameObject)
                         {
+                            if(inTaunt && GameManager.OccupiedGround[j].PlayerWeapon!="Shield")
+                            {
+                                canAttack=false;
+                                break;
+                            }
                             line.color = BoardManager.Grounds[GameManager.OccupiedGround[j].i][GameManager.OccupiedGround[j].j].GetComponent<SpriteRenderer>().color;
-                            BoardManager.Grounds[GameManager.OccupiedGround[j].i][GameManager.OccupiedGround[j].j].GetComponent<SpriteRenderer>().color = color;
-                            if (GameManager.OccupiedGround[j].PlayerWeapon == "Shield")
+                            BoardManager.Grounds[GameManager.OccupiedGround[j].i][GameManager.OccupiedGround[j].j].GetComponent<SpriteRenderer>().color = GameManager.instance.AttackAimHighlight;
+                            if (GameManager.OccupiedGround[j].PlayerWeapon == "Shield" && !ignoreTaunt
+                            && t.tag!=Center.tag)
                             {
                                 List<AimNode> newList = new List<AimNode>();
                                 for (int k = 0; k < AimRangeList.Count; k++)
                                 {
+                                    if (AimRangeList[k].Aim.tag == "Monster")
+                                    {
+                                        GameManager.instance.ArtifactGround.GetComponent<SpriteRenderer>().color = AimRangeList[k].color;
+                                        continue;
+                                    }
                                     for (int l  = 0; l < GameManager.OccupiedGround.Count;l++)
                                     {
                                         if (GameManager.OccupiedGround[l].PlayerOnGround == AimRangeList[k].Aim)
@@ -479,10 +517,6 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                                                     Debug.Log("AimRangeList:Aim is null");
                                                     continue;
                                                 }
-                                                if (AimRangeList[k].Aim.tag == "Monster")
-                                                {
-                                                    GameManager.instance.ArtifactGround.GetComponent<SpriteRenderer>().color = AimRangeList[k].color;
-                                                }
                                                 BoardManager.Grounds[GameManager.OccupiedGround[l].i][GameManager.OccupiedGround[l].j].GetComponent<SpriteRenderer>().color = AimRangeList[k].color;
                                             }
                                             break;
@@ -490,10 +524,13 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                                     }
                                 }
                                 AimRangeList = newList;
+                                inTaunt = true;
                             }
                             break;
                         }
                     }
+                    if(!canAttack)
+                        continue;
                 }
                 if (Mode == 0)
                 {
@@ -504,10 +541,13 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                         line.JudgeHelper = null;
                     }
                 }
-                if (Mode == 1)
+                else if (Mode == 1)
                     line.JudgeHelper = surroundLine;
+                else
+                {
+                    line.JudgeHelper = null;
+                }
                 AimRangeList.Add(line);
-
             }
         }
     }
@@ -525,7 +565,7 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
         if (GameManager.instance.SmallTurn >= totalSmallTurns)
         {
             //Debug.Log("AddTurn");
-            GameManager.ArtActFinished = false;
+            GameManager.instance.ArtActFinished = false;
             GameManager.instance.SmallTurn = 0;
             MovedDead = 0;
             List<GameManager.GroundStage> oGround = new List<GameManager.GroundStage>();
@@ -567,7 +607,6 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                 break;
             }
         }
-        Color color = new Color(255, 255, 0, 0.2f);
         for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
         {
             string team = "Team" + (GameManager.instance.MovingTeam + 1).ToString();
@@ -576,7 +615,7 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                 GameManager.GroundStage GStage=GameManager.OccupiedGround[i];
                 GStage.OrigColor = BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color;
                 GameManager.OccupiedGround[i] = GStage;
-                BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color = color;
+                BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color = GameManager.instance.MovablePlayerHighlight;
             }
         }
         //change:fix the bug due to moving a same chess contineously

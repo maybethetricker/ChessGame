@@ -94,11 +94,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 104b9335462af3b4687decc58747a3d4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  LongSoldier: {fileID: 21300000, guid: 759e96f4baaf6c84184c3c7b649b1388, type: 3}
-  ShortSoldier: {fileID: 21300000, guid: cd257e7ed8a484f409108f1633e35806, type: 3}
-  DragSoldier: {fileID: 21300000, guid: 482bb928544aa1c408edd9eaf9ef9ece, type: 3}
-  AxSoldier: {fileID: 21300000, guid: 21f5ff54a627b124baafdd85b31cf7bd, type: 3}
-  ShieldSoldier: {fileID: 21300000, guid: add373f1ff1354a4b8f3a47613d9aefa, type: 3}
 --- !u!60 &4259849278719359120
 PolygonCollider2D:
   m_ObjectHideFlags: 0
@@ -155,8 +150,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8833720965896343825}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.08, y: -0.05, z: 0}
-  m_LocalScale: {x: 0.5, y: 0.5, z: 1.5285}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 0.5, y: 0.5, z: 1.5}
   m_Children: []
   m_Father: {fileID: 3777425450030604289}
   m_RootOrder: 0

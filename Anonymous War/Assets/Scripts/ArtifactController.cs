@@ -7,7 +7,7 @@ using UnityEngine.SceneManagement;
 public class ArtifactController : PlayerController
 {
     public MotionArtifact Artifact;
-    
+    public int ArtifactType;
     public static ArtifactController instance;
     public bool aiAbleToUse;
     /// <summary>
@@ -22,10 +22,35 @@ public class ArtifactController : PlayerController
         {
             Destroy(gameObject);
         }
-        ChooseArtifact();
+        if(!GameManager.IsTraining && !GameManager.UseAI && GameManager.RealPlayerTeam.Contains("Team1"))
+        {
+            GameManager.instance.ArtActFinished = true;
+            ArtifactType = 0;
+            return;
+        }
+        ArtifactType=ChooseArtifact();
+        if(!GameManager.IsTraining&&!GameManager.UseAI)
+        {
+            ProtocolBytes protocol=new ProtocolBytes();
+            protocol.AddString("ChooseArtifact");
+            protocol.AddInt(ArtifactType);
+            NetMgr.srvConn.Send(protocol);
+        }
         Artifact.artPosition = gameObject.transform.position;
+        for (int i = 0; i < BoardManager.row;i++)
+            for (int j = 0; j < BoardManager.col;j++)
+                if(BoardManager.Grounds[i][j]!=null && Vector3.Distance(Artifact.artPosition,BoardManager.Grounds[i][j].transform.position)<BoardManager.distance/2)
+                    Artifact.artGroundPosition = BoardManager.Grounds[i][j].transform.position;
         aiAbleToUse = true;
         Artifact.OnArtCreate();
+        for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
+        {
+            string team = "Team" + (GameManager.instance.MovingTeam + 1).ToString();
+            if (GameManager.OccupiedGround[i].Moved == false && GameManager.OccupiedGround[i].PlayerOnGround.tag == team)
+            {
+                BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color = GameManager.instance.MovablePlayerHighlight;
+            }
+        }
     }
     /// <summary>
     /// Update is called every frame, if the MonoBehaviour is enabled.
@@ -34,31 +59,83 @@ public class ArtifactController : PlayerController
     {
         CheckAttack();
         //扩毒
-        if (GameManager.instance.Turn > 2 && !GameManager.ArtActFinished)
+        if (GameManager.instance.Turn > 2 && !GameManager.instance.ArtActFinished)
         {
             Artifact.ArtPower();
+            for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
+            {
+                string team = "Team" + (GameManager.instance.MovingTeam + 1).ToString();
+                if (GameManager.OccupiedGround[i].Moved == false && GameManager.OccupiedGround[i].PlayerOnGround.tag == team)
+                {
+                    BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color = GameManager.instance.MovablePlayerHighlight;
+                }
+            }
             //SetMug((GameManager.Turn) / 2);
         }
+        if (GameManager.instance.Turn >= 2 && !GameManager.instance.ArtPerActActFinished)
+        {
+            Artifact.ArtPerActionPower();
+        }
     }
-    void ChooseArtifact()
+    public void NetArtifactCreate(int kind)
     {
-        Dictionary<MotionArtifact,Sprite> spriteDic = new Dictionary<MotionArtifact,Sprite>();
+        ArtifactType = kind;
+        switch (kind)
+        {
+            case 1:Artifact=new AngerCrystal();gameObject.GetComponent<SpriteRenderer>().sprite=GameManager.instance.crystal;break;
+            case 2:Artifact=new HopeSpring();gameObject.GetComponent<SpriteRenderer>().sprite=GameManager.instance.spring;break;
+            case 3:Artifact = new LightTower();gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.tower;break;
+            default:break;
+        }
+        Artifact.artPosition = gameObject.transform.position;
+        for (int i = 0; i < BoardManager.row;i++)
+            for (int j = 0; j < BoardManager.col;j++)
+                if(BoardManager.Grounds[i][j]!=null && Vector3.Distance(Artifact.artPosition,BoardManager.Grounds[i][j].transform.position)<BoardManager.distance/2)
+                    Artifact.artGroundPosition = BoardManager.Grounds[i][j].transform.position;
+        aiAbleToUse = true;
+        Artifact.OnArtCreate();
+        for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
+        {
+            string team = "Team" + (GameManager.instance.MovingTeam + 1).ToString();
+            if (GameManager.OccupiedGround[i].Moved == false && GameManager.OccupiedGround[i].PlayerOnGround.tag == team)
+            {
+                BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color = GameManager.instance.MovablePlayerHighlight;
+            }
+        }
+    }
+    int ChooseArtifact()
+    {
+        Dictionary<MotionArtifact,int> spriteDic = new Dictionary<MotionArtifact,int>();
         List<MotionArtifact> randomList = new List<MotionArtifact>();
         MotionArtifact artifact = new AngerCrystal();
         MotionArtifact currentPlus = null;//当前最新解锁的物品出现率加倍
-        spriteDic.Add(artifact,GameManager.instance.crystal);
+        spriteDic.Add(artifact,1);
         randomList.Add(artifact);
         if(GameManager.Mode>=2)
         {
             MotionArtifact artifact1 = new HopeSpring();
-            spriteDic.Add(artifact1,GameManager.instance.spring);
+            spriteDic.Add(artifact1,2);
             randomList.Add(artifact1);
+        }
+        if(GameManager.Mode>=3)
+        {
+            MotionArtifact artifact2 = new LightTower();
+            spriteDic.Add(artifact2, 3);
+            randomList.Add(artifact2);
         }
         currentPlus = randomList[randomList.Count-1];
         randomList.Add(currentPlus);
         int rand = Random.Range(0, randomList.Count);
         Artifact = randomList[rand];
-        gameObject.GetComponent<SpriteRenderer>().sprite = spriteDic[Artifact];
+        Artifact = randomList[randomList.Count - 1];//for test
+        switch (spriteDic[Artifact])
+        {
+            case 1:gameObject.GetComponent<SpriteRenderer>().sprite=GameManager.instance.crystal;break;
+            case 2:gameObject.GetComponent<SpriteRenderer>().sprite=GameManager.instance.spring;break;
+            case 3:gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.tower;break;
+            default:break;
+        }
+        return spriteDic[Artifact];
     }
 
 

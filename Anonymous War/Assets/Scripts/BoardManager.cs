@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class BoardManager : MonoBehaviour
 {
+    public static BoardManager instance;
     //几种玩家状态，临时替代一种game object多状态
     public GameObject LongGround;
     public GameObject ShortGround;
@@ -11,6 +12,7 @@ public class BoardManager : MonoBehaviour
     public GameObject NothingGround;
     public GameObject AxGround;
     public GameObject ShieldGround;
+    List<string> weaponList;
     //用于生成地图
     List<GameObject> setBoardRandomGround = new List<GameObject>();
     public static float distance;//格子间距离
@@ -20,21 +22,45 @@ public class BoardManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        if (instance == null)
+            instance = this;
+        else
+        {
+            Destroy(gameObject);
+        }
         distance = 21.6f;
         setBoardRandomGround.Add(LongGround);
         setBoardRandomGround.Add(ShortGround);
         setBoardRandomGround.Add(DragGround);
         setBoardRandomGround.Add(NothingGround);
-        setBoardRandomGround.Add(AxGround);
         setBoardRandomGround.Add(ShieldGround);
+        setBoardRandomGround.Add(AxGround);
+        int weaponkind=0;
         if (GameManager.UseAI || GameManager.RealPlayerTeam.Contains("Team1"))
         {
-            if(GameManager.Mode<2)
-                SetBoard1(4,13,15);
+            if (GameManager.Mode < 2)
+            {
+                weaponkind = 5;
+                SetBoard1(weaponkind, 15, 13);
+            }
             else
             {
-                SetBoard1(6,17,19);
+                weaponkind = 6;
+                SetBoard1(weaponkind, 19, 17);
             }
+        }
+        weaponList = new List<string>();
+        for (int i = 0; i < weaponkind;i++)
+            weaponList.Add(setBoardRandomGround[i].tag);
+        foreach (Transform t in GameObject.Find("EnemyWeaponCard").GetComponentInChildren<Transform>())
+        {
+            if (!weaponList.Contains(t.tag))
+                t.gameObject.SetActive(false);
+        }
+        foreach (Transform t in GameObject.Find("PlayerWeaponCard").GetComponentInChildren<Transform>())
+        {
+            if (!weaponList.Contains(t.tag))
+                t.gameObject.SetActive(false);
         }
     }
 
@@ -58,6 +84,7 @@ public class BoardManager : MonoBehaviour
             randomlist[2][1] = randomlist[5][0] = randomlist[3][3] = randomlist[4][3] = randomlist[2][6] = 0;
             randomlist[2][2] = randomlist[5][2] = randomlist[0][3] = randomlist[5][3] = randomlist[4][4] = randomlist[0][4] = 1;
             randomlist[4][2] = randomlist[5][4] = randomlist[1][5] = 2;
+            randomlist[4][0] = randomlist[3][1] = 4;
         }
         else
         {
@@ -69,10 +96,13 @@ public class BoardManager : MonoBehaviour
             }
             int dragCount = 0;
             int WeaponNum = Random.Range(weaponNumMin, weaponNumMax + 1) - 2 * weaponKind;
+            Debug.Log(WeaponNum);
             while (k < WeaponNum)
             {
                 int i = Random.Range(0, 7);
                 int j = Random.Range(0, 7);
+                if(randomlist[i][j]!=3)
+                    continue;
                 switch (j)
                 {
                     case 0: if (i < 3 || i > 6) continue; break;
@@ -83,7 +113,6 @@ public class BoardManager : MonoBehaviour
                     case 5: if (i > 4) continue; break;
                     case 6: if (i > 3) continue; break;
                 }
-
                 int rand = Random.Range(0,weaponKind);
                 while(rand==3)
                     rand=Random.Range(0, weaponKind);
@@ -99,6 +128,7 @@ public class BoardManager : MonoBehaviour
                 randomlist[i][j] = rand;
                 k++;
             }
+            Debug.Log("DragCount" + dragCount);
             for (int i = 0; i < weaponKind; i++)
             {
                 if(i==3)
@@ -171,9 +201,10 @@ public class BoardManager : MonoBehaviour
                     case 6: if (i > 3) continue; break;
                 }
                 int random = randomlist[i][j];
-                Vector3 position = new Vector3(distance * i - 3 - 55, 1.732f * 0.5f * distance * j - 3 + 50, 78);
+                Vector3 position = new Vector3(distance * i - 3 - 55, 1.732f * 0.5f * distance * j - 3 + 56, 78);
                 position.x += (j - 3) * distance / 2;
                 Grounds[i][j] = Instantiate(setBoardRandomGround[random], position, Quaternion.identity, GameObject.Find("Grounds").transform);
+                Grounds[i][j].GetComponent<SpriteRenderer>().color = new Color(255,255,255);
             }
         }
     }

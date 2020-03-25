@@ -61,6 +61,8 @@ public class Root : MonoBehaviour
         NetMgr.srvConn.msgDist.AddListener("WinGame", WinGame);
         NetMgr.srvConn.msgDist.AddListener("GetScore", GetScore);
         NetMgr.srvConn.msgDist.AddListener("HopeSpringMove", HopeSpringMove);
+        NetMgr.srvConn.msgDist.AddListener("ChooseArtifact", netChooseArtifact);
+        NetMgr.srvConn.msgDist.AddListener("AddWeapon", NetAddWeapon);
     }
 
     // Update is called once per frame
@@ -261,7 +263,6 @@ public class Root : MonoBehaviour
         ProtocolBytes proto = (ProtocolBytes)protocol;
         int start = 0;
         string protoName = proto.GetString(start, ref start);
-        Color color;
         //确定降怪点
         Vector3 problePosition = new Vector3();
         problePosition.x = proto.GetFloat(start, ref start);
@@ -275,9 +276,7 @@ public class Root : MonoBehaviour
                 continue;
             if (Vector3.Distance(problePosition, t.position) < BoardManager.distance / 2 + BoardManager.distance * 2)
             {
-                color = new Color(220, 220, 220);
-                color.a = 0.2f;
-                t.gameObject.GetComponent<SpriteRenderer>().color = color;
+                t.gameObject.GetComponent<SpriteRenderer>().color = GameManager.instance.ArtifactRangeHighlight;
                 GameManager.instance.randomPlace.Add(t.gameObject);
                 if (t.tag == "Occupied")
                 {
@@ -294,16 +293,15 @@ public class Root : MonoBehaviour
                 }
             }
         }
-        color = new Color(255, 255, 0, 0.2f);
         for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
         {
             string team = "Team" + (GameManager.instance.MovingTeam + 1).ToString();
             if (GameManager.OccupiedGround[i].Moved == false && GameManager.OccupiedGround[i].PlayerOnGround.tag == team)
             {
-                BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color = color;
+                BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color = GameManager.instance.MovablePlayerHighlight;
             }
         }
-        GameManager.ArtActFinished = true;
+        GameManager.instance.ArtActFinished = true;
 
     }
     void NetCreateArtifact(ProtocolBase protocol)
@@ -315,8 +313,7 @@ public class Root : MonoBehaviour
         //清除提示圈
         for (int i = 0; i < GameManager.instance.randomPlace.Count; i++)
         {
-            Color color = new Color(255, 255, 255);
-            GameManager.instance.randomPlace[i].GetComponent<SpriteRenderer>().color = color;
+            GameManager.instance.randomPlace[i].GetComponent<SpriteRenderer>().color = GameManager.instance.OrigGroundColor;
             if (GameManager.instance.randomPlace[i].tag == "Occupied")
             {
                 for (int j = 0; j < GameManager.OccupiedGround.Count; j++)
@@ -357,6 +354,14 @@ public class Root : MonoBehaviour
         monster.transform.Rotate(-45, 0, 0);
         Vector3 offset = new Vector3(6, -12f, -2f);
         //monster.GetComponent<MonsterController>().Monster.OnMonsterCreate();
+    }
+    void netChooseArtifact(ProtocolBase protocol)
+    {
+        ProtocolBytes proto = (ProtocolBytes)protocol;
+        int start = 0;
+        string protoName = proto.GetString(start, ref start);
+        int kind = proto.GetInt(start, ref start);
+        ArtifactController.instance.NetArtifactCreate(kind);
     }
     void OnMatchBack(ProtocolBase protocol)
     {
@@ -551,6 +556,8 @@ public class Root : MonoBehaviour
             mode = 1;
         if(score>=300)
             mode = 2;
+        if(score>=500)
+            mode = 3;
         return mode;
     }
 
@@ -596,7 +603,7 @@ public class Root : MonoBehaviour
         }
         GameManager.instance.ArtifactGround.tag = "Occupied";
         ArtifactController.instance.ClearHighlight();
-        StartCoroutine(GameManager.instance.smoothMove(ArtifactController.instance.gameObject, transform.position + new Vector3(0, 0, -0.1f), 30, delegate ()
+        StartCoroutine(GameManager.instance.smoothMove(ArtifactController.instance.gameObject, aimPosition + new Vector3(0, 0, -0.1f), 30, delegate ()
         {
             ArtifactController.instance.Artifact.OnArtCreate();
             ArtifactController.instance.ChangeTurn();
@@ -617,10 +624,61 @@ public class Root : MonoBehaviour
         }
         else
         {
+            Debug.Log("limitFinished");
             useLimit = false;
             Root.instance.flowchart.SetBooleanVariable("FinnishCommand", true);
             FinishedAction();
             return true;
         }
+    }
+    void NetAddWeapon(ProtocolBase protocol)
+    {
+        ProtocolBytes proto = (ProtocolBytes)protocol;
+        int start = 0;
+        string protoName = proto.GetString(start, ref start);
+        string weaponName = proto.GetString(start, ref start);
+        Vector3 aimPosition;
+        aimPosition.x = proto.GetFloat(start, ref start);
+        aimPosition.y = proto.GetFloat(start, ref start);
+        aimPosition.z = proto.GetFloat(start, ref start);
+        for (int i = 0; i < BoardManager.row; i++)
+            for (int j = 0; j < BoardManager.col; j++)
+            {
+                if (BoardManager.Grounds[i][j] != null && Vector3.Distance(BoardManager.Grounds[i][j].transform.position, aimPosition) < BoardManager.distance * 0.45)
+                {
+                    GameObject aimGround = null;
+                    switch (weaponName)
+                    {
+                        case "Long": aimGround = BoardManager.instance.LongGround; break;
+                        case "Short": aimGround = BoardManager.instance.ShortGround; break;
+                        case "Drag": aimGround = BoardManager.instance.DragGround; break;
+                        case "Ax": aimGround = BoardManager.instance.AxGround; break;
+                        case "Shield": aimGround = BoardManager.instance.ShieldGround; break;
+                    }
+                    GameObject thisweapon = null;
+                    foreach (Transform t in BoardManager.Grounds[i][j].GetComponentInChildren<Transform>())
+                    {
+                        if (t.tag == "Weapon")
+                        {
+                            thisweapon = t.gameObject;
+                            t.gameObject.SetActive(true);
+                        }
+                    }
+                    foreach (Transform t in aimGround.GetComponentInChildren<Transform>())
+                    {
+                        if (t.tag == "Weapon")
+                        {
+                            thisweapon.GetComponent<SpriteRenderer>().sprite = t.GetComponent<SpriteRenderer>().sprite;
+                            //color?
+                        }
+                    }
+                    BoardManager.Grounds[i][j].tag = aimGround.tag;
+                    foreach(Transform t in GameObject.Find("EnemyWeaponCard").GetComponentInChildren<Transform>())
+                    {
+                        if(t.tag==weaponName)
+                            t.gameObject.SetActive(false);
+                    }
+                }
+            }
     }
 }

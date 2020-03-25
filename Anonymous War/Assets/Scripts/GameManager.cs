@@ -3,15 +3,29 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
-
 public class GameManager : MonoBehaviour
 {
+    public Color OrigGroundColor = new Color(255, 255, 255);//white,Board Manager处由于Game Manager可能没有生成，仍需要修改
+    public Color OrigButtonColor = new Color(255, 255, 255);//white
+    public Color ArtifactAbleRangeHighlight = new Color(0, 10, 0, 0.2f);//green
+    public Color HopeSpringDesperateHighlight = new Color(0, 10, 0, 0.6f);//brighter green
+    public Color MovablePlayerHighlight = new Color(255,255,0,0.2f);//yellow
+    public Color AttackAimHighlight = new Color(0, 255, 255, 0.2f);//blue, move aim is also this
+    public Color Team2Color = new Color(0, 8, 8);
+    public Color GuideHighlight = new Color(0, 10, 0, 0.2f);//green
+    public Color ArtifactRangeHighlight = new Color(220, 220, 220, 0.2f);//purple
+    public Color AddWeaponOrigColor;
+
     public static GameManager instance;
     public Sprite LongSoldier;
     public Sprite ShortSoldier;
     public Sprite DragSoldier;
+    public Sprite AxSoldier;
+    public Sprite ShieldSoldier;
     public Sprite crystal;
     public Sprite spring;
+    public Sprite tower;
+    public GameObject fogGround;
     public GameObject OrigSoldier;
     public GameObject Monster;//怪
     public Image Timer;
@@ -38,7 +52,8 @@ public class GameManager : MonoBehaviour
     public int Turn;
     public GameObject ArtifactGround=null;//怪物生成地
     public List<GameObject> randomPlace = new List<GameObject>();//生成怪的范围
-    public static bool ArtActFinished = false;//本回合是否已扩毒
+    public bool ArtActFinished = false;//本回合是否已扩毒
+    public bool ArtPerActActFinished = false;//战争迷雾是否已更新
     public static bool UseAI;
     public bool CoroutineStarted = false;
     public int MovingTeam = 1;//在移动的队伍
@@ -52,6 +67,8 @@ public class GameManager : MonoBehaviour
     public static bool IsTraining;
     public static int Mode=1;//随天梯分数提高而有游戏性变化
     public bool SmoothMoveOnWay;
+    public bool PointerIsready;
+    public Vector3 AddWeaponAim;
     //0:无天降神器
     //1愤怒水晶
     //Button test;
@@ -66,14 +83,6 @@ public class GameManager : MonoBehaviour
         else
         {
             Destroy(gameObject);
-        }
-        if (!GameManager.IsTraining)
-        {
-            timer = StartCoroutine(GameManager.instance.HandleTimer());
-        }
-        else
-        {
-            Timer.gameObject.SetActive(false);
         }
         SkipButton = GameObject.Find("Skip");
         Timer.fillAmount = 1;
@@ -121,6 +130,14 @@ public class GameManager : MonoBehaviour
                 Mode = 0;
             }
         }
+        if (!GameManager.IsTraining)
+        {
+            timer = StartCoroutine(GameManager.instance.HandleTimer());
+        }
+        else
+        {
+            Timer.gameObject.SetActive(false);
+        }
         int totalSoldier = TeamCount * 3;
         if (Guide == 1)
             totalSoldier = TeamCount;
@@ -159,7 +176,7 @@ public class GameManager : MonoBehaviour
                 }
             }
             if (newPlayer.tag == "Team2")
-                newPlayer.GetComponentInChildren<SpriteRenderer>().color = new Color(0, 8, 8);
+                newPlayer.GetComponentInChildren<SpriteRenderer>().color = Team2Color;
             newPlayer.transform.Rotate(-45, 0, 0);
             newPlayer.AddComponent<RealPlayer>();
             groundStage.PlayerOnGround = newPlayer;
@@ -231,7 +248,6 @@ public class GameManager : MonoBehaviour
             ArtActFinished = true;
             return;
         }
-        Color color;
         //确定降怪点
         int randomx = Random.Range(0, BoardManager.row);
         int randomy = Random.Range(0, BoardManager.col);
@@ -262,9 +278,7 @@ public class GameManager : MonoBehaviour
                 continue;
             if (Vector3.Distance(problePosition, t.position) < BoardManager.distance / 2 + BoardManager.distance * 2)
             {
-                color = new Color(220, 220, 220);
-                color.a = 0.2f;
-                t.gameObject.GetComponent<SpriteRenderer>().color = color;
+                t.gameObject.GetComponent<SpriteRenderer>().color = ArtifactRangeHighlight;
                 randomPlace.Add(t.gameObject);
                 if (t.tag == "Occupied")
                 {
@@ -281,13 +295,12 @@ public class GameManager : MonoBehaviour
                 }
             }
         }
-        color = new Color(255, 255, 0, 0.2f);
         for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
         {
             string team = "Team" + (MovingTeam + 1).ToString();
             if (GameManager.OccupiedGround[i].Moved == false && GameManager.OccupiedGround[i].PlayerOnGround.tag == team)
             {
-                BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color = color;
+                BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color = MovablePlayerHighlight;
             }
         }
         ArtActFinished = true;
@@ -302,8 +315,7 @@ public class GameManager : MonoBehaviour
         //清除提示圈
         for (int i = 0; i < randomPlace.Count; i++)
         {
-            Color color = new Color(255, 255, 255);
-            randomPlace[i].GetComponent<SpriteRenderer>().color = color;
+            randomPlace[i].GetComponent<SpriteRenderer>().color = OrigGroundColor;
             if (randomPlace[i].tag == "Occupied" )
             {
                 for (int j = 0; j < GameManager.OccupiedGround.Count; j++)
@@ -680,6 +692,7 @@ public class GameManager : MonoBehaviour
                         }
                     }
                 }
+                
                 SkipButton.GetComponent<SkipTurn>().SkipOnClick();
             }
         }
@@ -704,8 +717,13 @@ public class GameManager : MonoBehaviour
         SmoothMoveOnWay = false;
         //GameManager.PlayerOnEdit.transform.position = transform.position;
     }
+    //有些没有继承Mono behavior的脚本引用函数
     public void startCoroutine(IEnumerator ienu)
     {
         StartCoroutine(ienu);
+    }
+    public GameObject instantiate(GameObject original,Vector3 position,Quaternion rotation)
+    {
+        return Instantiate(original, position, rotation);
     }
 }

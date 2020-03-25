@@ -13,9 +13,15 @@ public class AngerCrystal : MotionArtifact
     public override void ArtOnHit()
     {
         GameObject Blood;
+        Vector3 playeroneditPosition=new Vector3();
         for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
         {
-            if (Vector3.Angle(GameManager.PlayerOnEdit.transform.position - artPosition, artPosition - BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.position) < 1)
+            if (GameManager.OccupiedGround[i].PlayerOnGround==GameManager.PlayerOnEdit)
+                playeroneditPosition = BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.position;
+        }
+        for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
+        {
+            if (Vector3.Angle(playeroneditPosition - artGroundPosition, artGroundPosition - BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.position) < 1)
             {
                 Blood = GameManager.OccupiedGround[i].PlayerBlood;
                 ArtifactController.instance.ClearHighlight();
@@ -67,7 +73,6 @@ public class AngerCrystal : MotionArtifact
 
     public void SetMug(int Range)
     {
-        Color color;
         if (GameManager.instance.Turn % 2 == 0)
         {
             //防止一出毒就被毒扩入的误差
@@ -121,15 +126,13 @@ public class AngerCrystal : MotionArtifact
                 && ((j1 >= j2 && (i1 >= i2 - Range && i1 <= i2 + Range + j2 - j1))
                 || (j1 < j2 && (i1 >= i2 - Range + j2 - j1 && i1 <= i2 + Range))))
             {
-                color = new Color(0, 10, 0); ;
-                color.a = 0.2f;
                 if (t == GameManager.instance.ArtifactGround.transform)
                     continue;
-                if (t.gameObject.GetComponent<SpriteRenderer>().color == color)
+                if (t.gameObject.GetComponent<SpriteRenderer>().color == GameManager.instance.ArtifactAbleRangeHighlight)
                     continue;
                 if (t.parent == GameManager.instance.ArtifactGround.transform)
                     continue;
-                t.gameObject.GetComponent<SpriteRenderer>().color = color;
+                t.gameObject.GetComponent<SpriteRenderer>().color = GameManager.instance.ArtifactAbleRangeHighlight;
                 GameManager.instance.randomPlace.Add(t.gameObject);
             }
         }
@@ -165,7 +168,7 @@ public class AngerCrystal : MotionArtifact
                 int bloodamount = int.Parse(GameManager.OccupiedGround[i].PlayerBlood.GetComponent<Text>().text);
                 bloodamount -= 1;
                 GameManager.OccupiedGround[i].PlayerBlood.GetComponent<Text>().text = bloodamount.ToString();
-                OnHitAction(artPosition, GameManager.OccupiedGround[i].PlayerOnGround);
+                GameManager.instance.startCoroutine(OnHitAction(artPosition, GameManager.OccupiedGround[i].PlayerOnGround));
                 //死亡
                 if (bloodamount <= 0)
                 {
@@ -208,7 +211,7 @@ public class AngerCrystal : MotionArtifact
         int counter = 0;
         //若都被晕住则开始新回合
         bool teamHaveMove = false;
-        GameManager.ArtActFinished = true;
+        GameManager.instance.ArtActFinished = true;
         while (!teamHaveMove)
         {
             for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
@@ -231,10 +234,10 @@ public class AngerCrystal : MotionArtifact
                 Debug.Log("ProbleBug");
                 if (counter >= 10)
                 {
-                    GameManager.ArtActFinished = true;
+                    GameManager.instance.ArtActFinished = true;
                     break;
                 }
-                GameManager.ArtActFinished = false;
+                GameManager.instance.ArtActFinished = false;
                 GameManager.instance.SmallTurn = 0;
                 PlayerController.MovedDead = 0;
                 oGround = new List<GameManager.GroundStage>();
@@ -247,15 +250,6 @@ public class AngerCrystal : MotionArtifact
                 GameManager.instance.Turn++;
                 GameManager.OccupiedGround = oGround;
                 break;
-            }
-        }
-        color = new Color(255, 255, 0, 0.2f);
-        for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
-        {
-            string team = "Team" + (GameManager.instance.MovingTeam + 1).ToString();
-            if (GameManager.OccupiedGround[i].Moved == false && GameManager.OccupiedGround[i].PlayerOnGround.tag == team)
-            {
-                BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color = color;
             }
         }
     }
