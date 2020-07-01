@@ -49,9 +49,19 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                         case "Short": attack = 4; range = 1; CheckRange(GameManager.PlayerOnEdit, BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.position, range, "Players", 0, false,false); GameManager.instance.AttackMode = 0; break;
                         case "Drag": attack = 1; range = 3; CheckRange(GameManager.PlayerOnEdit, BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.position, range, "Players", 1, true,false); GameManager.instance.AttackMode = 1; break;
                         case "Tear": attack = 50; range = 2; CheckRange(GameManager.PlayerOnEdit, BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.position, range, "Players", 0, false,false); GameManager.instance.AttackMode = 0; break;
-                        case "Ax":attack = 2;range = 1;CheckRange(GameManager.PlayerOnEdit, BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.position, range, "Players", 0, false,true); AxAttack(attack,false); break;
+                        case "Ax":attack = 2;
+                            if(GameManager.OccupiedGround[i].Ability==1)
+                                attack++;
+                            range = 1;CheckRange(GameManager.PlayerOnEdit, BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.position, range, "Players", 0, false,true); AxAttack(attack,false); break;
                         case "Shield":ClearHighlight();AimRangeList=new List<AimNode>();break;
+                        case "BumbMaker":ClearHighlight();AimRangeList=new List<AimNode>();break;
                     }
+                    while(i>=GameManager.OccupiedGround.Count||GameManager.OccupiedGround[i].PlayerOnGround != GameManager.PlayerOnEdit)
+                    {
+                        i--;
+                    }
+                    if(GameManager.OccupiedGround[i].Ability==1)
+                        attack++;
                     break;
                 }
             }
@@ -238,32 +248,127 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
             Vector3 playeroffset = new Vector3(0, 0, -0.1f);
             StartCoroutine(GameManager.instance.smoothMove(gameObject, surround.transform.position + playeroffset, 60, delegate ()
             {
+                int index = -1;
+                for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
+                {
+                    if (GameManager.OccupiedGround[i].PlayerOnGround == gameObject)
+                    {
+                        index = i;
+                        GStage = GameManager.OccupiedGround[i];
+                        break;
+                    }
+                }
+                Debug.Log(surround.tag);
                 switch (surround.tag)
                 {
                     case "Long":
                         foreach (Transform t in gameObject.GetComponentsInChildren<Transform>())
                             if (t.tag == "PlayerSprite")
-                                t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.LongSoldier;
+                            {
+                                if (Mathf.Abs(GStage.Ability) <= 1)
+                                    t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.LongSoldier;
+                                else if (Mathf.Abs(GStage.Ability) == 2)
+                                    t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.LongSoldier2;
+                                else
+                                    t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.LongSoldier3;
+                            }
                         break;
                     case "Short":
                         foreach (Transform t in gameObject.GetComponentsInChildren<Transform>())
                             if (t.tag == "PlayerSprite")
-                                t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.ShortSoldier;
+                            {
+                                if (Mathf.Abs(GStage.Ability) <= 1)
+                                    t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.ShortSoldier;
+                                else if (Mathf.Abs(GStage.Ability) == 2)
+                                    t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.ShortSoldier2;
+                                else
+                                    t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.ShortSoldier3;
+                            }
                         break;
                     case "Drag":
                         foreach (Transform t in gameObject.GetComponentsInChildren<Transform>())
                             if (t.tag == "PlayerSprite")
-                                t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.DragSoldier;
+                            {
+                                if (Mathf.Abs(GStage.Ability) <= 1)
+                                    t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.DragSoldier;
+                                else if (Mathf.Abs(GStage.Ability) == 2)
+                                    t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.DragSoldier2;
+                                else
+                                    t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.DragSoldier3;
+                            }
                         break;
                     case "Ax":
                         foreach (Transform t in gameObject.GetComponentsInChildren<Transform>())
                             if (t.tag == "PlayerSprite")
-                                t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.AxSoldier;
+                            {
+                                if (Mathf.Abs(GStage.Ability) <= 1)
+                                    t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.AxSoldier;
+                                else if (Mathf.Abs(GStage.Ability) == 2)
+                                    t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.AxSoldier2;
+                                else
+                                    t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.AxSoldier3;
+                            }
                         break;
                     case "Shield":
                         foreach (Transform t in gameObject.GetComponentsInChildren<Transform>())
                             if (t.tag == "PlayerSprite")
-                                t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.ShieldSoldier;
+                            {
+                                if (Mathf.Abs(GStage.Ability) <= 1)
+                                    t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.ShieldSoldier;
+                                else if (Mathf.Abs(GStage.Ability) == 2)
+                                    t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.ShieldSoldier2;
+                                else
+                                    t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.ShieldSoldier3;
+                            }
+                        break;
+                    case "Bumb":
+                        IEnumerator jump = OnClickJump();
+                        StartCoroutine(jump);
+                        int bloodamount = int.Parse(GStage.PlayerBlood.GetComponent<Text>().text) - 8;
+                        if(GStage.PlayerWeapon=="Shield")
+                            bloodamount++;
+                        GStage.PlayerBlood.GetComponent<Text>().text = bloodamount.ToString();
+                        if (bloodamount <= 0)
+                        {
+                            //被攻击者死亡
+                            for (int j = 0; j < GameManager.OccupiedGround.Count; j++)
+                                if (GameManager.OccupiedGround[j].PlayerOnGround == GStage.PlayerOnGround)
+                                {
+                                    if (!GameManager.OccupiedGround[j].Moved)
+                                        break;
+                                    PlayerController.MovedDead++;
+                                    break;
+                                }
+                            GStage.PlayerBlood.SetActive(false);
+                            Destroy(GStage.PlayerBlood);
+                            BoardManager.Grounds[GStage.i][GStage.j].tag = "Untagged";
+                            if (GStage.PlayerOnGround.tag == "Team1")
+                                GameManager.instance.TeamDiedSoldiers[0]++;
+                            if (GStage.PlayerOnGround.tag == "Team2")
+                                GameManager.instance.TeamDiedSoldiers[1]++;
+                            GStage.PlayerOnGround.SetActive(false);
+                            Destroy(GStage.PlayerOnGround);
+                            StopCoroutine(jump);
+                            GameManager.OccupiedGround.RemoveAt(index);
+                            foreach (Transform t in BoardManager.Grounds[GStage.i][GStage.j].GetComponentsInChildren<Transform>())
+                                if (t.tag == "Weapon")
+                                    t.gameObject.SetActive(false);
+                            ChangeTurn();
+                            GameManager.instance.EnemyChecked = false;
+                            return;
+                        }
+                        break;
+                    case "BumbMaker":
+                        foreach (Transform t in gameObject.GetComponentsInChildren<Transform>())
+                            if (t.tag == "PlayerSprite")
+                            {
+                                if (Mathf.Abs(GStage.Ability) <= 1)
+                                    t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.BumbSoldier;
+                                else if (Mathf.Abs(GStage.Ability) == 2)
+                                    t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.BumbSoldier2;
+                                else
+                                    t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.BumbSoldier3;
+                            }
                         break;
                 }
                 surround.tag = "Occupied";
@@ -304,9 +409,10 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                         GStage.j = j;
                     }
             //GStage.PlayerBlood = AimBlood;
-            if (surround.tag != "Untagged")
+            if (surround.tag != "Untagged" && surround.tag!="Bumb")
+            {
                 GStage.PlayerWeapon = surround.tag;
-            
+            }
             GameManager.OccupiedGround.Add(GStage);
             ClearHighlight();
         }
@@ -565,7 +671,7 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
         if (GameManager.instance.SmallTurn >= totalSmallTurns)
         {
             //Debug.Log("AddTurn");
-            GameManager.instance.ArtActFinished = false;
+            
             GameManager.instance.SmallTurn = 0;
             MovedDead = 0;
             List<GameManager.GroundStage> oGround = new List<GameManager.GroundStage>();
@@ -577,6 +683,7 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
             }
             GameManager.instance.Turn++;
             GameManager.OccupiedGround = oGround;
+            GameManager.instance.ArtActFinished = false;
         }
         bool teamHaveMove = false;
         int counter = 0;
@@ -654,19 +761,24 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
         Vector3 nowPosition = transform.position;
         Vector3 OrigPosition = nowPosition;
         //Vector3 nowPosition = position;
-        for (int i = 0; i < 10;i++)
+        for (int i = 0; i < 5;i++)
         {
+            if(gameObject==null)
+                break;
             nowPosition.y += 0.1f;
             transform.position = nowPosition;
             yield return 0;
         }
-        for (int i = 0; i < 10;i++)
+        for (int i = 0; i < 5;i++)
         {
+            if(gameObject==null)
+                break;
             nowPosition.y -= 0.1f;
             transform.position = nowPosition;
             yield return 0;
         }
         transform.position = OrigPosition;
+        GameManager.instance.ClickJumpOnway = false;
     }
     IEnumerator OnHitAction(GameObject attacker,GameObject aim)
     {

@@ -20,7 +20,7 @@ public class AI : PlayerController
     // Update is called once per frame
     void Update()
     {
-        if(GameManager.instance.SmoothMoveOnWay)
+        if (GameManager.instance.SmoothMoveOnWay)
             return;
         //检测攻击范围
         CheckAttack();
@@ -175,12 +175,20 @@ public class AI : PlayerController
                                                     case "Drag":
                                                         enemyScore *= 4;
                                                         break;
+                                                    case "Shield":
+                                                        enemyScore *= 2;
+                                                        break;
+                                                    case "BumbMaker":
+                                                        enemyScore *= 4;
+                                                        break;
                                                 }
                                                 if (GameManager.OccupiedGround[j].Faint)
                                                     enemyScore *= 2;
 
                                             }
                                             enemyScore -= (int)(Vector3.Distance(GameManager.OccupiedGround[j].PlayerOnGround.transform.position, Node.Aim.transform.position) / BoardManager.distance);
+                                            if(enemyScore<-5)
+                                                enemyScore=-5;
                                             if (enemyScore > enemyMaxScore)
                                             {
                                                 enemyMaxScore = enemyScore;
@@ -232,12 +240,20 @@ public class AI : PlayerController
                                                         case "Drag":
                                                             enemyScore *= 2;
                                                             break;
+                                                        case "Shield":
+                                                            enemyScore *= 2;
+                                                            break;
+                                                        case "BumbMaker":
+                                                            enemyScore *= 4;
+                                                            break;
                                                     }
                                                     if (GameManager.OccupiedGround[j].Faint)
                                                         enemyScore *= 2;
                                                 }
                                             }
                                             enemyScore -= (int)(Vector3.Distance(GameManager.OccupiedGround[j].PlayerOnGround.transform.position, Node.Aim.transform.position) / BoardManager.distance);
+                                            if(enemyScore<-5)
+                                                enemyScore=-5;
                                             if (enemyScore > enemyMaxScore)
                                             {
                                                 enemyMaxScore = enemyScore;
@@ -254,7 +270,13 @@ public class AI : PlayerController
                                     thisScore = 2;
                                     break;
                                 case "Ax":
-                                    thisScore = 1;
+                                    thisScore = 2;
+                                    break;
+                                case "Bumb":
+                                    thisScore = -5;
+                                    break;
+                                case "BumbMaker":
+                                    thisScore = 3;
                                     break;
                             }
                         }
@@ -364,17 +386,68 @@ public class AI : PlayerController
                     BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color = GameManager.OccupiedGround[i].OrigColor;
                 }
             }
+            GameManager.GroundStage GStage = new GameManager.GroundStage();
             for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
             {
                 if (GameManager.OccupiedGround[i].PlayerOnGround == GameManager.PlayerOnEdit)
                 {
-                    GameManager.GroundStage GStage = GameManager.OccupiedGround[i];
+                    GStage = GameManager.OccupiedGround[i];
                     GStage.Moved = true;
                     GameManager.OccupiedGround[i] = GStage;
                     break;
                 }
             }
-            GameManager.Stage = 2;
+            if (GStage.Ability == 3 && !GameManager.instance.SecondMovingTurn)
+            {
+                GameManager.instance.SecondMovingTurn = true;
+                GameManager.Stage = 1;
+                for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
+                {
+                    string team = "Team" + (GameManager.instance.MovingTeam + 1).ToString();
+                    if (GameManager.OccupiedGround[i].PlayerOnGround.tag == team)
+                    {
+                        GStage = GameManager.OccupiedGround[i];
+                        if (GStage.Ability == 3)
+                        {
+                            GStage.Moved = false;
+                            GStage.OrigColor = BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color;
+                            BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color = GameManager.instance.MovablePlayerHighlight;
+                        }
+                        else
+                        {
+                            if (GStage.Ability == 1)
+                                GameManager.instance.Ability1Moved = GStage.Moved;
+                            else
+                                GameManager.instance.Ability2Moved = GStage.Moved;
+                            GStage.Moved = true;
+                        }
+                        GameManager.OccupiedGround[i] = GStage;
+                    }
+                }
+                GameManager.PlayerOnEdit = null;
+            }
+            else
+            {
+                if (GStage.Ability == 3)
+                {
+                    GameManager.instance.SecondMovingTurn = false;
+                    for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
+                    {
+                        string team = "Team" + (GameManager.instance.MovingTeam + 1).ToString();
+                        if (GameManager.OccupiedGround[i].PlayerOnGround.tag == team)
+                        {
+                            GStage = GameManager.OccupiedGround[i];
+                            if (GStage.Ability == 1)
+                                GStage.Moved = GameManager.instance.Ability1Moved;
+                            else if(GStage.Ability==2)
+                                GStage.Moved = GameManager.instance.Ability2Moved;
+                            GameManager.OccupiedGround[i] = GStage;
+                        }
+                    }
+                }
+                GameManager.Stage = 2;
+            }
+            Debug.Log("AISkipMove");
             return;
         }
         //对接移动函数，可以不用看了
@@ -400,6 +473,7 @@ public class AI : PlayerController
                 score.Add(GameManager.OccupiedGround[i].PlayerBlood, surroundscore);
             }
         }
+        Debug.Log("AIMoved");
     }
 
     void AIAttack()
@@ -435,7 +509,7 @@ public class AI : PlayerController
         Debug.Log(AimRangeList.Count);
         for (int i = 0; i < AimRangeList.Count; i++)
         {
-            if (PlayerToAttack.tag == "Monster" || AimRangeList[i].Aim == PlayerToAttack)
+            if (AimRangeList[i].Aim == PlayerToAttack)
             {
                 canAttack = true;
                 break;
@@ -451,8 +525,11 @@ public class AI : PlayerController
         //PlayerToAttack.transform.localScale *= 1.1f;
         if (PlayerToAttack.tag == "Monster")
         {
-            if(ArtifactController.instance.aiAbleToUse)
-                ArtifactController.instance.OnMouseDown();
+            if (ArtifactController.instance.aiAbleToUse)
+            {
+                Debug.Log("AIAttackMonster");
+                ArtifactController.instance.Artifact.ArtOnHit();
+            }
             else
             {
                 GameManager.PlayerOnEdit.GetComponent<AI>().ClearHighlight();
@@ -537,10 +614,12 @@ public class AI : PlayerController
     IEnumerator WaitToMove()
     {
         GameManager.instance.CoroutineStarted = true;
+        GameManager.PlayerOnEdit = gameObject;
         int second = Random.Range(3, 5);
         if(GameManager.IsTraining)
-            second = 2;
+            second = 1;
         yield return new WaitForSeconds(second);
+        GameManager.PlayerOnEdit = null;
         AIMove();
         GameManager.instance.CoroutineStarted = false;
     }

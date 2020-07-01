@@ -172,6 +172,7 @@ public class HopeSpring : MotionArtifact
         {
             bloodChange = 1;
         }
+        List<GameManager.GroundStage> oGround = new List<GameManager.GroundStage>();
         for (int i = 0; i < GameManager.OccupiedGround.Count;i++)
         {
             if(Vector3.Distance(artPosition,BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.position)<BoardManager.distance*1.5f)
@@ -188,17 +189,63 @@ public class HopeSpring : MotionArtifact
                     GameObject diedObject = GameManager.OccupiedGround[i].PlayerOnGround;
                     BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].tag = "Untagged";
                     //BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color = GameManager.OccupiedGround[i].OrigColor;
-                    GameManager.OccupiedGround.RemoveAt(i);
                     if (diedObject.tag == "Team1")
                         GameManager.instance.TeamDiedSoldiers[0]++;
                     if (diedObject.tag == "Team2")
                         GameManager.instance.TeamDiedSoldiers[1]++;
+                    if(GameManager.PlayerOnEdit=diedObject)
+                        GameManager.instance.CoroutineStarted = false;
                     diedObject.SetActive(false);
                     GameManager.instance.DeleteDiedObject(diedObject);
                     continue;
                 }
                 GameManager.OccupiedGround[i].PlayerBlood.GetComponent<Text>().text = bloodNum.ToString();
                 GameManager.instance.startCoroutine(OnHitAction(artPosition, GameManager.OccupiedGround[i].PlayerOnGround));
+            }
+            oGround.Add(GameManager.OccupiedGround[i]);
+        }
+        GameManager.OccupiedGround = oGround;
+        int counter = 0;
+        //若都dead则开始新回合
+        bool teamHaveMove = false;
+        while (!teamHaveMove)
+        {
+            for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
+            {
+                string team = "Team" + (GameManager.instance.MovingTeam + 1).ToString();
+                if (GameManager.OccupiedGround[i].Moved == false && GameManager.OccupiedGround[i].PlayerOnGround.tag == team)
+                {
+                    teamHaveMove = true;
+                    break;
+                }
+            }
+            if (!teamHaveMove)
+                GameManager.instance.MovingTeam = (GameManager.instance.MovingTeam + 1) % GameManager.TeamCount;
+            counter++;
+            if (counter >= 2 * GameManager.TeamCount)
+            {
+                Debug.Log("faint,MovedDied" + PlayerController.FaintCount + PlayerController.MovedDead);
+                for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
+                    Debug.Log("position,moved" + BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.transform.position + GameManager.OccupiedGround[i].Moved);
+                Debug.Log("ProbleBug");
+                if (counter >= 10)
+                {
+                    GameManager.instance.ArtActFinished = true;
+                    break;
+                }
+                GameManager.instance.ArtActFinished = false;
+                GameManager.instance.SmallTurn = 0;
+                PlayerController.MovedDead = 0;
+                oGround = new List<GameManager.GroundStage>();
+                for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
+                {
+                    GameManager.GroundStage GStage = GameManager.OccupiedGround[i];
+                    GStage.Moved = false;
+                    oGround.Add(GStage);
+                }
+                GameManager.instance.Turn++;
+                GameManager.OccupiedGround = oGround;
+                break;
             }
         }
     }

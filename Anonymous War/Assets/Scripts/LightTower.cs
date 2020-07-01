@@ -8,6 +8,7 @@ public class LightTower : MotionArtifact
     List<GameObject> towerArea=new List<GameObject>();
     public override void OnArtCreate()
     {
+        GameManager.instance.fog.SetActive(true);
         fogGrounds = new GameObject[BoardManager.row][];
         for (int i = 0; i < BoardManager.row; i++)
         {
@@ -16,9 +17,14 @@ public class LightTower : MotionArtifact
         GameManager.instance.ArtActFinished = true;
         for (int i = 0; i < BoardManager.row;i++)
             for (int j = 0; j < BoardManager.col;j++)
-                if(BoardManager.Grounds[i][j]!=null && BoardManager.Grounds[i][j]!=GameManager.instance.ArtifactGround)
+                if(BoardManager.Grounds[i][j]!=null)
                 {
-                    fogGrounds[i][j] = GameManager.instance.instantiate(GameManager.instance.fogGround, BoardManager.Grounds[i][j].transform.position+new Vector3(0,5,0), Quaternion.identity);
+                    if(BoardManager.Grounds[i][j]==GameManager.instance.ArtifactGround)
+                    {
+                        GameManager.instance.instantiate(GameManager.instance.fogGround, BoardManager.Grounds[i][j].transform.position+new Vector3(-2,4,0), Quaternion.identity);
+                    }
+                    else
+                        fogGrounds[i][j] = GameManager.instance.instantiate(GameManager.instance.fogGround, BoardManager.Grounds[i][j].transform.position+new Vector3(-2,4,0), Quaternion.identity);
                 }
         List<GameObject> Surround = new List<GameObject>();
         //是否在直线上
@@ -36,6 +42,8 @@ public class LightTower : MotionArtifact
             }
         }
         int randomDir = Random.Range(0, Surround.Count);
+        if(!GameManager.UseAI)
+            randomDir = 0;
         towerArea = FindAimsSector(artGroundPosition, Surround[randomDir].transform.position, 20, 1, "Grounds");
         for (int i = 0; i < BoardManager.row;i++)
             for (int j = 0; j < BoardManager.col;j++)
@@ -56,7 +64,6 @@ public class LightTower : MotionArtifact
                             }
                         }
                     }
-                    fogGrounds[i][j].SetActive(false);
                 }
         ArtPerActionPower();
     }
@@ -68,6 +75,7 @@ public class LightTower : MotionArtifact
     public override void ArtOnHit()
     {
         Debug.Log("LightTowerOnHit");
+        ArtifactController.instance.ClearHighlight();
         for (int i = 0; i < BoardManager.row;i++)
             for (int j = 0; j < BoardManager.col;j++)
                 if(fogGrounds[i][j]!=null && towerArea.Contains(BoardManager.Grounds[i][j]))
@@ -108,10 +116,8 @@ public class LightTower : MotionArtifact
                             }
                         }
                     }
-                    fogGrounds[i][j].SetActive(false);
                 }
         ArtPerActionPower();
-        ArtifactController.instance.ClearHighlight();
         ArtifactController.instance.ChangeTurn();
         GameManager.instance.EnemyChecked = false;
     }
@@ -124,11 +130,11 @@ public class LightTower : MotionArtifact
             {
                 if (fogGrounds[i][j] != null && !towerArea.Contains(BoardManager.Grounds[i][j]))
                 {
-                    fogGrounds[i][j].SetActive(true);
+                    fogGrounds[i][j].SetActive(false);
                 }
                 if (fogGrounds[i][j] != null && towerArea.Contains(BoardManager.Grounds[i][j]))
                 {
-                    fogGrounds[i][j].SetActive(false);
+                    fogGrounds[i][j].SetActive(true);
                 }
             }
         for (int k = 0; k < GameManager.OccupiedGround.Count; k++)
@@ -194,10 +200,22 @@ public class LightTower : MotionArtifact
                                 if(inLine==false)
                                     continue;
                             }
-                            fogGrounds[i][j].SetActive(false);
+                            fogGrounds[i][j].SetActive(true);
                         }
                     }
         }
+        for (int i = 0; i < BoardManager.row; i++)
+            for (int j = 0; j < BoardManager.col; j++)
+            {
+                if (fogGrounds[i][j] != null && fogGrounds[i][j].activeSelf)
+                {
+                    BoardManager.Grounds[i][j].GetComponent<GroundClick>().canAddWeapon = true;
+                }
+                else if (fogGrounds[i][j] != null)
+                {
+                    BoardManager.Grounds[i][j].GetComponent<GroundClick>().canAddWeapon = false;
+                }
+            }
     }
 
     public List<GameObject> FindAimsSector(Vector3 Center, Vector3 Sectorcenter, int Range, int Breadth,string Groups)

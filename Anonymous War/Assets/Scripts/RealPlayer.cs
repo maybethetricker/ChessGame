@@ -22,7 +22,11 @@ public class RealPlayer : PlayerController
                 if (gstage.PlayerOnGround == gameObject && gstage.i != -1)
                     return;
             GameManager.PlayerOnEdit = gameObject;
-            StartCoroutine(OnClickJump());
+            if (!GameManager.instance.ClickJumpOnway)
+            {
+                GameManager.instance.ClickJumpOnway = true;
+                StartCoroutine(OnClickJump());
+            }
 
         }
         if (GameManager.Stage == 1 && GameManager.PlayerOnEdit == null)//移动
@@ -36,7 +40,11 @@ public class RealPlayer : PlayerController
             //标记出移动者并计算可移动范围
             //transform.localScale *= 1.1f;
             GameManager.PlayerOnEdit = gameObject;
-            StartCoroutine(OnClickJump());
+            if (!GameManager.instance.ClickJumpOnway)
+            {
+                GameManager.instance.ClickJumpOnway = true;
+                StartCoroutine(OnClickJump());
+            }
             foreach (GameManager.GroundStage gstage in GameManager.OccupiedGround)
                 if (gstage.PlayerOnGround == GameManager.PlayerOnEdit)
                 {
@@ -60,7 +68,11 @@ public class RealPlayer : PlayerController
             //mistake:haven't change scale back after move, won't change as way of highlighting isn't ready
             //transform.localScale *= 1.1f;
             //GameManager.PlayerOnEdit.transform.localScale /= 1.1f;
-            StartCoroutine(OnClickJump());
+            if (!GameManager.instance.ClickJumpOnway)
+            {
+                GameManager.instance.ClickJumpOnway = true;
+                StartCoroutine(OnClickJump());
+            }
             GameManager.PlayerOnEdit = gameObject;
             foreach (GameManager.GroundStage gstage in GameManager.OccupiedGround)
                 if (gstage.PlayerOnGround == GameManager.PlayerOnEdit)

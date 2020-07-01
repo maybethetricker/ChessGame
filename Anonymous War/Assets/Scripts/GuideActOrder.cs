@@ -478,6 +478,7 @@ public class GuideActOrder : MonoBehaviour
             BoardManager.Grounds[4][2].GetComponent<SpriteRenderer>().color = GameManager.instance.GuideHighlight;
             Root.instance.LimitClickFinished = delegate ()
             {
+                Debug.Log("inStep24");
                 BoardManager.Grounds[4][2].GetComponent<SpriteRenderer>().color = GameManager.instance.OrigGroundColor;
             };
             Root.instance.UseLimitClick = true;

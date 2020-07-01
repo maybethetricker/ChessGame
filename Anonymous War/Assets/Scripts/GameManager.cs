@@ -18,14 +18,29 @@ public class GameManager : MonoBehaviour
 
     public static GameManager instance;
     public Sprite LongSoldier;
+    public Sprite LongSoldier2;
+    public Sprite LongSoldier3;
     public Sprite ShortSoldier;
+    public Sprite ShortSoldier2;
+    public Sprite ShortSoldier3;
     public Sprite DragSoldier;
+    public Sprite DragSoldier2;
+    public Sprite DragSoldier3;
     public Sprite AxSoldier;
+    public Sprite AxSoldier2;
+    public Sprite AxSoldier3;
     public Sprite ShieldSoldier;
+    public Sprite ShieldSoldier2;
+    public Sprite ShieldSoldier3;
+    public Sprite BumbSoldier;
+    public Sprite BumbSoldier2;
+    public Sprite BumbSoldier3;
+    public Sprite Bumb;
     public Sprite crystal;
     public Sprite spring;
     public Sprite tower;
     public GameObject fogGround;
+    public GameObject fog;
     public GameObject OrigSoldier;
     public GameObject Monster;//怪
     public Image Timer;
@@ -73,7 +88,10 @@ public class GameManager : MonoBehaviour
     //1愤怒水晶
     //Button test;
     public static int Guide = -1;//1,2,3...为各教程
-
+    public bool SecondMovingTurn=false;
+    public bool Ability1Moved = false;
+    public bool Ability2Moved = false;
+    public bool ClickJumpOnway = false;//防止连点同一士兵导致错位，但用SmoothMoveOnway的话响应普遍延迟，手感不好
     // Start is called before the first frame update
 
     public virtual void Start()
@@ -194,6 +212,18 @@ public class GameManager : MonoBehaviour
             foreach (Transform t in newPlayer.GetComponentsInChildren<Transform>())
                 if (t.tag == "Blood")
                     blood = t.gameObject;
+            if (groundStage.Ability == 2)
+            {
+                blood.GetComponent<Text>().text = (int.Parse(blood.GetComponent<Text>().text) + 10).ToString();
+            }
+            foreach (Transform t in newPlayer.GetComponentsInChildren<Transform>())
+                if (t.tag == "PlayerSprite")
+                {
+                    if (Mathf.Abs(groundStage.Ability) == 2)
+                        t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.ShortSoldier2;
+                    else if(Mathf.Abs(groundStage.Ability)==3)
+                        t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.ShortSoldier3;
+                }
             groundStage.PlayerBlood = blood;
             OccupiedGround.Add(groundStage);
         }
@@ -229,6 +259,7 @@ public class GameManager : MonoBehaviour
                 Root.instance.flowchart.SetBooleanVariable("FinnishCommand",true);
             //降怪前准备
             FindArtifact();
+            
         }
         //降怪
         if (Mode >= 1 && Turn == 2 && !ArtActFinished)
@@ -236,6 +267,7 @@ public class GameManager : MonoBehaviour
             if(Guide==3)
                 Root.instance.flowchart.SetBooleanVariable("FinnishCommand",true);
             CreateArtifact();
+            
         }
         if(InGame)
             CheckWinner();
@@ -450,6 +482,13 @@ public class GameManager : MonoBehaviour
             else
             {
                 notice = "失败";
+                if (!IsTraining && Mode>=2)
+                {
+                    ProtocolBytes prot = new ProtocolBytes();
+                    prot.AddString("AddScore");
+                    prot.AddInt(-50);
+                    NetMgr.srvConn.Send(prot);
+                }
             }
             Root.instance.ShowNotice(notice, "返回", delegate () {
                 SceneManager.LoadScene("MainPage");

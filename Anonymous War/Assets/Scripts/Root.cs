@@ -21,6 +21,7 @@ public class Root : MonoBehaviour
     public VoidDelegate LimitClickFinished;
     public Button SkipPlot;
     public bool OncePlotOpen = false;
+    public int Authority=-1;
 
     //public GameObject Plot;
     //public Text PlotText;
@@ -219,7 +220,8 @@ public class Root : MonoBehaviour
                     case "Short": attack = 4; break;
                     case "Drag": attack = 1; break;
                 }
-
+                if(GameManager.OccupiedGround[i].Ability==1)
+                    attack++;
                 thisBlood = GameManager.OccupiedGround[i].PlayerBlood;
             }
         }
@@ -402,6 +404,13 @@ public class Root : MonoBehaviour
 
                 NetMgr.srvConn.Send(prot);
             }
+            if (GameManager.Mode >= 2)
+            {
+                prot = new ProtocolBytes();
+                prot.AddString("AddScore");
+                prot.AddInt(-50);
+                NetMgr.srvConn.Send(prot);
+            }
             Quit.GetComponentInChildren<Text>().text = "退出";
             Quit.onClick.RemoveAllListeners();
             Quit.onClick.AddListener(delegate () { Application.Quit(); });
@@ -552,7 +561,7 @@ public class Root : MonoBehaviour
     public int FindMode(int score)
     {
         int mode = 0;
-        if(score>=150)
+        if(score>=100)
             mode = 1;
         if(score>=300)
             mode = 2;
@@ -654,6 +663,7 @@ public class Root : MonoBehaviour
                         case "Drag": aimGround = BoardManager.instance.DragGround; break;
                         case "Ax": aimGround = BoardManager.instance.AxGround; break;
                         case "Shield": aimGround = BoardManager.instance.ShieldGround; break;
+                        case "BumbMaker":aimGround=BoardManager.instance.BumbGround;break;
                     }
                     GameObject thisweapon = null;
                     foreach (Transform t in BoardManager.Grounds[i][j].GetComponentInChildren<Transform>())
@@ -680,5 +690,16 @@ public class Root : MonoBehaviour
                     }
                 }
             }
+    }
+
+    public bool AntiInjection(string str)
+    {
+        if (System.Text.RegularExpressions.Regex.IsMatch(str, "^[0-9a-zA-Z]+$"))
+        {
+            return true;
+        }
+        else
+            return false;
+
     }
 }

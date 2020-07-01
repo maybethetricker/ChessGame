@@ -182,6 +182,8 @@ public class AngerCrystal : MotionArtifact
                         GameManager.instance.TeamDiedSoldiers[0]++;
                     if (diedObject.tag == "Team2")
                         GameManager.instance.TeamDiedSoldiers[1]++;
+                    if(GameManager.PlayerOnEdit=diedObject)
+                        GameManager.instance.CoroutineStarted = false;
                     diedObject.SetActive(false);
                     //Destroy(GameManager.OccupiedGround[i].PlayerOnGround);
                     Debug.Log("PoisonDiedDeleted");

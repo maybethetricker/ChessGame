@@ -19,6 +19,8 @@ TagManager:
   - PlayerSprite
   - Ax
   - Shield
+  - Bumb
+  - BumbMaker
   layers:
   - Default
   - TransparentFX

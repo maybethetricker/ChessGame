@@ -10,6 +10,7 @@ public class ArtifactController : PlayerController
     public int ArtifactType;
     public static ArtifactController instance;
     public bool aiAbleToUse;
+    bool created=false;
     /// <summary>
     /// Start is called on the frame when a script is enabled just before
     /// any of the Update methods is called the first time.
@@ -43,6 +44,7 @@ public class ArtifactController : PlayerController
                     Artifact.artGroundPosition = BoardManager.Grounds[i][j].transform.position;
         aiAbleToUse = true;
         Artifact.OnArtCreate();
+        created = true;
         for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
         {
             string team = "Team" + (GameManager.instance.MovingTeam + 1).ToString();
@@ -72,7 +74,7 @@ public class ArtifactController : PlayerController
             }
             //SetMug((GameManager.Turn) / 2);
         }
-        if (GameManager.instance.Turn >= 2 && !GameManager.instance.ArtPerActActFinished)
+        if (GameManager.instance.Turn >= 2 && !GameManager.instance.ArtPerActActFinished && created)
         {
             Artifact.ArtPerActionPower();
         }
@@ -82,9 +84,9 @@ public class ArtifactController : PlayerController
         ArtifactType = kind;
         switch (kind)
         {
-            case 1:Artifact=new AngerCrystal();gameObject.GetComponent<SpriteRenderer>().sprite=GameManager.instance.crystal;break;
-            case 2:Artifact=new HopeSpring();gameObject.GetComponent<SpriteRenderer>().sprite=GameManager.instance.spring;break;
-            case 3:Artifact = new LightTower();gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.tower;break;
+            case 1:Artifact=new AngerCrystal();gameObject.GetComponent<SpriteRenderer>().sprite=GameManager.instance.crystal;gameObject.name="crystal";break;
+            case 2:Artifact=new HopeSpring();gameObject.GetComponent<SpriteRenderer>().sprite=GameManager.instance.spring;gameObject.name="spring";break;
+            case 3:Artifact = new LightTower();gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.tower;gameObject.name="tower";break;
             default:break;
         }
         Artifact.artPosition = gameObject.transform.position;
@@ -94,6 +96,7 @@ public class ArtifactController : PlayerController
                     Artifact.artGroundPosition = BoardManager.Grounds[i][j].transform.position;
         aiAbleToUse = true;
         Artifact.OnArtCreate();
+        created = true;
         for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
         {
             string team = "Team" + (GameManager.instance.MovingTeam + 1).ToString();
@@ -127,12 +130,12 @@ public class ArtifactController : PlayerController
         randomList.Add(currentPlus);
         int rand = Random.Range(0, randomList.Count);
         Artifact = randomList[rand];
-        Artifact = randomList[randomList.Count - 1];//for test
+        Artifact = randomList[randomList.Count - 3];//for test
         switch (spriteDic[Artifact])
         {
-            case 1:gameObject.GetComponent<SpriteRenderer>().sprite=GameManager.instance.crystal;break;
-            case 2:gameObject.GetComponent<SpriteRenderer>().sprite=GameManager.instance.spring;break;
-            case 3:gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.tower;break;
+            case 1:gameObject.GetComponent<SpriteRenderer>().sprite=GameManager.instance.crystal;gameObject.name="crystal";break;
+            case 2:gameObject.GetComponent<SpriteRenderer>().sprite=GameManager.instance.spring;gameObject.name="spring";break;
+            case 3:gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.tower;gameObject.name="tower";break;
             default:break;
         }
         return spriteDic[Artifact];

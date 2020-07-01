@@ -57,17 +57,67 @@ public class SkipTurn : MonoBehaviour
                     BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color = GameManager.OccupiedGround[i].OrigColor;
                 }
             }
+            GameManager.GroundStage GStage = new GameManager.GroundStage();
             for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
             {
                 if (GameManager.OccupiedGround[i].PlayerOnGround == GameManager.PlayerOnEdit)
                 {
-                    GameManager.GroundStage GStage = GameManager.OccupiedGround[i];
+                    GStage = GameManager.OccupiedGround[i];
                     GStage.Moved = true;
                     GameManager.OccupiedGround[i] = GStage;
                     break;
                 }
             }
-            GameManager.Stage = 2;
+            if (GStage.Ability == 3 && !GameManager.instance.SecondMovingTurn)
+            {
+                GameManager.instance.SecondMovingTurn = true;
+                GameManager.Stage = 1;
+                for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
+                {
+                    string team = "Team" + (GameManager.instance.MovingTeam + 1).ToString();
+                    if (GameManager.OccupiedGround[i].PlayerOnGround.tag == team)
+                    {
+                        GStage = GameManager.OccupiedGround[i];
+                        if (GStage.Ability == 3)
+                        {
+                            GStage.Moved = false;
+                            GStage.OrigColor = BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color;
+                            BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color = GameManager.instance.MovablePlayerHighlight;
+                        }
+                        else
+                        {
+                            if (GStage.Ability == 1)
+                                GameManager.instance.Ability1Moved = GStage.Moved;
+                            else
+                                GameManager.instance.Ability2Moved = GStage.Moved;
+                            GStage.Moved = true;
+                        }
+                        GameManager.OccupiedGround[i] = GStage;
+                    }
+                }
+                GameManager.PlayerOnEdit = null;
+            }
+            else
+            {
+                if (GStage.Ability == 3)
+                {
+                    GameManager.instance.SecondMovingTurn = false;
+                    for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
+                    {
+                        string team = "Team" + (GameManager.instance.MovingTeam + 1).ToString();
+                        if (GameManager.OccupiedGround[i].PlayerOnGround.tag == team)
+                        {
+                            GStage = GameManager.OccupiedGround[i];
+                            if (GStage.Ability == 1)
+                                GStage.Moved = GameManager.instance.Ability1Moved;
+                            else if(GStage.Ability==2)
+                                GStage.Moved = GameManager.instance.Ability2Moved;
+                            GameManager.OccupiedGround[i] = GStage;
+                        }
+                    }
+                }
+                GameManager.Stage = 2;
+            }
             return;
         }
         //跳过攻击，删除高亮并更替小回合

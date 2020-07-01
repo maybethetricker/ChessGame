@@ -12,6 +12,7 @@ public class BoardManager : MonoBehaviour
     public GameObject NothingGround;
     public GameObject AxGround;
     public GameObject ShieldGround;
+    public GameObject BumbGround;
     List<string> weaponList;
     //用于生成地图
     List<GameObject> setBoardRandomGround = new List<GameObject>();
@@ -35,7 +36,20 @@ public class BoardManager : MonoBehaviour
         setBoardRandomGround.Add(NothingGround);
         setBoardRandomGround.Add(ShieldGround);
         setBoardRandomGround.Add(AxGround);
+        setBoardRandomGround.Add(BumbGround);
         int weaponkind=0;
+        if (GameManager.Mode < 2)
+            {
+                weaponkind = 5;
+            }
+            else if(GameManager.Mode<3)
+            {
+                weaponkind = 6;
+            }
+            else
+            {
+                weaponkind = 7;
+            }
         if (GameManager.UseAI || GameManager.RealPlayerTeam.Contains("Team1"))
         {
             if (GameManager.Mode < 2)
@@ -43,10 +57,15 @@ public class BoardManager : MonoBehaviour
                 weaponkind = 5;
                 SetBoard1(weaponkind, 15, 13);
             }
-            else
+            else if(GameManager.Mode<3)
             {
                 weaponkind = 6;
                 SetBoard1(weaponkind, 19, 17);
+            }
+            else
+            {
+                weaponkind = 7;
+                SetBoard1(weaponkind, 23, 20);
             }
         }
         weaponList = new List<string>();

@@ -1828,6 +1828,7 @@ MonoBehaviour:
   AxGround: {fileID: 0}
   ShieldGround: {fileID: 8290989736083176746, guid: 02ce866f158dbd84091a0bd52447f811,
     type: 3}
+  BumbGround: {fileID: 0}
 --- !u!4 &1235716293
 Transform:
   m_ObjectHideFlags: 0
@@ -2570,14 +2571,29 @@ MonoBehaviour:
   ArtifactRangeHighlight: {r: 220, g: 220, b: 220, a: 0.2}
   AddWeaponOrigColor: {r: 0, g: 0, b: 0, a: 0}
   LongSoldier: {fileID: 21300000, guid: 759e96f4baaf6c84184c3c7b649b1388, type: 3}
+  LongSoldier2: {fileID: 21300000, guid: b012bd5e9dae4c04a84a2c9dc1bf1897, type: 3}
+  LongSoldier3: {fileID: 21300000, guid: eaf19f839a0e2cd42bc33d416bda7911, type: 3}
   ShortSoldier: {fileID: 21300000, guid: cd257e7ed8a484f409108f1633e35806, type: 3}
+  ShortSoldier2: {fileID: 21300000, guid: 54a78364059ae9d418415ac9f567ff3c, type: 3}
+  ShortSoldier3: {fileID: 21300000, guid: fb8274470a6e61b4d8377ad82492a981, type: 3}
   DragSoldier: {fileID: 21300000, guid: 482bb928544aa1c408edd9eaf9ef9ece, type: 3}
-  AxSoldier: {fileID: 0}
-  ShieldSoldier: {fileID: 21300000, guid: add373f1ff1354a4b8f3a47613d9aefa, type: 3}
+  DragSoldier2: {fileID: 21300000, guid: 2012d3c67e13379489eb63b9e6d88596, type: 3}
+  DragSoldier3: {fileID: 21300000, guid: 5c30ddc4c46efb141a0466085d5b37f4, type: 3}
+  AxSoldier: {fileID: 21300000, guid: 28c2cc199cb6e9441a623c76d07742e3, type: 3}
+  AxSoldier2: {fileID: 21300000, guid: ee3042a32bbf76547a95c1c6535d11f9, type: 3}
+  AxSoldier3: {fileID: 21300000, guid: 445e6cc2f9c540348ac50a917fbddc04, type: 3}
+  ShieldSoldier: {fileID: 21300000, guid: 6517684f1de07384994d0f717e16bdae, type: 3}
+  ShieldSoldier2: {fileID: 21300000, guid: 14be90ece3690cf429968689927a4e22, type: 3}
+  ShieldSoldier3: {fileID: 21300000, guid: 11e57425c7dc616468df12029dfbaab0, type: 3}
+  BumbSoldier: {fileID: 21300000, guid: 98417433fa86e3f419bcfe36eb170f09, type: 3}
+  BumbSoldier2: {fileID: 21300000, guid: 906d7422e0947e24e9fb332aa811fe49, type: 3}
+  BumbSoldier3: {fileID: 21300000, guid: d7c37b56d00f0c34094eb8cf716cb8a9, type: 3}
+  Bumb: {fileID: 21300000, guid: 6616201b5547f4e488fe6a4dea5ac79b, type: 3}
   crystal: {fileID: 21300000, guid: a530b9b2364a79244b1a0b920ab4a90d, type: 3}
   spring: {fileID: 0}
   tower: {fileID: 0}
   fogGround: {fileID: 0}
+  fog: {fileID: 0}
   OrigSoldier: {fileID: 8887891261889884195, guid: f092f229a39c2164a9c817a9c557b010,
     type: 3}
   Monster: {fileID: 7174348744320852066, guid: 6aac8f5c9ac2e0a469436af8d22add9c, type: 3}

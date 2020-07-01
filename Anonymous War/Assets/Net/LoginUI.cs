@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using System.Security.Cryptography;
+using System.Text;
+using System;
 
 public class LoginUI : MonoBehaviour
 {
@@ -46,7 +49,12 @@ public class LoginUI : MonoBehaviour
     {
         if (idInput.text == "" || pwInput.text == "")
         {
-            Warning.text = "用户名或密码为空";
+            Warning.text = "用户名或密码不能为空";
+            return;
+        }
+        if (!Root.instance.AntiInjection(idInput.text) || !Root.instance.AntiInjection(pwInput.text))
+        {
+            Warning.text="只能输入字母与数字组成的用户名与密码";
             return;
         }
         if (NetMgr.srvConn.status != Connection.Status.Connected)
@@ -58,7 +66,8 @@ public class LoginUI : MonoBehaviour
         ProtocolBytes protocol = new ProtocolBytes();
         protocol.AddString("Login");
         protocol.AddString(idInput.text);
-        protocol.AddString(pwInput.text);
+        Debug.Log((SHA512(pwInput.text)));
+        protocol.AddString(SHA512(pwInput.text));
         NetMgr.srvConn.Send(protocol, OnLoginBack);
     }
     public void OnLoginBack(ProtocolBase protocol)
@@ -71,6 +80,8 @@ public class LoginUI : MonoBehaviour
         {
             Debug.Log("Login Succeed");
             //Start Your Game
+            int authority=proto.GetInt(start, ref start);
+            Root.instance.Authority = authority;
             SceneManager.LoadScene("MainPage");
         }
         else
@@ -83,7 +94,12 @@ public class LoginUI : MonoBehaviour
     {    //用户名、密码为空
         if (idInput.text == "" || pwInput.text == "")
         {
-            Warning.text="用户名密码不能为空 !";
+            Warning.text="用户名密码不能为空";
+            return;
+        }
+        if (!Root.instance.AntiInjection(idInput.text) || !Root.instance.AntiInjection(pwInput.text))
+        {
+            Warning.text="只能输入字母与数字组成的用户名与密码";
             return;
         }
         if (NetMgr.srvConn.status != Connection.Status.Connected)
@@ -94,7 +110,9 @@ public class LoginUI : MonoBehaviour
         ProtocolBytes protocol = new ProtocolBytes();
         protocol.AddString("Register"); 
         protocol.AddString(idInput.text);
-        protocol.AddString(pwInput.text);
+        protocol.AddString(SHA512(pwInput.text));
+        protocol.AddInt(0);//测试服用户
+        //protocol.AddInt(1);//正式服用户
         Debug.Log("发送 " + protocol.GetDesc());
         NetMgr.srvConn.Send(protocol, OnRegBack);
     }
@@ -115,4 +133,15 @@ public class LoginUI : MonoBehaviour
             NetMgr.srvConn.status = Connection.Status.None;
         }
     }
+    string SHA512(string strPlain)
+        {
+            SHA512Managed sha512 = new SHA512Managed();
+            string strHash = string.Empty;
+            byte[] btHash = sha512.ComputeHash(UnicodeEncoding.Unicode.GetBytes(strPlain));
+            for (int i = 0; i < btHash.Length; i++)
+            {
+                strHash = strHash + Convert.ToString(btHash[i], 16);
+            }
+            return strHash;
+        }
 }

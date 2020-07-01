@@ -83,21 +83,31 @@ public class CardController : MonoBehaviour
     }
     void AddWeapon()
     {
-
+        if (Root.instance.UseLimitClick && GameManager.Guide == 1)
+        {
+            if (Vector3.Distance(GameManager.instance.AddWeaponAim,Root.instance.LimitClickException.transform.transform.position)>0.45*BoardManager.distance)
+            {
+                Root.instance.flowchart.SetBooleanVariable("RepeatCommand", true);
+                return;
+            }
+        }
         for (int i = 0; i < BoardManager.row; i++)
             for (int j = 0; j < BoardManager.col; j++)
             {
                 if (BoardManager.Grounds[i][j] != null && Vector3.Distance(BoardManager.Grounds[i][j].transform.position, GameManager.instance.AddWeaponAim) < BoardManager.distance * 0.45)
                 {
-                    if (Root.instance.UseLimitClick&&BoardManager.Grounds[i][j] != Root.instance.LimitClickException)
+                    if (Root.instance.UseLimitClick && GameManager.Guide==1)
                     {
-                        Root.instance.flowchart.SetBooleanVariable("RepeatCommand", true);
-                        return;
-                    }
-                    else
-                    {
-                        Root.instance.flowchart.SetBooleanVariable("FinnishCommand", true);
-                        BoardManager.Grounds[i][j].GetComponent<SpriteRenderer>().color = GameManager.instance.OrigGroundColor;
+                        if (BoardManager.Grounds[i][j] != Root.instance.LimitClickException)
+                        {
+                            Root.instance.flowchart.SetBooleanVariable("RepeatCommand", true);
+                            return;
+                        }
+                        else
+                        {
+                            Root.instance.flowchart.SetBooleanVariable("FinnishCommand", true);
+                            BoardManager.Grounds[i][j].GetComponent<SpriteRenderer>().color = GameManager.instance.OrigGroundColor;
+                        }
                     }
                     if (!GameManager.UseAI && GameManager.RealPlayerTeam.Count < GameManager.TeamCount)
                     {
@@ -117,6 +127,7 @@ public class CardController : MonoBehaviour
                         case "Drag": aimGround = BoardManager.instance.DragGround; break;
                         case "Ax": aimGround = BoardManager.instance.AxGround; break;
                         case "Shield": aimGround = BoardManager.instance.ShieldGround; break;
+                        case "BumbMaker":aimGround = BoardManager.instance.BumbGround; break;
                     }
                     GameObject thisweapon=null;
                     foreach(Transform t in BoardManager.Grounds[i][j].GetComponentInChildren<Transform>())
@@ -136,7 +147,10 @@ public class CardController : MonoBehaviour
                         }
                     }
                     BoardManager.Grounds[i][j].tag = aimGround.tag;
-                    BoardManager.Grounds[i][j].GetComponent<SpriteRenderer>().color = GameManager.instance.AddWeaponOrigColor;
+                    if(GameManager.Guide!=1)
+                        BoardManager.Grounds[i][j].GetComponent<SpriteRenderer>().color = GameManager.instance.AddWeaponOrigColor;
+                    else
+                        GameManager.instance.AddWeaponOrigColor = GameManager.instance.OrigGroundColor;
                     GameManager.instance.AddWeaponAim = new Vector3(0, 0, 0);
                     gameObject.SetActive(false);
                 }
