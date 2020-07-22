@@ -15,7 +15,7 @@ public class SkipTurn : MonoBehaviour
     {
         if(!Root.instance.MouseClickLimit(gameObject,Root.instance.LimitClickException,ref Root.instance.UseLimitClick,Root.instance.LimitClickFinished))
             return;
-        if (GameManager.PlayerOnEdit != null && GameManager.RealPlayerTeam.Contains(GameManager.PlayerOnEdit.tag))
+        if (GameManager.PlayerOnEdit != null && GameManager.RealPlayerTeam.Contains(GameManager.PlayerOnEdit.tag)&&GameManager.Stage!=0)
         {
             if ((!GameManager.UseAI) && GameManager.RealPlayerTeam.Count < GameManager.TeamCount)
             {

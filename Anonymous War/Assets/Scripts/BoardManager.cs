@@ -62,6 +62,15 @@ public class BoardManager : MonoBehaviour
                 weaponkind = 6;
                 SetBoard1(weaponkind, 19, 17);
             }
+            else if(GameManager.Mode==8)
+            {
+                weaponkind = 7;
+                SetBoard1(weaponkind, 30, 27);
+            }
+            else if(GameManager.Mode==9)
+            {
+                SetBoard1(0, 0, 0);
+            }
             else
             {
                 weaponkind = 7;
@@ -71,14 +80,9 @@ public class BoardManager : MonoBehaviour
         weaponList = new List<string>();
         for (int i = 0; i < weaponkind;i++)
             weaponList.Add(setBoardRandomGround[i].tag);
-        foreach (Transform t in GameObject.Find("EnemyWeaponCard").GetComponentInChildren<Transform>())
-        {
-            if (!weaponList.Contains(t.tag))
-                t.gameObject.SetActive(false);
-        }
         foreach (Transform t in GameObject.Find("PlayerWeaponCard").GetComponentInChildren<Transform>())
         {
-            if (!weaponList.Contains(t.tag))
+            if (!weaponList.Contains(t.tag) || GameManager.Mode==9)
                 t.gameObject.SetActive(false);
         }
     }

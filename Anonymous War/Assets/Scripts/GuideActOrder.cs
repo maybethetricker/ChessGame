@@ -81,6 +81,7 @@ public class GuideActOrder : MonoBehaviour
                 NetMgr.srvConn.Send(prot);
                 Root.instance.UseLimitClick = false;
                 Root.instance.OncePlotOpen = true;
+                Root.instance.soundManager.ChangeClip();
                 SceneManager.LoadScene("MainPage");
             };
             Root.instance.UseLimitClick = true;
@@ -412,7 +413,7 @@ public class GuideActOrder : MonoBehaviour
         }
         if(Step==18)
         {
-            foreach (Transform t in GameObject.Find("EnemyWeaponCard").GetComponentInChildren<Transform>())
+            foreach (Transform t in GameObject.Find("EnemyWeaponCardTeam1").GetComponentInChildren<Transform>())
             {
                 if (t.tag=="Long")
                     t.gameObject.SetActive(false);
@@ -491,6 +492,7 @@ public class GuideActOrder : MonoBehaviour
             prot.AddInt(50);
             NetMgr.srvConn.Send(prot);
             Root.instance.UseLimitClick = false;
+            Root.instance.soundManager.ChangeClip();
             SceneManager.LoadScene("MainPage");
         }
     }

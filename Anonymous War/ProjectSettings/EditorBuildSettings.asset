@@ -17,4 +17,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Guide.unity
     guid: 05ab4951edffb584cbe2f36f15228cae
+  - enabled: 1
+    path: Assets/Scenes/RelaxMode.unity
+    guid: bab9559138b7d0b4bb6bbf7cbbede9d9
   m_configObjects: {}

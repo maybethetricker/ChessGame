@@ -13,7 +13,9 @@ public class MainPageUI : MonoBehaviour
     public Button ChangeRank;
     public InputField ChangeRankInput;
     public Button OpenHint;
+    public Button ExtraMode;
     public GameObject hint;
+    public GameObject ButtonHolder;
     // Start is called before the first frame update
     void Start()
     {
@@ -31,12 +33,14 @@ public class MainPageUI : MonoBehaviour
         StartWithAI.onClick.AddListener(StartFightWithAI);
         ChangeRankInput.gameObject.SetActive(false);
         ChangeRank.onClick.AddListener(ChangeScore);
+        ExtraMode.onClick.AddListener(StartExtraMode);
         if(Root.instance.Authority!=0)
             ChangeRank.gameObject.SetActive(false);
         Root.instance.flowchart.SetBooleanVariable("Started", false);
         Root.instance.flowchart.SetBooleanVariable("Finnished", false);
         hint.SetActive(false);
         OpenHint.onClick.AddListener(delegate { hint.SetActive(true); });
+        StartCoroutine(DynamicButtonCreate(new Vector3(0,0,0),100,false));
     }
 
     // Update is called once per frame
@@ -56,10 +60,10 @@ public class MainPageUI : MonoBehaviour
                 return;
             }
             GameManager.UseAI = true;
-            Root.instance.Quit.gameObject.SetActive(false);
             Root.instance.flowchart.SetBooleanVariable("RepeatCommand", false);
             Root.instance.flowchart.SetBooleanVariable("FinnishCommand", false);
             Root.instance.flowchart.SetIntegerVariable("GuideStep", 0);
+            Root.instance.soundManager.ChangeClip();
             SceneManager.LoadScene("Guide");
         }
 
@@ -137,20 +141,24 @@ public class MainPageUI : MonoBehaviour
         int rand = Random.Range(0, 2);
         GameManager.RealPlayerTeam = new List<string>();
         GameManager.RealPlayerTeam.Add("Team" + (rand + 1).ToString());
+        GameManager.TeamCount = 2;
         GameManager.UseAI = true;
         GameManager.Guide = -1;
-        Root.instance.Quit.GetComponentInChildren<Text>().text = "投降";
-        Root.instance.Quit.onClick.RemoveAllListeners();
-        Root.instance.Quit.onClick.AddListener(delegate ()
+        Root.instance.soundManager.ChangeClip();
+        Root.instance.Quit.gameObject.SetActive(false);
+        Root.instance.GiveIn.gameObject.SetActive(true);
+        Root.instance.GiveIn.onClick.RemoveAllListeners();
+        Root.instance.GiveIn.onClick.AddListener(delegate ()
         {
             string winnerNotice = "";
-            winnerNotice = "失败";
-            Root.instance.Quit.GetComponentInChildren<Text>().text = "退出";
-            Root.instance.Quit.onClick.RemoveAllListeners();
-            Root.instance.Quit.onClick.AddListener(delegate () { Application.Quit(); });
-            Root.instance.ShowNotice(winnerNotice, "返回", delegate () {
-                SceneManager.LoadScene("MainPage");
-            });
+            winnerNotice = "失 败";
+            Root.instance.Quit.gameObject.SetActive(true);
+            Root.instance.GiveIn.gameObject.SetActive(false);
+            Root.instance.OptionPanel.SetActive(false);
+            Root.instance.soundManager.ChangeClip();
+            GameManager.instance.WinnerNotice.color = GameManager.instance.LostColor;
+            GameManager.instance.WinnerText.text = winnerNotice;
+            GameManager.instance.WinnerNotice.gameObject.SetActive(true);
             //SceneManager.LoadScene("MainPage");
         });
         SceneManager.LoadScene("Game");
@@ -192,5 +200,22 @@ public class MainPageUI : MonoBehaviour
             ChangeRank.onClick.AddListener(ChangeScore);
             ChangeRankInput.gameObject.SetActive(false);
         });
+    }
+    void StartExtraMode()
+    {
+        StartCoroutine(DynamicButtonCreate(new Vector3(-284,0,0),120,true));
+        
+    }
+
+    IEnumerator DynamicButtonCreate(Vector3 Aim,float Speed,bool OpenScene)
+    {
+        while (Vector3.Distance(ButtonHolder.transform.position,Aim)>0.1f)
+        {
+            ButtonHolder.transform.position = Vector3.MoveTowards(ButtonHolder.transform.position, Aim, Speed * Time.deltaTime);
+            yield return 0;
+        }
+        ButtonHolder.transform.position = Aim;
+        if(OpenScene)
+            SceneManager.LoadScene("RelaxMode");
     }
 }

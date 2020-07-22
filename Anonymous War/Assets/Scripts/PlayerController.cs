@@ -103,10 +103,10 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
         switch (AimWeapon)
         {
             //change:use position of ground instead of army to check range
-            case "Long": aimattack = 3; aimrange = 3; CheckRange(gameObject, AimPosition, aimrange, "Players", 2, false,false); break;
-            case "Short": aimattack = 4; aimrange = 1; CheckRange(gameObject, AimPosition, aimrange, "Players", 0, false,false); break;
-            case "Drag": aimattack = 1; aimrange = 3; CheckRange(gameObject, AimPosition, aimrange, "Players", 1, true,false); break;
-            case "Tear": aimattack = 50; aimrange = 2; CheckRange(gameObject, AimPosition, aimrange, "Players", 0, false, false); break;
+            case "Long": aimattack = 3; aimrange = 3; CheckRange(gameObject, AimPosition, aimrange, "Players", 2, false,true); break;
+            case "Short": aimattack = 4; aimrange = 1; CheckRange(gameObject, AimPosition, aimrange, "Players", 0, false,true); break;
+            case "Drag": aimattack = 1; aimrange = 3; CheckRange(gameObject, AimPosition, aimrange, "Players", 1, true,true); break;
+            case "Tear": aimattack = 50; aimrange = 2; CheckRange(gameObject, AimPosition, aimrange, "Players", 0, false, true); break;
             case "Ax":aimattack = 2; aimrange = 1; CheckRange(gameObject, AimPosition, aimrange, "Players", 0, false,true);break;
         }
         bool canHitBack = false;
@@ -165,6 +165,10 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                     GameManager.instance.TeamDiedSoldiers[0]++;
                 if (GameManager.PlayerOnEdit.tag == "Team2")
                     GameManager.instance.TeamDiedSoldiers[1]++;
+                if (GameManager.PlayerOnEdit.tag == "Team3")
+                    GameManager.instance.TeamDiedSoldiers[2]++;
+                if (GameManager.PlayerOnEdit.tag == "Team4")
+                    GameManager.instance.TeamDiedSoldiers[3]++;
                 ThisDie();
             }
         }
@@ -196,6 +200,10 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                 GameManager.instance.TeamDiedSoldiers[0]++;
             if (gameObject.tag == "Team2")
                 GameManager.instance.TeamDiedSoldiers[1]++;
+            if (gameObject.tag == "Team3")
+                GameManager.instance.TeamDiedSoldiers[2]++;
+            if (gameObject.tag == "Team4")
+                GameManager.instance.TeamDiedSoldiers[3]++;
             Die();
 
         }
@@ -346,6 +354,10 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                                 GameManager.instance.TeamDiedSoldiers[0]++;
                             if (GStage.PlayerOnGround.tag == "Team2")
                                 GameManager.instance.TeamDiedSoldiers[1]++;
+                            if (GStage.PlayerOnGround.tag == "Team3")
+                                GameManager.instance.TeamDiedSoldiers[2]++;
+                            if (GStage.PlayerOnGround.tag == "Team4")
+                                GameManager.instance.TeamDiedSoldiers[3]++;
                             GStage.PlayerOnGround.SetActive(false);
                             Destroy(GStage.PlayerOnGround);
                             StopCoroutine(jump);
@@ -453,8 +465,7 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                 if (GameManager.OccupiedGround[i].PlayerOnGround == AimRangeList[j].Aim)
                 {
                     List<AimNode> origList = AimRangeList;
-                    if ((!GameManager.RealPlayerTeam.Contains(GameManager.PlayerOnEdit.tag) && !InHitBack)
-                    || (GameManager.RealPlayerTeam.Contains(GameManager.PlayerOnEdit.tag) && InHitBack))
+                    if (GameManager.RealPlayerTeam.Contains(AimRangeList[j].Aim.tag))
                         AimRangeList[j].Aim.GetComponent<RealPlayer>().Attack(GameManager.OccupiedGround[i].PlayerBlood, thisBlood, BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.transform.position, ThisPosition, attack, aimWeapon, false);
                     else if (GameManager.UseAI)
                         AimRangeList[j].Aim.GetComponent<AI>().Attack(GameManager.OccupiedGround[i].PlayerBlood, thisBlood, BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.transform.position, ThisPosition, attack, aimWeapon, false);
@@ -484,7 +495,9 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
     public void CheckRange(GameObject Center, Vector3 CenterPosition, int Range, string Groups, int Mode, bool CanAttackFriendly, bool ignoreTaunt)//Mode0：只以距离中心的距离为判断标准
     //Mode1：只允许直线攻击，Mode2远程攻击，但是近身一格不在攻击范围内
     {
-        bool inTaunt = false;
+        bool[] inTaunt = new bool[GameManager.TeamCount];
+        for (int i = 0;i<GameManager.TeamCount;i++)
+            inTaunt[i] = false;
         ClearHighlight();
         List<GameObject> Surround = new List<GameObject>();
         //是否在直线上
@@ -530,8 +543,11 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                 line.Aim = t.gameObject;
                 if (t.gameObject.tag == "Monster")
                 {
-                    if(inTaunt || ignoreTaunt)
+                    if(ignoreTaunt)
                         continue;
+                    for (int i = 0;i<GameManager.TeamCount;i++)
+                        if(inTaunt[i])
+                            continue;
                     if(Vector3.Distance(CenterPosition,t.position)>BoardManager.distance *1.5)
                         continue;
                     line.color = GameManager.instance.ArtifactGround.GetComponent<SpriteRenderer>().color;
@@ -570,7 +586,7 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                 }
                 if (Groups == "Grounds" && (t.tag == "Occupied" || t.tag == "Weapon"))
                     continue;
-                if (Groups == "Players" && t.tag != "Team1" && t.tag != "Team2" && t.tag != "Monster")
+                if (Groups == "Players" && t.tag != "Team1" && t.tag != "Team2"  && t.tag != "Team3"  && t.tag != "Team4"&& t.tag != "Monster")
                     continue;
                 if (Groups == "Players" && !CanAttackFriendly && t.tag == Center.tag)
                 {
@@ -590,7 +606,15 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                     {
                         if (GameManager.OccupiedGround[j].PlayerOnGround == t.gameObject)
                         {
-                            if(inTaunt && GameManager.OccupiedGround[j].PlayerWeapon!="Shield")
+                            int enemyTeam=0;
+                            switch(GameManager.OccupiedGround[j].PlayerOnGround.tag)
+                            {
+                                case "Team1":enemyTeam = 0;break;
+                                case "Team2":enemyTeam = 1;break;
+                                case "Team3":enemyTeam = 2;break;
+                                case "Team4":enemyTeam = 3;break;
+                            }
+                            if(inTaunt[enemyTeam] && GameManager.OccupiedGround[j].PlayerWeapon!="Shield")
                             {
                                 canAttack=false;
                                 break;
@@ -612,7 +636,8 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                                     {
                                         if (GameManager.OccupiedGround[l].PlayerOnGround == AimRangeList[k].Aim)
                                         {
-                                            if (GameManager.OccupiedGround[l].PlayerWeapon == "Shield")
+                                            if (GameManager.OccupiedGround[l].PlayerWeapon == "Shield" 
+                                            || GameManager.OccupiedGround[l].PlayerOnGround.tag!=GameManager.OccupiedGround[j].PlayerOnGround.tag)
                                             {
                                                 newList.Add(AimRangeList[k]);
                                             }
@@ -630,7 +655,7 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
                                     }
                                 }
                                 AimRangeList = newList;
-                                inTaunt = true;
+                                inTaunt[enemyTeam] = true;
                             }
                             break;
                         }
@@ -664,7 +689,7 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
         //Debug.Log("SmallTurn:"+GameManager.instance.SmallTurn);
         //若本回合结束更换大回合
         int totalSmallTurns = GameManager.TeamCount * 3 - FaintCount + MovedDead;
-        if(GameManager.Guide==1)
+        if(GameManager.Guide==1 || GameManager.Mode==9)
             totalSmallTurns = GameManager.TeamCount - FaintCount - MovedDead;
         for (int k = 0; k < GameManager.TeamCount;k++)
             totalSmallTurns -= GameManager.instance.TeamDiedSoldiers[k];
@@ -707,6 +732,8 @@ public class PlayerController : MonoBehaviour//附着在每个棋子上
             {
                 Debug.Log("SmallTurn" + GameManager.instance.SmallTurn);
                 Debug.Log("faint,MovedDied" + FaintCount + MovedDead);
+                for(int i=0;i<GameManager.TeamCount;i++)
+                    Debug.Log("Died" + GameManager.instance.TeamDiedSoldiers[i]);
                 for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
                     Debug.Log("position,moved" + BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.transform.position + GameManager.OccupiedGround[i].Moved);
                 Debug.Log("Bug");

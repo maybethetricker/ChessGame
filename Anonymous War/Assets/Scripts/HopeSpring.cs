@@ -193,6 +193,10 @@ public class HopeSpring : MotionArtifact
                         GameManager.instance.TeamDiedSoldiers[0]++;
                     if (diedObject.tag == "Team2")
                         GameManager.instance.TeamDiedSoldiers[1]++;
+                    if (diedObject.tag == "Team3")
+                        GameManager.instance.TeamDiedSoldiers[2]++;
+                    if (diedObject.tag == "Team4")
+                        GameManager.instance.TeamDiedSoldiers[3]++;
                     if(GameManager.PlayerOnEdit=diedObject)
                         GameManager.instance.CoroutineStarted = false;
                     diedObject.SetActive(false);

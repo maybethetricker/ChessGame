@@ -68,7 +68,10 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
             return;
         if (GameManager.Stage == 0)
         {
-            if (this.tag == "Occupied" || this.tag == "Untagged")
+            if (this.tag == "Occupied")
+                return;
+            if((GameManager.Mode!=9&& this.tag == "Untagged")
+            ||(GameManager.Mode==9&&this.tag!="Untagged"))
                 return;
             if(GameManager.PlayerOnEdit==null)
                 return;
@@ -78,9 +81,16 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
                 {
                     ProtocolBytes protocol = new ProtocolBytes();
                     protocol.AddString("UpdateLand");
-                    protocol.AddFloat(GameManager.PlayerOnEdit.transform.position.x);
-                    protocol.AddFloat(GameManager.PlayerOnEdit.transform.position.y);
-                    protocol.AddFloat(GameManager.PlayerOnEdit.transform.position.z);
+                    for (int i = 0; i < GameManager.OccupiedGround.Count;i++)
+                    {
+                        if(GameManager.OccupiedGround[i].PlayerOnGround==GameManager.PlayerOnEdit)
+                        {
+                            Debug.Log("Added");
+                            protocol.AddString(GameManager.PlayerOnEdit.tag);
+                            protocol.AddFloat(GameManager.PlayerOnEdit.transform.position.y);
+                            break;
+                        }
+                    }
                     protocol.AddFloat(this.transform.position.x);
                     protocol.AddFloat(this.transform.position.y);
                     protocol.AddFloat(this.transform.position.z);
@@ -252,19 +262,78 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
                 if (t.tag == "Weapon")
                     t.gameObject.SetActive(false);
             GameManager.instance.SmallTurn++;
-            TeamCounter = (TeamCounter + 1) % GameManager.TeamCount;
+            TeamCounter = (TeamCounter - 1 +GameManager.TeamCount) % GameManager.TeamCount;
+            bool teamHaveMove = false;
+            int counter = 0;
+            //若死人或晕人导致一队可能连续移动（一队全部动不了就再次更改下小回合移动的一方
+            while (!teamHaveMove)
+            {
+                for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
+                {
+                    string team = "Team" + (TeamCounter + 1).ToString();
+                    if (GameManager.OccupiedGround[i].i < 0 && GameManager.OccupiedGround[i].PlayerOnGround.tag == team)
+                    {
+                        teamHaveMove = true;
+                        break;
+                    }
+                }
+                if (!teamHaveMove)
+                {
+                    Debug.Log("!Teamhavemove");
+                    GroundClick.TeamCounter = (GroundClick.TeamCounter - 1 + GameManager.TeamCount) % GameManager.TeamCount;
+                }
+                counter++;
+                if (counter > 2 * GameManager.TeamCount)
+                {
+                    Debug.Log("SmallTurn" + GameManager.instance.SmallTurn);
+                    Debug.Log("faint,MovedDied" + PlayerController.FaintCount + PlayerController.MovedDead);
+                    for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
+                        Debug.Log("position,moved" + BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.transform.position + GameManager.OccupiedGround[i].Moved);
+                    Debug.Log("Bug");
+                    break;
+                }
+            }
             //For Guide
             if (GameManager.Guide == 1 && GameManager.instance.SmallTurn == 1)
             {
                 Root.instance.flowchart.SendFungusMessage("Guide1Start");
             }
             if (((GameManager.Guide != 1 && GameManager.instance.SmallTurn >= 3 * GameManager.TeamCount)
-            || (GameManager.Guide == 1 && GameManager.instance.SmallTurn >= GameManager.TeamCount))
+            || ((GameManager.Guide == 1||GameManager.Mode==9) && GameManager.instance.SmallTurn >= GameManager.TeamCount))
             && GameManager.Stage == 0)
             {
                 GameManager.PlayerOnEdit = null;
                 GameManager.instance.SmallTurn = 0;
                 GameManager.Stage = 1;
+                teamHaveMove = false;
+                counter = 0;
+                //若死人或晕人导致一队可能连续移动（一队全部动不了就再次更改下小回合移动的一方
+                while (!teamHaveMove)
+                {
+                    for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
+                    {
+                        string team = "Team" + (GameManager.instance.MovingTeam + 1).ToString();
+                        if (GameManager.OccupiedGround[i].Moved == false && GameManager.OccupiedGround[i].PlayerOnGround.tag == team)
+                        {
+                            teamHaveMove = true;
+                            break;
+                        }
+                    }
+                    if (!teamHaveMove)
+                    {
+                        GameManager.instance.MovingTeam = (GameManager.instance.MovingTeam + 1) % GameManager.TeamCount;
+                    }
+                    counter++;
+                    if (counter > 2 * GameManager.TeamCount)
+                    {
+                        Debug.Log("SmallTurn" + GameManager.instance.SmallTurn);
+                        Debug.Log("faint,MovedDied" + PlayerController.FaintCount + PlayerController.MovedDead);
+                        for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
+                            Debug.Log("position,moved" + BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.transform.position + GameManager.OccupiedGround[i].Moved);
+                        Debug.Log("Bug");
+                        break;
+                    }
+                }
                 for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
                 {
                     string team = "Team" + (GameManager.instance.MovingTeam + 1).ToString();
@@ -279,13 +348,6 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
         //只能降空地
         //newPlayer = Instantiate(EmptySoldier, this.transform.position, Quaternion.identity,GameObject.Find("Players").transform);
         //一队一个轮流
-        switch (TeamCounter)
-        {
-            case 0: newPlayer.tag = "Team1"; break;
-            case 1: newPlayer.tag = "Team2"; break;
-            case 2: newPlayer.tag = "Team3"; break;
-            case 3: newPlayer.tag = "Team4"; break;
-        }
         Destroy(newPlayer.GetComponent<RealPlayer>());
         if (GameManager.RealPlayerTeam.Contains(newPlayer.tag))
         {
@@ -317,7 +379,8 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
                     GStage.j = j;
                 }
         GStage.PlayerOnGround = newPlayer;
-        GStage.PlayerWeapon = this.tag;
+        if(this.tag!="Untagged")
+            GStage.PlayerWeapon = this.tag;
         GStage.OrigColor = BoardManager.Grounds[GStage.i][GStage.j].GetComponent<SpriteRenderer>().color;
         GameManager.OccupiedGround.Add(GStage);
         
@@ -439,6 +502,24 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
                     if (bloodamount <= 0)
                     {
                         //被攻击者死亡
+                        if (GStage.Ability == 3 && GameManager.instance.SecondMovingTurn)
+                        {
+                            Debug.Log("SecondMoveFinished");
+                            GameManager.instance.SecondMovingTurn = false;
+                            for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
+                            {
+                                string team = "Team" + (GameManager.instance.MovingTeam + 1).ToString();
+                                if (GameManager.OccupiedGround[i].PlayerOnGround.tag == team)
+                                {
+                                    GStage = GameManager.OccupiedGround[i];
+                                    if (GStage.Ability == 1)
+                                        GStage.Moved = GameManager.instance.Ability1Moved;
+                                    else if (GStage.Ability == 2)
+                                        GStage.Moved = GameManager.instance.Ability2Moved;
+                                    GameManager.OccupiedGround[i] = GStage;
+                                }
+                            }
+                        }
                         for (int j = 0; j < GameManager.OccupiedGround.Count; j++)
                             if (GameManager.OccupiedGround[j].PlayerOnGround == GStage.PlayerOnGround)
                             {
@@ -454,6 +535,10 @@ public class GroundClick : MonoBehaviour//附着在每个地块上，用于初�
                             GameManager.instance.TeamDiedSoldiers[0]++;
                         if (GStage.PlayerOnGround.tag == "Team2")
                             GameManager.instance.TeamDiedSoldiers[1]++;
+                        if (GStage.PlayerOnGround.tag == "Team3")
+                            GameManager.instance.TeamDiedSoldiers[2]++;
+                        if (GStage.PlayerOnGround.tag == "Team4")
+                            GameManager.instance.TeamDiedSoldiers[3]++;
                         GStage.PlayerOnGround.SetActive(false);
                         Destroy(GStage.PlayerOnGround);
                         GameManager.OccupiedGround.RemoveAt(index);

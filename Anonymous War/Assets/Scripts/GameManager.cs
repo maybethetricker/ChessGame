@@ -12,9 +12,13 @@ public class GameManager : MonoBehaviour
     public Color MovablePlayerHighlight = new Color(255,255,0,0.2f);//yellow
     public Color AttackAimHighlight = new Color(0, 255, 255, 0.2f);//blue, move aim is also this
     public Color Team2Color = new Color(0, 8, 8);
+    public Color Team3Color=new Color(255,255,0);
+    public Color Team4Color;
     public Color GuideHighlight = new Color(0, 10, 0, 0.2f);//green
     public Color ArtifactRangeHighlight = new Color(220, 220, 220, 0.2f);//purple
     public Color AddWeaponOrigColor;
+    public Color WinColor;
+    public Color LostColor;
 
     public static GameManager instance;
     public Sprite LongSoldier;
@@ -45,6 +49,11 @@ public class GameManager : MonoBehaviour
     public GameObject Monster;//怪
     public Image Timer;
     public Text TimerText;
+    public Image WinnerNotice;
+    public Text WinnerText;
+    public Button Back;
+    public GameObject TimerHolder;
+    public GameObject EnemyCard;
     public struct GroundStage
     {
         //public GameObject Ground;//所在地块
@@ -75,8 +84,8 @@ public class GameManager : MonoBehaviour
     public int SmallTurn;//每回合的小回合
     public bool EnemyChecked;//是否检测了可攻击范围
     public int AttackMode;
-    public int[] TeamDiedSoldiers=new int[TeamCount];//各队死亡人数
-    bool InGame = true;
+    public int[] TeamDiedSoldiers;//各队死亡人数
+    public bool InGame = true;
     public GameObject SkipButton;
     public Coroutine timer;
     public static bool IsTraining;
@@ -102,7 +111,59 @@ public class GameManager : MonoBehaviour
         {
             Destroy(gameObject);
         }
+        if(TeamCount==2)
+        {
+            GameObject enemyCard = Instantiate(EnemyCard, new Vector3(-15, -33, 0), Quaternion.identity, GameObject.Find("Canvas(1)").transform);
+            enemyCard.transform.localPosition = new Vector3(-15, 150, 0);
+            enemyCard.transform.Rotate(-45, 0, 0);
+            if(Mode<3)
+                foreach (Transform t in enemyCard.GetComponentInChildren<Transform>())
+                {
+                    if(Mode<2&&t.tag=="Ax")
+                        t.gameObject.SetActive(false);
+                    if(t.tag=="BumbMaker")
+                        t.gameObject.SetActive(false);
+                }
+            if(RealPlayerTeam.Contains("Team1"))
+                enemyCard.name = "EnemyWeaponCardTeam2";
+            else
+                enemyCard.name = "EnemyWeaponCardTeam1";
+        }
+        if(TeamCount==3)
+        {
+            GameObject enemyCard1 = Instantiate(EnemyCard, new Vector3(-30, -33, 0), Quaternion.identity, GameObject.Find("Canvas(1)").transform);
+            GameObject enemyCard2 = Instantiate(EnemyCard, new Vector3(0, -33, 0), Quaternion.identity, GameObject.Find("Canvas(1)").transform);
+            enemyCard1.transform.localPosition = new Vector3(-160, 150, 0);
+            enemyCard1.transform.Rotate(-45, 0, 0);
+            enemyCard1.transform.localScale *= 0.75f;
+            enemyCard2.transform.localPosition = new Vector3(140, 150, 0);
+            enemyCard2.transform.Rotate(-45, 0, 0);
+            enemyCard2.transform.localScale *= 0.75f;
+            if (RealPlayerTeam.Contains("Team1"))
+            {
+                enemyCard1.name = "EnemyWeaponCardTeam2";
+                enemyCard1.GetComponentInChildren<Text>().text = "蓝队:";
+                enemyCard2.name = "EnemyWeaponCardTeam3";
+                enemyCard2.GetComponentInChildren<Text>().text = "红队:";
+            }
+            else if (RealPlayerTeam.Contains("Team2"))
+            {
+                enemyCard1.name = "EnemyWeaponCardTeam1";
+                enemyCard1.GetComponentInChildren<Text>().text = "白队:";
+                enemyCard2.name = "EnemyWeaponCardTeam3";
+                enemyCard2.GetComponentInChildren<Text>().text = "红队:";
+            }
+            else
+            {
+                enemyCard1.name = "EnemyWeaponCardTeam1";
+                enemyCard1.GetComponentInChildren<Text>().text = "白队:";
+                enemyCard2.name = "EnemyWeaponCardTeam2";
+                enemyCard2.GetComponentInChildren<Text>().text = "蓝队:";
+            }
+        }
         SkipButton = GameObject.Find("Skip");
+        if(Mode==9)
+            SkipButton.SetActive(false);
         Timer.fillAmount = 1;
         TimerText.text = "20";
         //初始化变量
@@ -116,12 +177,14 @@ public class GameManager : MonoBehaviour
         MovingTeam = 1;
         SmallTurn = 0;
         PlayerController.FaintCount = 0;
+        TeamDiedSoldiers = new int[TeamCount];
         for (int i = 0; i < TeamCount; i++)
             TeamDiedSoldiers[i] = 0;
         EnemyChecked = false;
         PlayerController.AimRangeList = new List<PlayerController.AimNode>();
         PlayerController.MovedDead = 0;
         CoroutineStarted = false;
+        Back.onClick.AddListener(delegate { SceneManager.LoadScene("MainPage"); });
         //RealPlayerTeam.Add("Team1");
         //RealPlayerTeam.Add("Team2");
         //UseAI = false;
@@ -154,54 +217,89 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            Timer.gameObject.SetActive(false);
+            TimerHolder.gameObject.SetActive(false);
         }
         int totalSoldier = TeamCount * 3;
-        if (Guide == 1)
+        if (Guide == 1 || Mode==9)
             totalSoldier = TeamCount;
+        Debug.Log(totalSoldier);
         for (int i = 0; i < totalSoldier; i++)
         {
             GroundStage groundStage = new GroundStage();
             Vector3 position = new Vector3();
             position.z = 78;
             groundStage.i = groundStage.j = -1;
-            if (i < totalSoldier / 2)
+            if (i < totalSoldier/TeamCount)
             {
                 position.x = -80;
             }
+            else if(i<totalSoldier/TeamCount*2)
+            {
+                position.x = 82;
+            }
+            else if(i<totalSoldier/TeamCount*3)
+            {
+                position.x = 94;
+            }
             else
             {
-                position.x = 100;
+                position.x=106;
             }
-            if (Guide==1)
+            if (Guide==1 || Mode==9)
                 position.y = 70;
             else
             {
                 position.y = 50 + (i % 3) * 20 * 2;
             }
             GameObject newPlayer = Instantiate(OrigSoldier, position, Quaternion.identity, GameObject.Find("Players").transform);
-            if (i < totalSoldier / 2)
+            if (i < totalSoldier/TeamCount)
             {
                 newPlayer.tag = RealPlayerTeam[0];
             }
-            else
+            else if(i<totalSoldier/TeamCount*2)
             {
-                if (RealPlayerTeam[0] == "Team1")
-                    newPlayer.tag = "Team2";
+                if (RealPlayerTeam[0] == "Team2")
+                    newPlayer.tag = "Team1";
                 else
                 {
+                    newPlayer.tag = "Team2";
+                }
+            }
+            else if(i<totalSoldier/TeamCount*3)
+            {
+                if (RealPlayerTeam[0] == "Team3")
                     newPlayer.tag = "Team1";
+                else
+                {
+                    newPlayer.tag = "Team3";
+                }
+            }
+            else{
+                if (RealPlayerTeam[0] == "Team4")
+                    newPlayer.tag = "Team1";
+                else
+                {
+                    newPlayer.tag = "Team4";
                 }
             }
             if (newPlayer.tag == "Team2")
                 newPlayer.GetComponentInChildren<SpriteRenderer>().color = Team2Color;
+            else if(newPlayer.tag == "Team3")
+                newPlayer.GetComponentInChildren<SpriteRenderer>().color = Team3Color;
+            else if(newPlayer.tag == "Team4")
+                newPlayer.GetComponentInChildren<SpriteRenderer>().color = Team4Color;
             newPlayer.transform.Rotate(-45, 0, 0);
             newPlayer.AddComponent<RealPlayer>();
             groundStage.PlayerOnGround = newPlayer;
             groundStage.Moved = false;
             groundStage.InMug = false;
             groundStage.Faint = false;
-            if (Mode >= 2)
+            if (Mode == 9)
+            {
+                groundStage.Ability = 3;
+                groundStage.PlayerWeapon = "BumbMaker";
+            }
+            else if (Mode >= 2)
                 groundStage.Ability = i % 3 + 1;
             else
             {
@@ -221,8 +319,13 @@ public class GameManager : MonoBehaviour
                 {
                     if (Mathf.Abs(groundStage.Ability) == 2)
                         t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.ShortSoldier2;
-                    else if(Mathf.Abs(groundStage.Ability)==3)
-                        t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.ShortSoldier3;
+                    else if (Mathf.Abs(groundStage.Ability) == 3)
+                    {
+                        if (Mode==9)
+                            t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.BumbSoldier3;
+                        else
+                            t.gameObject.GetComponent<SpriteRenderer>().sprite = GameManager.instance.ShortSoldier3;
+                    }
                 }
             groundStage.PlayerBlood = blood;
             OccupiedGround.Add(groundStage);
@@ -253,7 +356,7 @@ public class GameManager : MonoBehaviour
             if (!CoroutineStarted)
                 StartCoroutine(WaitToLand());
         }
-        if (Mode>=1&&Turn == 1 && !ArtActFinished)
+        if (Mode>=1&&Mode<=8&&Turn == 1 && !ArtActFinished)
         {
             if(Guide==3)
                 Root.instance.flowchart.SetBooleanVariable("FinnishCommand",true);
@@ -262,7 +365,7 @@ public class GameManager : MonoBehaviour
             
         }
         //降怪
-        if (Mode >= 1 && Turn == 2 && !ArtActFinished)
+        if (Mode >= 1 && Mode<=8 && Turn == 2 && !ArtActFinished)
         {
             if(Guide==3)
                 Root.instance.flowchart.SetBooleanVariable("FinnishCommand",true);
@@ -275,19 +378,38 @@ public class GameManager : MonoBehaviour
     }
     void FindArtifact()
     {
-        if (RealPlayerTeam.Count < 2 && (!UseAI) && RealPlayerTeam.Contains("Team2"))
+        if (RealPlayerTeam.Count < 2 && (!UseAI) && !RealPlayerTeam.Contains("Team1"))
         {
             ArtActFinished = true;
             return;
         }
         //确定降怪点
-        int randomx = Random.Range(0, BoardManager.row);
-        int randomy = Random.Range(0, BoardManager.col);
+        int randomx=3;
+        int randomy = Random.Range(1, BoardManager.col-1);
+        if(randomy==1)
+            randomx = Random.Range(3, BoardManager.row-1);
+        else if(randomy==2)
+            randomx = Random.Range(2, BoardManager.row-1);
+        else if(randomy==3)
+            randomx = Random.Range(1, BoardManager.row-1);
+        else if(randomy==4)
+            randomx = Random.Range(1, BoardManager.row-2);    
+        else if(randomy==5)
+            randomx = Random.Range(1, BoardManager.row-3);
         ArtifactGround = BoardManager.Grounds[randomx][randomy];
         while (ArtifactGround == null)
         {
-            randomx = Random.Range(0, BoardManager.row);
             randomy = Random.Range(0, BoardManager.col);
+            if (randomy == 1)
+                randomx = Random.Range(3, BoardManager.row - 1);
+            else if (randomy == 2)
+                randomx = Random.Range(2, BoardManager.row - 1);
+            else if (randomy == 3)
+                randomx = Random.Range(1, BoardManager.row - 1);
+            else if (randomy == 4)
+                randomx = Random.Range(1, BoardManager.row - 2);
+            else if (randomy == 5)
+                randomx = Random.Range(1, BoardManager.row - 3);
             ArtifactGround = BoardManager.Grounds[randomx][randomy];
         }
         Vector3 problePosition = ArtifactGround.transform.position + new Vector3(-BoardManager.distance, 0, 0);
@@ -339,7 +461,7 @@ public class GameManager : MonoBehaviour
     }
     void CreateArtifact()
     {
-        if (RealPlayerTeam.Count < 2 && (!UseAI) && RealPlayerTeam.Contains("Team2"))
+        if (RealPlayerTeam.Count < 2 && (!UseAI) && !RealPlayerTeam.Contains("Team1"))
         {
             ArtActFinished = true;
             return;
@@ -441,10 +563,20 @@ public class GameManager : MonoBehaviour
     {
         int RemainingTeam = TeamCount;
         int lastTeam=0;
+        bool thisTeamLost=false;
         for (int i = 0; i < TeamCount;i++)
         {
-            if(TeamDiedSoldiers[i]>=3)
+            if ((Mode!=9&&TeamDiedSoldiers[i] >= 3)
+            ||Mode==9&&TeamDiedSoldiers[i]>=1)
+            {
                 RemainingTeam--;
+                //TeamDiedSoldiers[i] = 0;
+                if (RealPlayerTeam.Contains("Team" + (i + 1).ToString()))
+                {
+                    Debug.Log("you lost");
+                    thisTeamLost = true;
+                }
+            }
             else
             {
                 lastTeam = i;
@@ -464,14 +596,15 @@ public class GameManager : MonoBehaviour
             string notice="";
             if (RealPlayerTeam.Contains("Team" + (lastTeam + 1).ToString()))
             {
-                notice = "胜利";
+                notice = "胜 利";
+                WinnerNotice.color = WinColor;
                 if(!UseAI && !IsTraining)
                 {
                     ProtocolBytes protocol = new ProtocolBytes();
                     protocol.AddString("OutOfGame");
                     NetMgr.srvConn.Send(protocol);
                 }
-                if (!IsTraining||Guide==2||Guide==3)
+                if ((!IsTraining||Guide==2||Guide==3)&&Mode<7)
                 {
                     ProtocolBytes prot = new ProtocolBytes();
                     prot.AddString("AddScore");
@@ -481,8 +614,9 @@ public class GameManager : MonoBehaviour
             }
             else
             {
-                notice = "失败";
-                if (!IsTraining && Mode>=2)
+                notice = "失 败";
+                WinnerNotice.color = LostColor;
+                if (!IsTraining && Mode>=2 && Mode<7)
                 {
                     ProtocolBytes prot = new ProtocolBytes();
                     prot.AddString("AddScore");
@@ -490,9 +624,41 @@ public class GameManager : MonoBehaviour
                     NetMgr.srvConn.Send(prot);
                 }
             }
-            Root.instance.ShowNotice(notice, "返回", delegate () {
-                SceneManager.LoadScene("MainPage");
-            });
+            Root.instance.Quit.gameObject.SetActive(true);
+            Root.instance.GiveIn.gameObject.SetActive(false);
+            Root.instance.soundManager.ChangeClip();
+            WinnerNotice.gameObject.SetActive(true);
+            WinnerText.text = notice;
+            foreach (Transform t in GameObject.Find("Players").GetComponentsInChildren<Transform>())
+            {
+                if (t.name == "Players")
+                    continue;
+                if (t.gameObject.GetComponent<AI>())
+                    Destroy(t.gameObject.GetComponent<AI>());
+                if (t.gameObject.GetComponent<RealPlayer>())
+                    Destroy(t.gameObject.GetComponent<RealPlayer>());
+
+            }
+        }
+        else if(thisTeamLost)
+        {
+            InGame = false;
+            try
+            {
+                StopCoroutine(timer);
+            }
+            catch
+            {
+                Debug.Log("stopTimerError");
+            }
+            string notice = "";
+            notice = "失 败";
+            WinnerNotice.color = LostColor;
+            Root.instance.Quit.gameObject.SetActive(true);
+            Root.instance.GiveIn.gameObject.SetActive(false);
+            Root.instance.soundManager.ChangeClip();
+            WinnerNotice.gameObject.SetActive(true);
+            WinnerText.text = notice;
             foreach (Transform t in GameObject.Find("Players").GetComponentsInChildren<Transform>())
             {
                 if (t.name == "Players")
@@ -511,7 +677,7 @@ public class GameManager : MonoBehaviour
         for (int i = 0; i < GameManager.OccupiedGround.Count;i++)
         {
             GameObject player = GameManager.OccupiedGround[i].PlayerOnGround;
-            if(!RealPlayerTeam.Contains(player.tag)&&GameManager.OccupiedGround[i].i==-1)
+            if(GameManager.OccupiedGround[i].PlayerOnGround.tag==("Team" + (GroundClick.TeamCounter + 1).ToString())&&GameManager.OccupiedGround[i].i==-1)
             {
                 PlayerOnEdit = player;
                 break;
@@ -525,11 +691,15 @@ public class GameManager : MonoBehaviour
         {
             if (t.name == "Grounds")
                 continue;
-            if (t.tag != "Occupied" && t.tag != "Untagged" && t.tag != "Weapon")
+            if (t.tag != "Occupied"  && t.tag != "Weapon")
             {
-                if (t.tag == "Drag")
+                if(t.tag=="Untagged"&&Mode!=9)
                     continue;
-                if(t.tag=="Ax")
+                if(Mode==9 && t.tag != "Untagged")
+                    continue;
+                if (t.tag == "Drag" &&randomLandList.Count>0)
+                    continue;
+                if(t.tag=="Ax"&&randomLandList.Count>0)
                     continue;
                 randomLandList.Add(t.gameObject);
             }
@@ -566,7 +736,7 @@ public class GameManager : MonoBehaviour
             for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
             {
                 GameObject player = GameManager.OccupiedGround[i].PlayerOnGround;
-                if (!RealPlayerTeam.Contains(player.tag) && GameManager.OccupiedGround[i].i == -1)
+                if (GameManager.OccupiedGround[i].PlayerOnGround.tag==("Team" + (GroundClick.TeamCounter + 1).ToString()) && GameManager.OccupiedGround[i].i == -1)
                 {
                     PlayerOnEdit = player;
                     break;
@@ -609,7 +779,7 @@ public class GameManager : MonoBehaviour
     
     public void TimerEvent(int lastFlameStage)
     {
-        if(SmoothMoveOnWay)
+        if(SmoothMoveOnWay || !InGame)
             return;
         if (Stage == 1 && !RealPlayerTeam.Contains("Team" + (MovingTeam + 1).ToString()))
         {
@@ -643,7 +813,7 @@ public class GameManager : MonoBehaviour
             {
                 for (int i = 0; i < OccupiedGround.Count; i++)
                 {
-                    if (RealPlayerTeam.Contains(OccupiedGround[i].PlayerOnGround.tag))
+                    if (RealPlayerTeam.Contains(OccupiedGround[i].PlayerOnGround.tag) && OccupiedGround[i].i<0)
                     {
                         PlayerOnEdit = OccupiedGround[i].PlayerOnGround;
                         break;
@@ -667,9 +837,16 @@ public class GameManager : MonoBehaviour
                 {
                     ProtocolBytes protocol=new ProtocolBytes();
                     protocol.AddString("UpdateLand");
-                    protocol.AddFloat(PlayerOnEdit.transform.position.x);
-                    protocol.AddFloat(PlayerOnEdit.transform.position.y);
-                    protocol.AddFloat(PlayerOnEdit.transform.position.z);
+                    for (int i = 0; i < GameManager.OccupiedGround.Count;i++)
+                    {
+                        if(GameManager.OccupiedGround[i].PlayerOnGround==GameManager.PlayerOnEdit)
+                        {
+                            Debug.Log("Added");
+                            protocol.AddString(GameManager.PlayerOnEdit.tag);
+                            protocol.AddFloat(GameManager.PlayerOnEdit.transform.position.y);
+                            break;
+                        }
+                    }
                     protocol.AddFloat(GroundToLand.transform.position.x);
                     protocol.AddFloat(GroundToLand.transform.position.y);
                     protocol.AddFloat(GroundToLand.transform.position.z);
@@ -717,9 +894,12 @@ public class GameManager : MonoBehaviour
             }
             Timer.fillAmount = 1;
             if ((Stage==1&&RealPlayerTeam.Contains("Team"+(MovingTeam+1).ToString()))
-                ||(Stage==2&&RealPlayerTeam.Contains(PlayerOnEdit.tag)))
+                ||(Stage==2&&PlayerOnEdit!=null&&RealPlayerTeam.Contains(PlayerOnEdit.tag)))
             {
+                Debug.Log(PlayerOnEdit);
+                Debug.Log(Stage);
                 Debug.Log("TimeUpSkip");
+                Vector3 groundPositon = new Vector3();
                 if (PlayerOnEdit == null)
                 {
                     for (int i = 0; i < OccupiedGround.Count; i++)
@@ -727,11 +907,28 @@ public class GameManager : MonoBehaviour
                         if (RealPlayerTeam.Contains(OccupiedGround[i].PlayerOnGround.tag) && OccupiedGround[i].Moved == false)
                         {
                             PlayerOnEdit = OccupiedGround[i].PlayerOnGround;
+                            groundPositon = BoardManager.Grounds[OccupiedGround[i].i][OccupiedGround[i].j].transform.position;
                             break;
                         }
                     }
                 }
-                
+                if(Mode==9)
+                {
+                    foreach (Transform t in GameObject.Find("Grounds").GetComponentsInChildren<Transform>())
+                    {
+                        if (t.name == "Grounds")
+                            continue;
+                        if (t.tag != "Occupied" && t.tag != "Weapon")
+                        {
+                            if(Vector3.Distance(groundPositon,t.position)<BoardManager.distance*1.5)
+                            {
+                                t.gameObject.GetComponent<GroundClick>().PlayerMove();
+                                TimerText.text = leftTime.ToString();
+                                return;
+                            }
+                        }
+                    }
+                }
                 SkipButton.GetComponent<SkipTurn>().SkipOnClick();
             }
         }

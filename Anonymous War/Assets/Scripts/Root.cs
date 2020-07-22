@@ -8,7 +8,11 @@ using Fungus;
 public class Root : MonoBehaviour
 {
     public static Root instance;
+    public GameObject OptionPanel;
+    public Button Options;
+    public Button GiveIn;
     public Button Quit;
+    public Button ClosePanel;
     public GameObject StaticUI;
     public GameObject Notice;
     public Text NoticeText;
@@ -22,6 +26,7 @@ public class Root : MonoBehaviour
     public Button SkipPlot;
     public bool OncePlotOpen = false;
     public int Authority=-1;
+    public SoundManager soundManager;
 
     //public GameObject Plot;
     //public Text PlotText;
@@ -45,8 +50,11 @@ public class Root : MonoBehaviour
             }
             flowchart.SetBooleanVariable("Finnished", true);
         });
+        OptionPanel.SetActive(false);
         Notice.SetActive(false);
         //Plot.SetActive(false);
+        Options.onClick.AddListener(delegate { OptionPanel.SetActive(true); });
+        ClosePanel.onClick.AddListener(delegate { OptionPanel.SetActive(false); });
         Quit.onClick.AddListener(QuitGame);
         NetMgr.srvConn.msgDist.AddListener("StartFight", OnMatchBack);
         NetMgr.srvConn.msgDist.AddListener("SetBoard", NetSetBoard);
@@ -77,10 +85,18 @@ public class Root : MonoBehaviour
         ProtocolBytes proto = (ProtocolBytes)protocol;
         int start = 0;
         string protoName = proto.GetString(start, ref start);
-        Vector3 GroundPosition, playerPosition;
-        playerPosition.x = proto.GetFloat(start, ref start);
-        playerPosition.y = proto.GetFloat(start, ref start);
-        playerPosition.z = proto.GetFloat(start, ref start);
+        string playerTeam = proto.GetString(start, ref start);
+        float y = proto.GetFloat(start, ref start);
+        Vector3 GroundPosition;
+        for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
+        {
+            if ( GameManager.OccupiedGround[i].PlayerOnGround.tag==playerTeam
+            && Mathf.Abs(GameManager.OccupiedGround[i].PlayerOnGround.transform.position.y-y)<1)
+            {
+                GameManager.PlayerOnEdit = GameManager.OccupiedGround[i].PlayerOnGround;
+                break;
+            }
+        }
         GroundPosition.x = proto.GetFloat(start, ref start);
         GroundPosition.y = proto.GetFloat(start, ref start);
         GroundPosition.z = proto.GetFloat(start, ref start);
@@ -99,27 +115,10 @@ public class Root : MonoBehaviour
                 break;
             }
         }
-        for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
-        {
-            if(GameManager.OccupiedGround[i].i!=-1)
-                continue;
-            Debug.Log(Mathf.Abs(GameManager.OccupiedGround[i].PlayerOnGround.transform.position.y - playerPosition.y));
-            if(Mathf.Abs(GameManager.OccupiedGround[i].PlayerOnGround.transform.position.y-playerPosition.y)<1f)
-                GameManager.PlayerOnEdit = GameManager.OccupiedGround[i].PlayerOnGround;
-        }
         if(GameManager.PlayerOnEdit==null)
             Debug.Log("NullPlayer");
         //对接降落函数，可以不用看了
-        foreach (Transform t in GameObject.Find("Grounds").GetComponentsInChildren<Transform>())
-        {
-            if (t.name == "Grounds")
-                continue;
-            if (Vector3.Distance(GroundToLand.transform.position, t.position) < BoardManager.distance / 2)
-            {
-                t.gameObject.GetComponent<GroundClick>().PlaceSinglePlayer();
-                break;
-            }
-        }
+        GroundToLand.GetComponent<GroundClick>().PlaceSinglePlayer();
     }
 
     void NetMove(ProtocolBase protocol)
@@ -238,7 +237,10 @@ public class Root : MonoBehaviour
                 {
                     if (attackMode == 0)
                     {
-                        t.gameObject.GetComponent<RealPlayer>().Attack(Blood, thisBlood, PlayerToAttack.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon,true);
+                        if(GameManager.RealPlayerTeam.Contains(t.tag))
+                            t.gameObject.GetComponent<RealPlayer>().Attack(Blood, thisBlood, PlayerToAttack.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon,true);
+                        else
+                            t.gameObject.GetComponent<RemoteEnemy>().Attack(Blood, thisBlood, PlayerToAttack.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon,true);
                         break;
                     }
                     else if (attackMode == 1)
@@ -251,7 +253,10 @@ public class Root : MonoBehaviour
                     }
                     else
                     {
-                        t.gameObject.GetComponent<RealPlayer>().ArrowAttack(Blood, thisBlood, PlayerToAttack.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon);
+                        if(GameManager.RealPlayerTeam.Contains(t.tag))
+                            t.gameObject.GetComponent<RealPlayer>().ArrowAttack(Blood, thisBlood, PlayerToAttack.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon);
+                        else
+                            t.gameObject.GetComponent<RemoteEnemy>().ArrowAttack(Blood, thisBlood, PlayerToAttack.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon);
                         break;
                     }
                 }
@@ -381,42 +386,46 @@ public class Root : MonoBehaviour
         else
             GameManager.UseAI = false;
         int mode = proto.GetInt(start, ref start);
+        GameManager.TeamCount = proto.GetInt(start, ref start);
+        Debug.Log(GameManager.TeamCount);
         GameManager.Mode = mode;
         GameManager.Guide = -1;
-        Quit.GetComponentInChildren<Text>().text = "投降";
-        Quit.onClick.RemoveAllListeners();
-        Quit.onClick.AddListener(delegate ()
+        soundManager.ChangeClip();
+        Quit.gameObject.SetActive(false);
+        GiveIn.gameObject.SetActive(true);
+        GiveIn.onClick.RemoveAllListeners();
+        GiveIn.onClick.AddListener(delegate ()
         {
             ProtocolBytes prot = new ProtocolBytes();
             prot.AddString("EndGame");
             string winnerNotice = "";
-            if (GameManager.RealPlayerTeam.Contains("Team1"))
+            switch(GameManager.RealPlayerTeam[0])
             {
-                prot.AddInt(2);
+                case "Team1":prot.AddInt(1);break;
+                case "Team2":prot.AddInt(2);break;
+                case "Team3":prot.AddInt(3);break;
+                case "Team4":prot.AddInt(4);break;
             }
-            else
-            {
-                prot.AddInt(1);
-            }
-            winnerNotice = "失败";
+            winnerNotice = "失 败";
             if (GameManager.RealPlayerTeam.Count < 2 && (!GameManager.UseAI))
             {
-
                 NetMgr.srvConn.Send(prot);
             }
-            if (GameManager.Mode >= 2)
+            if (GameManager.Mode >= 2 && GameManager.Mode < 7)
             {
                 prot = new ProtocolBytes();
                 prot.AddString("AddScore");
                 prot.AddInt(-50);
                 NetMgr.srvConn.Send(prot);
             }
-            Quit.GetComponentInChildren<Text>().text = "退出";
-            Quit.onClick.RemoveAllListeners();
-            Quit.onClick.AddListener(delegate () { Application.Quit(); });
-            ShowNotice(winnerNotice, "返回", delegate () {
-                SceneManager.LoadScene("MainPage");
-            });
+            GiveIn.gameObject.SetActive(false);
+            Quit.gameObject.SetActive(true);
+            soundManager.ChangeClip();
+            GameManager.instance.InGame=false;
+            OptionPanel.SetActive(false);
+            GameManager.instance.WinnerNotice.color = GameManager.instance.LostColor;
+            GameManager.instance.WinnerText.text = winnerNotice;
+            GameManager.instance.WinnerNotice.gameObject.SetActive(true);
             //SceneManager.LoadScene("MainPage");
         });
         SceneManager.LoadScene("Game");
@@ -452,46 +461,207 @@ public class Root : MonoBehaviour
         GameObject.Find("Skip").GetComponent<SkipTurn>().Skip();
     }
 
-    void EndGame(ProtocolBase protocol)
+    void EndGame(ProtocolBase protocol)//多人游戏中一方投降，将其棋子全部清除并更新游戏回合状态
     {
         ProtocolBytes proto = (ProtocolBytes)protocol;
         int start = 0;
         string protoName = proto.GetString(start, ref start);
-        string winnerNotice = "";
-        int winCase = proto.GetInt(start, ref start);
-        switch (winCase)
+        int losedTeam = proto.GetInt(start, ref start);
+
+
+        if (GameManager.Stage == 1 && GameManager.instance.MovingTeam + 1 == losedTeam)
         {
-            case 1:
-                if(GameManager.RealPlayerTeam.Contains("Team1"))
-                    winnerNotice = "胜利";
-                else
+            for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
+            {
+                string team = "Team" + (GameManager.instance.MovingTeam + 1).ToString();
+                if (GameManager.OccupiedGround[i].Moved == false && GameManager.OccupiedGround[i].PlayerOnGround.tag == team)
                 {
-                    winnerNotice = "失败";
+                    BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color = GameManager.OccupiedGround[i].OrigColor;
                 }
-                break;
-            case 2:
-                if(GameManager.RealPlayerTeam.Contains("Team2"))
-                    winnerNotice = "胜利";
-                else
+            }
+            GameManager.Stage = 2;
+        }
+        List<GameManager.GroundStage> oGround = new List<GameManager.GroundStage>();
+        for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
+        {
+            if (GameManager.OccupiedGround[i].PlayerOnGround.tag == "Team" + losedTeam.ToString())
+            {
+                if (GameManager.OccupiedGround[i].Moved)
+                    PlayerController.MovedDead++;
+                GameManager.OccupiedGround[i].PlayerBlood.SetActive(false);
+                Destroy(GameManager.OccupiedGround[i].PlayerBlood);
+                if (GameManager.OccupiedGround[i].i > 0)
+                    BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].tag = "Untagged";
+                else if (GameManager.Stage == 0)
+                    GameManager.instance.SmallTurn++;
+                //BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color = GameManager.OccupiedGround[i].OrigColor;
+                Debug.Log(GameManager.OccupiedGround[i].PlayerOnGround.tag);
+                if (GameManager.OccupiedGround[i].PlayerOnGround.tag == "Team1")
+                    GameManager.instance.TeamDiedSoldiers[0]++;
+                if (GameManager.OccupiedGround[i].PlayerOnGround.tag == "Team2")
+                    GameManager.instance.TeamDiedSoldiers[1]++;
+                if (GameManager.OccupiedGround[i].PlayerOnGround.tag == "Team3")
+                    GameManager.instance.TeamDiedSoldiers[2]++;
+                if (GameManager.OccupiedGround[i].PlayerOnGround.tag == "Team4")
+                    GameManager.instance.TeamDiedSoldiers[3]++;
+                GameManager.OccupiedGround[i].PlayerOnGround.SetActive(false);
+                Destroy(GameManager.OccupiedGround[i].PlayerOnGround);
+            }
+            else
+                oGround.Add(GameManager.OccupiedGround[i]);
+        }
+        GameManager.OccupiedGround = oGround;
+        if (GameManager.Stage == 0)
+        {
+            if ((GameManager.instance.SmallTurn >= 3 * GameManager.TeamCount&&GameManager.Mode!=9)
+            ||(GameManager.instance.SmallTurn >= GameManager.TeamCount&&GameManager.Mode==9))
+            {
+                GameManager.instance.SmallTurn = 0;
+                GameManager.Stage = 1;
+                for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
+                    {
+                        string team = "Team" + (GameManager.instance.MovingTeam + 1).ToString();
+                        if (GameManager.OccupiedGround[i].Moved == false && GameManager.OccupiedGround[i].PlayerOnGround.tag == team)
+                        {
+                            GameManager.GroundStage GStage = GameManager.OccupiedGround[i];
+                            GStage.OrigColor = BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color;
+                            GameManager.OccupiedGround[i] = GStage;
+                            BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color = GameManager.instance.MovablePlayerHighlight;
+                        }
+                    }
+                //change:fix the bug due to moving a same chess contineously
+                GameManager.PlayerOnEdit = null;
+            }
+            if (GroundClick.TeamCounter + 1 == losedTeam)
+                GroundClick.TeamCounter = (GroundClick.TeamCounter - 1 + GameManager.TeamCount) % GameManager.TeamCount;
+        }
+        if (GameManager.Stage == 2 && GameManager.instance.MovingTeam == losedTeam)
+        {
+            //ClearHighLight
+            foreach (PlayerController.AimNode line in PlayerController.AimRangeList)
+            {
+                if (line.Aim == null)
                 {
-                    winnerNotice = "失败";
+                    Debug.Log("AimRangeList:Aim is null");
+                    continue;
                 }
-                break;
+                if (line.Aim.tag == "Monster")
+                {
+                    GameManager.instance.ArtifactGround.GetComponent<SpriteRenderer>().color = line.color;
+                }
+                if (line.Aim == line.JudgeHelper)
+                    line.Aim.GetComponent<SpriteRenderer>().color = line.color;
+                for (int j = 0; j < GameManager.OccupiedGround.Count; j++)
+                {
+                    if (GameManager.OccupiedGround[j].PlayerOnGround == line.Aim)
+                    {
+                        BoardManager.Grounds[GameManager.OccupiedGround[j].i][GameManager.OccupiedGround[j].j].GetComponent<SpriteRenderer>().color = line.color;
+                        break;
+                    }
+                }
+            }
+            PlayerController.AimRangeList = new List<PlayerController.AimNode>();
+            //ChangeTurn
+            GameManager.Stage = 1;
+            GameManager.instance.SmallTurn++;
+            //Debug.Log("SmallTurn:"+GameManager.instance.SmallTurn);
+            //若本回合结束更换大回合
+            int totalSmallTurns = GameManager.TeamCount * 3 - PlayerController.FaintCount + PlayerController.MovedDead;
+            if(GameManager.Mode==9)
+                totalSmallTurns = GameManager.TeamCount - PlayerController.FaintCount + PlayerController.MovedDead;
+            for (int k = 0; k < GameManager.TeamCount; k++)
+                totalSmallTurns -= GameManager.instance.TeamDiedSoldiers[k];
+            if (GameManager.instance.SmallTurn >= totalSmallTurns)
+            {
+                //Debug.Log("AddTurn");
+
+                GameManager.instance.SmallTurn = 0;
+                PlayerController.MovedDead = 0;
+                List<GameManager.GroundStage> oGround2 = new List<GameManager.GroundStage>();
+                for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
+                {
+                    GameManager.GroundStage GStage = GameManager.OccupiedGround[i];
+                    GStage.Moved = false;
+                    oGround2.Add(GStage);
+                }
+                GameManager.instance.Turn++;
+                GameManager.OccupiedGround = oGround2;
+                GameManager.instance.ArtActFinished = false;
+            }
         }
-        if (winnerNotice == "胜利")
-        {
-            ProtocolBytes prot = new ProtocolBytes();
-            prot.AddString("AddScore");
-            prot.AddInt(50);
-            NetMgr.srvConn.Send(prot);
-        }
-        ShowNotice(winnerNotice, "返回", delegate ()
-        {
-            SceneManager.LoadScene("MainPage");
-        });
-        Quit.GetComponentInChildren<Text>().text = "退出";
-        Quit.onClick.RemoveAllListeners();
-        Quit.onClick.AddListener(delegate () { Application.Quit(); });
+        bool teamHaveMove = false;
+        int counter = 0;
+        //若死人或晕人导致一队可能连续移动（一队全部动不了就再次更改下小回合移动的一方
+        if (GameManager.Stage == 1)
+            while (!teamHaveMove)
+            {
+                for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
+                {
+                    string team = "Team" + (GameManager.instance.MovingTeam + 1).ToString();
+                    if (GameManager.OccupiedGround[i].Moved == false && GameManager.OccupiedGround[i].PlayerOnGround.tag == team)
+                    {
+                        teamHaveMove = true;
+                        break;
+                    }
+                }
+                if (!teamHaveMove)
+                {
+                    GameManager.instance.MovingTeam = (GameManager.instance.MovingTeam + 1) % GameManager.TeamCount;
+                }
+                counter++;
+                if (counter > 2 * GameManager.TeamCount)
+                {
+                    Debug.Log("SmallTurn" + GameManager.instance.SmallTurn);
+                    Debug.Log("faint,MovedDied" + PlayerController.FaintCount + PlayerController.MovedDead);
+                    for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
+                        Debug.Log("position,moved" + BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.transform.position + GameManager.OccupiedGround[i].Moved);
+                    Debug.Log("Bug");
+                    break;
+                }
+            }
+        else if(GameManager.Stage==0)
+            while (!teamHaveMove)
+            {
+                for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
+                {
+                    string team = "Team" + (GroundClick.TeamCounter + 1).ToString();
+                    if (GameManager.OccupiedGround[i].i < 0 && GameManager.OccupiedGround[i].PlayerOnGround.tag == team)
+                    {
+                        teamHaveMove = true;
+                        break;
+                    }
+                }
+                if (!teamHaveMove)
+                {
+                    Debug.Log("!Teamhavemove");
+                    GroundClick.TeamCounter = (GroundClick.TeamCounter - 1 + GameManager.TeamCount) % GameManager.TeamCount;
+                }
+                counter++;
+                if (counter > 2 * GameManager.TeamCount)
+                {
+                    Debug.Log("SmallTurn" + GameManager.instance.SmallTurn);
+                    Debug.Log("faint,MovedDied" + PlayerController.FaintCount + PlayerController.MovedDead);
+                    for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
+                        Debug.Log("position,moved" + BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].transform.transform.position + GameManager.OccupiedGround[i].Moved);
+                    Debug.Log("Bug");
+                    break;
+                }
+                if (GameManager.Stage == 1)
+                    for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
+                    {
+                        string team = "Team" + (GameManager.instance.MovingTeam + 1).ToString();
+                        if (GameManager.OccupiedGround[i].Moved == false && GameManager.OccupiedGround[i].PlayerOnGround.tag == team)
+                        {
+                            GameManager.GroundStage GStage = GameManager.OccupiedGround[i];
+                            GStage.OrigColor = BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color;
+                            GameManager.OccupiedGround[i] = GStage;
+                            BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j].GetComponent<SpriteRenderer>().color = GameManager.instance.MovablePlayerHighlight;
+                        }
+                    }
+                //change:fix the bug due to moving a same chess contineously
+                GameManager.PlayerOnEdit = null;
+            }
+
     }
 
     void NetSetBoard(ProtocolBase protocol)
@@ -535,27 +705,33 @@ public class Root : MonoBehaviour
         //PlotText.text = plotText;
         
     }
+    void QuitGame()
+    {
+        Debug.Log("quit");
+        Application.Quit();
+    }
 
     void OnLogoutBack(ProtocolBase protocol)
     {
         ShowNotice("网络断开或您的账号在其他地方登录", "好的", QuitGame);
     }
-    void QuitGame()
-    {
-        Application.Quit();
-    }
 
     void WinGame(ProtocolBase protocol)
     {
-        ProtocolBytes prot = new ProtocolBytes();
-        prot.AddString("AddScore");
-        prot.AddInt(50);
-        NetMgr.srvConn.Send(prot);
-        string winnerNotice = "胜利";
-        ShowNotice(winnerNotice, "返回", delegate ()
+        if (GameManager.Mode < 7)
         {
-            SceneManager.LoadScene("MainPage");
-        });
+            ProtocolBytes prot = new ProtocolBytes();
+            prot.AddString("AddScore");
+            prot.AddInt(50);
+            NetMgr.srvConn.Send(prot);
+        }
+        string winnerNotice = "胜 利";
+        Root.instance.Quit.gameObject.SetActive(true);
+        Root.instance.GiveIn.gameObject.SetActive(false);
+        soundManager.ChangeClip();
+        GameManager.instance.WinnerNotice.color = GameManager.instance.WinColor;
+        GameManager.instance.WinnerText.text = winnerNotice;
+        GameManager.instance.WinnerNotice.gameObject.SetActive(true);
     }
 
     public int FindMode(int score)
@@ -683,7 +859,7 @@ public class Root : MonoBehaviour
                         }
                     }
                     BoardManager.Grounds[i][j].tag = aimGround.tag;
-                    foreach(Transform t in GameObject.Find("EnemyWeaponCard").GetComponentInChildren<Transform>())
+                    foreach(Transform t in GameObject.Find("EnemyWeaponCard"+"Team"+proto.GetInt(start,ref start).ToString()).GetComponentInChildren<Transform>())
                     {
                         if(t.tag==weaponName)
                             t.gameObject.SetActive(false);

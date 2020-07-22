@@ -108,7 +108,7 @@ public class AI : PlayerController
         {
             if (GameManager.RealPlayerTeam.Contains(GameManager.OccupiedGround[i].PlayerOnGround.tag))
                 PlayerBloodSum += int.Parse(GameManager.OccupiedGround[i].PlayerBlood.GetComponentInChildren<Text>().text);
-            else
+            else if(GameManager.OccupiedGround[i].PlayerOnGround.tag==("Team" + (GameManager.instance.MovingTeam + 1).ToString()))
             {
                 EnemyBloodSum += int.Parse(GameManager.OccupiedGround[i].PlayerBlood.GetComponentInChildren<Text>().text);
             }
@@ -116,7 +116,7 @@ public class AI : PlayerController
         //算分
         for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
         {
-            if (!GameManager.RealPlayerTeam.Contains(GameManager.OccupiedGround[i].PlayerOnGround.tag))
+            if (GameManager.OccupiedGround[i].PlayerOnGround.tag == "Team" + (GameManager.instance.MovingTeam + 1).ToString())
             {
                 SurroundScore surroundscore = new SurroundScore();
                 surroundscore.AveScoreAim = null;
@@ -157,7 +157,7 @@ public class AI : PlayerController
                                 case "Short":
                                     for (int j = 0; j < GameManager.OccupiedGround.Count; j++)
                                     {
-                                        if (GameManager.RealPlayerTeam.Contains(GameManager.OccupiedGround[j].PlayerOnGround.tag))
+                                        if (GameManager.OccupiedGround[i].PlayerOnGround.tag!=GameManager.OccupiedGround[j].PlayerOnGround.tag)
                                         {
                                             enemyScore = 0;
                                             if (Vector3.Distance(GameManager.OccupiedGround[j].PlayerOnGround.transform.position, Node.Aim.transform.position) < BoardManager.distance * 1.5f)
@@ -201,7 +201,7 @@ public class AI : PlayerController
                                 case "Long":
                                     for (int j = 0; j < GameManager.OccupiedGround.Count; j++)
                                     {
-                                        if (GameManager.RealPlayerTeam.Contains(GameManager.OccupiedGround[j].PlayerOnGround.tag))
+                                        if (GameManager.OccupiedGround[i].PlayerOnGround.tag!=GameManager.OccupiedGround[j].PlayerOnGround.tag)
                                         {
                                             enemyScore = 0;
                                             int i1 = 0, j1 = 0, i2 = 0, j2 = 0, Range = 3;
@@ -276,7 +276,11 @@ public class AI : PlayerController
                                     thisScore = -5;
                                     break;
                                 case "BumbMaker":
-                                    thisScore = 3;
+                                    if(Node.Aim == BoardManager.Grounds[GameManager.OccupiedGround[i].i][GameManager.OccupiedGround[i].j]
+                                    &&GameManager.Mode==9)
+                                        thisScore = -6;
+                                    else
+                                        thisScore = 3;
                                     break;
                             }
                         }
@@ -331,12 +335,12 @@ public class AI : PlayerController
         }
         GameObject possibleEnemy = null;
         maxScore = -10;
-        if (PlayerBloodSum < EnemyBloodSum - 4)
+        if ((PlayerBloodSum < EnemyBloodSum - 4)&&GameManager.Mode!=9)
         {
             Debug.Log("Act");
             for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
             {
-                if ((!GameManager.RealPlayerTeam.Contains(GameManager.OccupiedGround[i].PlayerOnGround.tag)) && !GameManager.OccupiedGround[i].Moved)
+                if (GameManager.OccupiedGround[i].PlayerOnGround.tag == "Team" + (GameManager.instance.MovingTeam + 1).ToString() && !GameManager.OccupiedGround[i].Moved)
                 {
                     if (score[GameManager.OccupiedGround[i].PlayerBlood].AveScoreAim == null)
                     {
@@ -352,6 +356,7 @@ public class AI : PlayerController
                     }
                     else
                         GroundToMove = score[GameManager.OccupiedGround[i].PlayerBlood].AveScoreAim;
+                    break;
                 }
             }
         }
@@ -360,7 +365,7 @@ public class AI : PlayerController
             Debug.Log("Normal");
             for (int i = 0; i < GameManager.OccupiedGround.Count; i++)
             {
-                if ((!GameManager.RealPlayerTeam.Contains(GameManager.OccupiedGround[i].PlayerOnGround.tag)) && !GameManager.OccupiedGround[i].Moved)
+                if (GameManager.OccupiedGround[i].PlayerOnGround.tag == "Team" + (GameManager.instance.MovingTeam + 1).ToString() && !GameManager.OccupiedGround[i].Moved)
                 {
                     if (score[GameManager.OccupiedGround[i].PlayerBlood].MaxScore <= maxScore)
                         continue;
@@ -562,7 +567,7 @@ public class AI : PlayerController
                 {
                     if (GameManager.instance.AttackMode == 1)
                     {
-                        if (t.tag != GameManager.PlayerOnEdit.tag)
+                        if (GameManager.RealPlayerTeam.Contains(t.gameObject.tag))
                             t.gameObject.GetComponent<RealPlayer>().DragAttack(Blood, thisBlood, attack, aimWeapon);
                         else
                         {
@@ -572,7 +577,7 @@ public class AI : PlayerController
                     }
                     if (GameManager.instance.AttackMode == 0)
                     {
-                        if (t.tag != GameManager.PlayerOnEdit.tag)
+                        if (GameManager.RealPlayerTeam.Contains(t.gameObject.tag))
                             t.gameObject.GetComponent<RealPlayer>().Attack(Blood, thisBlood, PlayerToAttack.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon,true);
                         else
                         {
@@ -582,7 +587,7 @@ public class AI : PlayerController
                     }
                     if (GameManager.instance.AttackMode == 2)
                     {
-                        if (t.tag != GameManager.PlayerOnEdit.tag)
+                        if (GameManager.RealPlayerTeam.Contains(t.gameObject.tag))
                             t.gameObject.GetComponent<RealPlayer>().ArrowAttack(Blood, thisBlood, PlayerToAttack.transform.position, GameManager.PlayerOnEdit.transform.position, attack, aimWeapon);
                         else
                         {

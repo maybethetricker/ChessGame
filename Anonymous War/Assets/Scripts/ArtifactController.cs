@@ -23,7 +23,7 @@ public class ArtifactController : PlayerController
         {
             Destroy(gameObject);
         }
-        if(!GameManager.IsTraining && !GameManager.UseAI && GameManager.RealPlayerTeam.Contains("Team1"))
+        if(!GameManager.IsTraining && !GameManager.UseAI && !GameManager.RealPlayerTeam.Contains("Team1"))
         {
             GameManager.instance.ArtActFinished = true;
             ArtifactType = 0;
@@ -130,7 +130,7 @@ public class ArtifactController : PlayerController
         randomList.Add(currentPlus);
         int rand = Random.Range(0, randomList.Count);
         Artifact = randomList[rand];
-        Artifact = randomList[randomList.Count - 3];//for test
+        //Artifact = randomList[randomList.Count - 3];//for test
         switch (spriteDic[Artifact])
         {
             case 1:gameObject.GetComponent<SpriteRenderer>().sprite=GameManager.instance.crystal;gameObject.name="crystal";break;

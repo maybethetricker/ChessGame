@@ -117,6 +117,7 @@ public class CardController : MonoBehaviour
                         protocol.AddFloat(BoardManager.Grounds[i][j].transform.position.x);
                         protocol.AddFloat(BoardManager.Grounds[i][j].transform.position.y);
                         protocol.AddFloat(BoardManager.Grounds[i][j].transform.position.z);
+                        protocol.AddInt(GameManager.instance.MovingTeam+1);
                         NetMgr.srvConn.Send(protocol);
                     }
                     GameObject aimGround = null;
